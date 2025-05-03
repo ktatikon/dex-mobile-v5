@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 0 0% 5%; /* #0D0D0D */
+    --foreground: 0 0% 100%; /* #FFFFFF */
+
+    --card: 0 0% 11%; /* #1C1C1C */
+    --card-foreground: 0 0% 100%; /* #FFFFFF */
+
+    --popover: 0 0% 11%; /* #1C1C1C */
+    --popover-foreground: 0 0% 100%; /* #FFFFFF */
+
+    --primary: 300 100% 50%; /* #FF00FF - Neon Pink */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF */
+
+    --secondary: 174 100% 50%; /* #00FFE0 - Neon Teal */
+    --secondary-foreground: 0 0% 0%; /* #000000 */
+
+    --muted: 0 0% 15%; /* #262626 */
+    --muted-foreground: 0 0% 69%; /* #B0B0B0 */
+
+    --accent: 270 100% 65%; /* #9C4DFF - Purple */
+    --accent-foreground: 0 0% 100%; /* #FFFFFF */
+
+    --destructive: 0 100% 50%; /* #FF0000 */
+    --destructive-foreground: 0 0% 100%; /* #FFFFFF */
+
+    --border: 0 0% 20%; /* #333333 */
+    --input: 0 0% 20%; /* #333333 */
+    --ring: 174 100% 50%; /* #00FFE0 - Neon Teal */
+
+    --sidebar-background: 0 0% 7%; /* #121212 */
+    --sidebar-foreground: 0 0% 100%; /* #FFFFFF */
+    --sidebar-primary: 300 100% 50%; /* #FF00FF - Neon Pink */
+    --sidebar-primary-foreground: 0 0% 100%; /* #FFFFFF */
+    --sidebar-accent: 174 100% 50%; /* #00FFE0 - Neon Teal */
+    --sidebar-accent-foreground: 0 0% 0%; /* #000000 */
+    --sidebar-border: 0 0% 15%; /* #262626 */
+    --sidebar-ring: 270 100% 65%; /* #9C4DFF - Purple */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}

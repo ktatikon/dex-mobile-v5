@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>V-DEX Mobile</title>
+    <meta name="description" content="Decentralized Exchange Mobile Application" />
+    <meta name="author" content="V-DEX" />
+    <meta name="theme-color" content="#00FFE0" />
+
+    <!-- Manifest for PWA -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png" />
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:title" content="V-DEX Mobile" />
+    <meta property="og:description" content="Decentralized Exchange Mobile Application" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/assets/social/og-image.png" />
+    <meta property="og:url" content="https://v-dex.com" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@v_dex" />
+    <meta name="twitter:title" content="V-DEX Mobile" />
+    <meta name="twitter:description" content="Decentralized Exchange Mobile Application" />
+    <meta name="twitter:image" content="/assets/social/twitter-image.png" />
+
+    <!-- iOS meta tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="V-DEX" />
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <!-- Service Worker Registration -->
+    <script src="/register-sw.js"></script>
+    <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
+    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
