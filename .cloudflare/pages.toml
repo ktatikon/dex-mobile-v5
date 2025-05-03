@@ -1,0 +1,20 @@
+[build]
+command = "npm install && npm run build"
+destination = "dist"
+environment = { NODE_VERSION = "18" }
+
+[build.environment]
+BUN_INSTALL = "false"
+NPM_FLAGS = "--no-package-lock"
+
+[site]
+bucket = "./dist"
+entry-point = "."
+
+[env.production]
+name = "production"
+route = "*"
+
+[env.staging]
+name = "staging"
+route = "staging.*"
