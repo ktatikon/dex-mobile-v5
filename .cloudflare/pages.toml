@@ -1,14 +1,14 @@
 [build]
 command = "cp cloudflare-package.json package.json && node cloudflare-build.js"
 destination = "dist"
-environment = { NODE_VERSION = "18" }
+environment = { NODE_VERSION = "20" }
 
 [build.environment]
 BUN_INSTALL = "false"
-NPM_FLAGS = "--no-package-lock"
+NPM_FLAGS = "--no-package-lock --legacy-peer-deps"
 USE_BUN = "false"
 PACKAGE_MANAGER = "npm"
-NODE_VERSION = "18"
+NODE_VERSION = "20"
 CI = "true"
 
 [site]

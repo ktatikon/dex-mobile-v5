@@ -2,11 +2,11 @@
   "build": {
     "command": "cp cloudflare-package.json package.json && node cloudflare-build.js",
     "environment": {
-      "NODE_VERSION": "18",
+      "NODE_VERSION": "20",
       "BUN_INSTALL": "false",
       "USE_BUN": "false",
       "PACKAGE_MANAGER": "npm",
-      "NPM_FLAGS": "--no-package-lock"
+      "NPM_FLAGS": "--no-package-lock --legacy-peer-deps"
     }
   }
 }
