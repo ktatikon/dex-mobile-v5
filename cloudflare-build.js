@@ -79,8 +79,8 @@ console.log('='.repeat(70));
 console.log('Building the project:');
 console.log('='.repeat(70));
 try {
-  console.log('Running vite build with cloudflare config...');
-  execSync('npx vite build --config vite.config.cloudflare.js', { stdio: 'inherit' });
+  console.log('Running vite build with explicit config...');
+  execSync('NODE_ENV=production npx vite build --config vite.config.js --mode production', { stdio: 'inherit' });
   console.log('Build completed successfully!');
 
   // List files in dist directory
