@@ -19,7 +19,7 @@ echo "Installing dependencies with npm..."
 npm install
 
 # Build the project
-echo "Building project..."
-npm run build
+echo "Building project with Vite directly..."
+npx vite build
 
 echo "Build completed successfully!"

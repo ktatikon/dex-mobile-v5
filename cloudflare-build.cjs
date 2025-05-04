@@ -79,10 +79,10 @@ console.log('='.repeat(70));
 console.log('Building the project:');
 console.log('='.repeat(70));
 try {
-  console.log('Running npm run build...');
-  execSync('npm run build', { stdio: 'inherit' });
+  console.log('Running vite build directly...');
+  execSync('npx vite build', { stdio: 'inherit' });
   console.log('Build completed successfully!');
-  
+
   // List files in dist directory
   console.log('='.repeat(70));
   console.log('Build output:');
@@ -90,7 +90,7 @@ try {
   console.log('Files in dist directory:');
   const distFiles = execSync('ls -la dist').toString();
   console.log(distFiles);
-  
+
   process.exit(0);
 } catch (error) {
   console.error('Build failed:', error.message);

@@ -77,8 +77,8 @@ echo
 echo "====================================================="
 echo "Building the project:"
 echo "====================================================="
-echo "Running npm run build..."
-npm run build
+echo "Running vite build directly..."
+npx vite build
 BUILD_RESULT=$?
 echo
 
