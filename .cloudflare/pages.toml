@@ -1,5 +1,5 @@
 [build]
-command = "cp cloudflare-package.json package.json && npm install && NODE_ENV=production npx vite build --config vite.config.js --mode production"
+command = "cp cloudflare-package.json package.json && npm install && NODE_ENV=production npx vite build --mode production"
 destination = "dist"
 environment = { NODE_VERSION = "20" }
 
