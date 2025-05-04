@@ -1,5 +1,5 @@
 [build]
-command = "bash -c 'npm install && npm run build'"
+command = "cp cloudflare-package.json package.json && node cloudflare-build.js"
 destination = "dist"
 environment = { NODE_VERSION = "18" }
 
@@ -8,6 +8,8 @@ BUN_INSTALL = "false"
 NPM_FLAGS = "--no-package-lock"
 USE_BUN = "false"
 PACKAGE_MANAGER = "npm"
+NODE_VERSION = "18"
+CI = "true"
 
 [site]
 bucket = "./dist"

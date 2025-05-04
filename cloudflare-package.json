@@ -3,9 +3,14 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "packageManager": "npm@10.8.3",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node cloudflare-build.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },
