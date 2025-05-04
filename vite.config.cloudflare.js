@@ -3,7 +3,7 @@ const { defineConfig } = require('vite');
 const react = require('@vitejs/plugin-react-swc');
 const path = require('path');
 
-// Simple configuration without lovable-tagger for Cloudflare builds
+// Simple configuration for Cloudflare builds
 module.exports = defineConfig({
   server: {
     host: "::",
@@ -11,7 +11,7 @@ module.exports = defineConfig({
   },
   plugins: [
     react(),
-    // lovable-tagger is completely removed to avoid build issues
+    // No additional plugins needed
   ],
   resolve: {
     alias: {
