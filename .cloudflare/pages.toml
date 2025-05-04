@@ -1,5 +1,5 @@
 [build]
-command = "cp cloudflare-package.json package.json && NODE_OPTIONS='--no-warnings' node cloudflare-build.cjs"
+command = "cp cloudflare-package.json package.json && npm install && npx vite build --config vite.config.js"
 destination = "dist"
 environment = { NODE_VERSION = "20" }
 
