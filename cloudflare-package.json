@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "NODE_ENV=production vite build --config vite.config.js --mode production",
+    "build": "NODE_ENV=production vite build --mode production",
     "lint": "eslint .",
     "preview": "vite preview"
   },
