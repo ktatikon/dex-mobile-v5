@@ -1,5 +1,5 @@
 [build]
-command = "cp cloudflare-package.json package.json && node cloudflare-build.cjs"
+command = "cp cloudflare-package.json package.json && NODE_OPTIONS='--no-warnings' node cloudflare-build.cjs"
 destination = "dist"
 environment = { NODE_VERSION = "20" }
 
