@@ -77,8 +77,8 @@ echo
 echo "====================================================="
 echo "Building the project:"
 echo "====================================================="
-echo "Running vite build directly..."
-npx vite build
+echo "Running vite build with cloudflare config..."
+npx vite build --config vite.config.cloudflare.js
 BUILD_RESULT=$?
 echo
 

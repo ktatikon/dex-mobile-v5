@@ -1,6 +1,6 @@
 {
   "installCommand": "npm install",
-  "buildCommand": "npx vite build",
+  "buildCommand": "npx vite build --config vite.config.cloudflare.js",
   "outputDirectory": "dist",
   "nodeVersion": "18"
 }

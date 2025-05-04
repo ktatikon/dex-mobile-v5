@@ -16,7 +16,7 @@ echo "Installing dependencies with npm..."
 npm ci || npm install
 
 # Build the project
-echo "Building project with Vite directly..."
-npx vite build
+echo "Building project with cloudflare config..."
+npx vite build --config vite.config.cloudflare.js
 
 echo "Build completed successfully!"
