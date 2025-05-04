@@ -10,7 +10,7 @@
   "packageManager": "npm@10.8.3",
   "scripts": {
     "dev": "vite",
-    "build": "node cloudflare-build.js",
+    "build": "node cloudflare-build.cjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },

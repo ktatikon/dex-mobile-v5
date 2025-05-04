@@ -1,6 +1,6 @@
 {
   "build": {
-    "command": "cp cloudflare-package.json package.json && node cloudflare-build.js",
+    "command": "cp cloudflare-package.json package.json && node cloudflare-build.cjs",
     "environment": {
       "NODE_VERSION": "20",
       "BUN_INSTALL": "false",

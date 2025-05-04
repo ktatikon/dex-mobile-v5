@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
-import { execSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
+const { execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 
 // Print header
 console.log('='.repeat(70));
-console.log('Cloudflare Pages Custom Build Script');
+console.log('Cloudflare Pages Custom Build Script (CommonJS)');
 console.log('='.repeat(70));
 console.log(`Starting build process at ${new Date().toISOString()}`);
 console.log();
@@ -82,7 +82,7 @@ try {
   console.log('Running npm run build...');
   execSync('npm run build', { stdio: 'inherit' });
   console.log('Build completed successfully!');
-
+  
   // List files in dist directory
   console.log('='.repeat(70));
   console.log('Build output:');
@@ -90,7 +90,7 @@ try {
   console.log('Files in dist directory:');
   const distFiles = execSync('ls -la dist').toString();
   console.log(distFiles);
-
+  
   process.exit(0);
 } catch (error) {
   console.error('Build failed:', error.message);
