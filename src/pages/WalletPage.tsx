@@ -4,10 +4,10 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TokenListItem from '@/components/TokenListItem';
-import { calculateTotalBalance, formatCurrency, mockWallet } from '@/services/mockData';
+import { formatCurrency } from '@/services/realTimeData';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, Shield, Flame, Plus, ChevronDown, Usb, Check, AlertCircle } from 'lucide-react';
+import { Wallet, Shield, Flame, Plus, ChevronDown, Usb, Check, AlertCircle, RefreshCw } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +17,8 @@ import {
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
 import TokenIcon from '@/components/TokenIcon';
+import { useWalletData } from '@/hooks/useWalletData';
+import EmptyStateCard from '@/components/EmptyStateCard';
 
 // Hardware wallet options
 interface HardwareWallet {
@@ -116,27 +118,32 @@ const additionalAltcoins = [
 const WalletPage: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { address, tokens } = mockWallet;
-  const [activeWalletType, setActiveWalletType] = useState<'hot' | 'cold'>('hot');
   const [selectedHardwareWallet, setSelectedHardwareWallet] = useState<HardwareWallet | null>(null);
 
-  // Combine original tokens with additional altcoins
-  const allTokens = [...tokens, ...additionalAltcoins];
+  const {
+    address,
+    totalBalance,
+    hotWalletTokens,
+    coldWalletTokens,
+    hotWalletBalance,
+    coldWalletBalance,
+    portfolioChange24h,
+    loading,
+    error,
+    refreshData,
+    activeWalletType,
+    setActiveWalletType,
+    lastUpdated
+  } = useWalletData();
 
-  // Sort tokens by value (balance * price)
-  const sortedTokens = [...allTokens].sort((a, b) => {
-    const aValue = parseFloat(a.balance || '0') * (a.price || 0);
-    const bValue = parseFloat(b.balance || '0') * (b.price || 0);
-    return bValue - aValue;
-  });
+  // Format last updated time
+  const formattedLastUpdated = lastUpdated
+    ? new Date(lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : '';
 
-  // Split tokens between hot and cold wallets for demo purposes
-  const hotWalletTokens = sortedTokens.slice(0, Math.ceil(sortedTokens.length / 2) + 2); // Add more tokens to hot wallet
-  const coldWalletTokens = sortedTokens.slice(Math.ceil(sortedTokens.length / 2) + 2);
-
-  const totalBalance = calculateTotalBalance(allTokens);
-  const hotWalletBalance = calculateTotalBalance(hotWalletTokens);
-  const coldWalletBalance = calculateTotalBalance(coldWalletTokens);
+  // Format portfolio change for display
+  const formattedPortfolioChange = portfolioChange24h.toFixed(2);
+  const isPositiveChange = portfolioChange24h >= 0;
 
   const handleCopyAddress = () => {
     if (navigator.clipboard) {
@@ -176,14 +183,110 @@ const WalletPage: React.FC = () => {
     });
   };
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="pb-20">
+        <Card className="p-4 mb-6 bg-dex-dark text-white border-dex-secondary/30 shadow-lg shadow-dex-secondary/10 backdrop-blur-sm">
+          <h2 className="text-lg font-semibold mb-1">Wallet</h2>
+
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <div className="h-8 w-32 bg-dex-secondary/20 rounded-md animate-pulse mb-2"></div>
+              <div className="h-4 w-48 bg-dex-secondary/10 rounded-md animate-pulse"></div>
+            </div>
+
+            <div className="flex gap-3">
+              <div className="h-11 w-28 bg-dex-secondary/20 rounded-lg animate-pulse"></div>
+              <div className="h-11 w-28 bg-dex-secondary/10 rounded-lg animate-pulse"></div>
+            </div>
+          </div>
+        </Card>
+
+        <div className="flex justify-center items-center p-8">
+          <RefreshCw className="h-8 w-8 animate-spin text-dex-primary" />
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="pb-20">
+        <Card className="p-4 mb-6 bg-dex-dark text-white border-dex-secondary/30 shadow-lg shadow-dex-secondary/10 backdrop-blur-sm">
+          <h2 className="text-lg font-semibold mb-1">Wallet</h2>
+
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <div className="text-2xl font-bold text-white">$0.00</div>
+              <button
+                className="text-sm text-gray-400 hover:text-white flex items-center gap-1 transition-all duration-200"
+                onClick={handleCopyAddress}
+              >
+                {address}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="primary"
+                className="h-11 min-w-[110px] px-4 py-3 rounded-lg flex items-center justify-center"
+                onClick={() => refreshData()}
+              >
+                <RefreshCw size={20} className="mr-2" />
+                Retry
+              </Button>
+            </div>
+          </div>
+        </Card>
+
+        <EmptyStateCard
+          title="Error Loading Wallet Data"
+          description={error.message || "Failed to load wallet data. Please try again."}
+          icon={<AlertCircle size={40} className="text-dex-negative" />}
+          actionLabel="Retry"
+          onAction={() => refreshData()}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="pb-20">
       <Card className="p-4 mb-6 bg-dex-dark text-white border-dex-secondary/30 shadow-lg shadow-dex-secondary/10 backdrop-blur-sm">
-        <h2 className="text-lg font-semibold mb-1">Wallet</h2>
+        <div className="flex justify-between items-center mb-1">
+          <h2 className="text-lg font-semibold">Wallet</h2>
+          {lastUpdated && (
+            <div className="text-xs text-gray-400 flex items-center">
+              <RefreshCw size={12} className="mr-1" />
+              Updated {formattedLastUpdated}
+            </div>
+          )}
+        </div>
 
         <div className="flex justify-between items-start mb-4">
           <div>
-            <div className="text-2xl font-bold text-white">${formatCurrency(totalBalance)}</div>
+            <div className="flex items-center gap-2">
+              <div className="text-2xl font-bold text-white">${formatCurrency(totalBalance)}</div>
+              <span className={`text-xs font-semibold px-2 py-1 rounded-full ${isPositiveChange ? 'bg-dex-positive/10 text-dex-positive' : 'bg-dex-negative/10 text-dex-negative'}`}>
+                {isPositiveChange ? '+' : ''}{formattedPortfolioChange}%
+              </span>
+            </div>
             <button
               className="text-sm text-gray-400 hover:text-white flex items-center gap-1 transition-all duration-200"
               onClick={handleCopyAddress}
@@ -206,52 +309,64 @@ const WalletPage: React.FC = () => {
             </button>
           </div>
 
-          <div className="flex gap-3">
-            <Button
-              variant="primary"
-              className="h-11 min-w-[110px] px-4 py-3 rounded-lg flex items-center justify-center"
-              onClick={() => navigate('/send')}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mr-2"
-              >
-                <path d="M12 5v14"/>
-                <path d="M5 12h14"/>
-              </svg>
-              Send
-            </Button>
-
+          <div className="flex gap-2">
             <Button
               variant="outline"
-              className="h-11 min-w-[110px] px-4 py-3 rounded-lg border-dex-secondary/30 text-white flex items-center justify-center"
-              onClick={() => navigate('/receive')}
+              size="icon"
+              className="h-11 w-11 rounded-lg border-dex-secondary/30 text-white flex items-center justify-center"
+              onClick={() => refreshData()}
+              title="Refresh wallet data"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mr-2"
-              >
-                <path d="M12 19V5"/>
-                <path d="M5 12h14"/>
-              </svg>
-              Receive
+              <RefreshCw size={20} className={loading ? "animate-spin" : ""} />
             </Button>
+
+            <div className="flex gap-2">
+              <Button
+                variant="primary"
+                className="h-11 min-w-[100px] px-4 py-3 rounded-lg flex items-center justify-center"
+                onClick={() => navigate('/send')}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="mr-2"
+                >
+                  <path d="M12 5v14"/>
+                  <path d="M5 12h14"/>
+                </svg>
+                Send
+              </Button>
+
+              <Button
+                variant="outline"
+                className="h-11 min-w-[100px] px-4 py-3 rounded-lg border-dex-secondary/30 text-white flex items-center justify-center"
+                onClick={() => navigate('/receive')}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="mr-2"
+                >
+                  <path d="M12 19V5"/>
+                  <path d="M5 12h14"/>
+                </svg>
+                Receive
+              </Button>
+            </div>
           </div>
         </div>
       </Card>
@@ -344,20 +459,26 @@ const WalletPage: React.FC = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Card className="p-0 bg-dex-dark text-white border-dex-secondary/10 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.2)] backdrop-blur-sm mb-4">
-              {hotWalletTokens.map(token => (
-                <TokenListItem
-                  key={token.id}
-                  token={token}
-                  onSelect={() => handleGoToSwap(token)}
-                />
-              ))}
-              {hotWalletTokens.length === 0 && (
-                <div className="p-4 text-center text-gray-400">
-                  No tokens in hot wallet
-                </div>
-              )}
-            </Card>
+            {hotWalletTokens.length > 0 ? (
+              <Card className="p-0 bg-dex-dark text-white border-dex-secondary/10 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.2)] backdrop-blur-sm mb-4">
+                {hotWalletTokens.map(token => (
+                  <TokenListItem
+                    key={token.id}
+                    token={token}
+                    onSelect={() => handleGoToSwap(token)}
+                  />
+                ))}
+              </Card>
+            ) : (
+              <EmptyStateCard
+                title="No Tokens in Hot Wallet"
+                description="Add funds to your wallet to get started with trading."
+                icon={<Wallet size={40} />}
+                actionLabel="Add Funds"
+                onAction={() => navigate('/receive')}
+                className="mb-4"
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="cold">
@@ -426,20 +547,26 @@ const WalletPage: React.FC = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Card className="p-0 bg-dex-dark text-white border-dex-secondary/10 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.2)] backdrop-blur-sm mb-4">
-              {coldWalletTokens.map(token => (
-                <TokenListItem
-                  key={token.id}
-                  token={token}
-                  onSelect={() => handleGoToSwap(token)}
-                />
-              ))}
-              {coldWalletTokens.length === 0 && (
-                <div className="p-4 text-center text-gray-400">
-                  No tokens in cold wallet
-                </div>
-              )}
-            </Card>
+            {coldWalletTokens.length > 0 ? (
+              <Card className="p-0 bg-dex-dark text-white border-dex-secondary/10 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.2)] backdrop-blur-sm mb-4">
+                {coldWalletTokens.map(token => (
+                  <TokenListItem
+                    key={token.id}
+                    token={token}
+                    onSelect={() => handleGoToSwap(token)}
+                  />
+                ))}
+              </Card>
+            ) : (
+              <EmptyStateCard
+                title="No Tokens in Cold Wallet"
+                description="Connect your hardware wallet to manage your cold storage assets."
+                icon={<Shield size={40} />}
+                actionLabel="Connect Hardware Wallet"
+                onAction={() => setSelectedHardwareWallet(hardwareWallets[0])}
+                className="mb-4"
+              />
+            )}
 
             <Button
               variant="primary"

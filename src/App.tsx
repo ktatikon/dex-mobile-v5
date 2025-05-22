@@ -6,18 +6,19 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { KYCProvider } from "@/contexts/KYCContext";
+import { MarketDataProvider } from "@/contexts/MarketDataContext";
 import PrivateRoute from "@/components/PrivateRoute";
 import DexNavigation from "@/components/DexNavigation";
 import DexHeader from "@/components/DexHeader";
-import HomePage from "./pages/HomePage";
+import HomePageWithErrorBoundary from "./pages/HomePageWithErrorBoundary";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
 import TradePage from "./pages/TradePage";
 import ExplorePage from "./pages/ExplorePage";
-import PortfolioPage from "./pages/PortfolioPage";
+import PortfolioPageWithErrorBoundary from "./pages/PortfolioPageWithErrorBoundary";
 import SettingsPage from "./pages/SettingsPage";
 import ProfileSettingsPage from "./pages/ProfileSettingsPage";
-import WalletPage from "./pages/WalletPage";
+import WalletPageWithErrorBoundary from "./pages/WalletPageWithErrorBoundary";
 import ActivityPage from "./pages/ActivityPage";
 import BuyPage from "./pages/BuyPage";
 import SellPage from "./pages/SellPage";
@@ -54,10 +55,11 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <KYCProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
+          <MarketDataProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
               <div className="min-h-screen dark bg-gradient-to-br from-dex-dark via-dex-primary/10 to-dex-secondary/10">
                 <Routes>
                 <Route path="/auth" element={<AuthPage />} />
@@ -72,7 +74,7 @@ const App = () => {
                       />
                       <div className="pt-16 pb-20">
                         <div className="container mx-auto px-4 mb-4">
-                          <HomePage />
+                          <HomePageWithErrorBoundary />
                         </div>
                         <DexNavigation />
                       </div>
@@ -109,7 +111,7 @@ const App = () => {
                     />
                     <div className="pt-16 pb-20">
                       <div className="container mx-auto px-4 mb-4">
-                        <WalletPage />
+                        <WalletPageWithErrorBoundary />
                       </div>
                       <DexNavigation />
                     </div>
@@ -163,7 +165,7 @@ const App = () => {
                     />
                     <div className="pt-16 pb-20">
                       <div className="container mx-auto px-4 mb-4">
-                        <PortfolioPage />
+                        <PortfolioPageWithErrorBoundary />
                       </div>
                       <DexNavigation />
                     </div>
@@ -425,11 +427,12 @@ const App = () => {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
-        </BrowserRouter>
-      </TooltipProvider>
-        </KYCProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+            </BrowserRouter>
+          </TooltipProvider>
+        </MarketDataProvider>
+      </KYCProvider>
+    </AuthProvider>
+  </QueryClientProvider>
   );
 };
 

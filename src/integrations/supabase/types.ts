@@ -9,6 +9,181 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      wallet_balances: {
+        Row: {
+          id: string
+          user_id: string
+          wallet_id: string
+          token_id: string
+          balance: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          wallet_id: string
+          token_id: string
+          balance: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          wallet_id?: string
+          token_id?: string
+          balance?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      transactions: {
+        Row: {
+          id: string
+          user_id: string
+          wallet_id: string
+          transaction_type: string
+          from_token_id: string | null
+          to_token_id: string | null
+          from_amount: string | null
+          to_amount: string | null
+          timestamp: string
+          hash: string | null
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          wallet_id: string
+          transaction_type: string
+          from_token_id?: string | null
+          to_token_id?: string | null
+          from_amount?: string | null
+          to_amount?: string | null
+          timestamp?: string
+          hash?: string | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          wallet_id?: string
+          transaction_type?: string
+          from_token_id?: string | null
+          to_token_id?: string | null
+          from_amount?: string | null
+          to_amount?: string | null
+          timestamp?: string
+          hash?: string | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      liquidity_positions: {
+        Row: {
+          id: string
+          user_id: string
+          token_a_id: string
+          token_b_id: string
+          token_a_amount: string
+          token_b_amount: string
+          pool_share: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          token_a_id: string
+          token_b_id: string
+          token_a_amount: string
+          token_b_amount: string
+          pool_share: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          token_a_id?: string
+          token_b_id?: string
+          token_a_amount?: string
+          token_b_amount?: string
+          pool_share?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      tokens: {
+        Row: {
+          id: string
+          symbol: string
+          name: string
+          logo: string
+          decimals: number
+          price: number | null
+          price_change_24h: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          symbol: string
+          name: string
+          logo: string
+          decimals: number
+          price?: number | null
+          price_change_24h?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          symbol?: string
+          name?: string
+          logo?: string
+          decimals?: number
+          price?: number | null
+          price_change_24h?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      wallets: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          wallet_type: string
+          address: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          wallet_type: string
+          address: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          wallet_type?: string
+          address?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
       notification_settings: {
         Row: {
           id: string
@@ -112,7 +287,7 @@ export type Database = {
           },
         ]
       }
-      transactions: {
+      legacy_transactions: {
         Row: {
           amount: number
           created_at: string | null

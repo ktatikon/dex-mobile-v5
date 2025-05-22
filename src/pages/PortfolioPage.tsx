@@ -1,16 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Wallet, ChevronRight, BarChart3, Flame, RefreshCw, ArrowUpDown, Clock, Plus,
   TrendingUp, TrendingDown, History, Building, PieChart, Shield, AlertTriangle,
-  HelpCircle, ArrowRight, Landmark
+  HelpCircle, ArrowRight, Landmark, AlertCircle
 } from 'lucide-react';
-import { mockTokens } from '@/services/mockData';
+import { formatCurrency } from '@/services/realTimeData';
 import TokenIcon from '@/components/TokenIcon';
 import { Token } from '@/types';
 import { Button } from '@/components/ui/button';
+import { usePortfolioData } from '@/hooks/usePortfolioData';
+import EmptyStateCard from '@/components/EmptyStateCard';
+import { useGlobalMarketData } from '@/contexts/MarketDataContext';
 
 // Interface for futures contracts
 interface FuturesContract {
@@ -25,53 +28,78 @@ interface FuturesContract {
   volume24h: number;
 }
 
-// Mock data for futures contracts
-const futuresContracts: FuturesContract[] = [
-  {
-    id: "btc-perp",
-    symbol: "BTC-PERP",
-    name: "Bitcoin Perpetual",
-    logo: "/crypto-icons/btc.svg",
-    price: 56231.42,
-    priceChange24h: 1.2,
-    fundingRate: 0.0012,
-    maxLeverage: 100,
-    volume24h: 1250000000
-  },
-  {
-    id: "eth-perp",
-    symbol: "ETH-PERP",
-    name: "Ethereum Perpetual",
-    logo: "/crypto-icons/eth.svg",
-    price: 2845.23,
-    priceChange24h: -0.8,
-    fundingRate: -0.0008,
-    maxLeverage: 100,
-    volume24h: 750000000
-  },
-  {
-    id: "sol-perp",
-    symbol: "SOL-PERP",
-    name: "Solana Perpetual",
-    logo: "/crypto-icons/sol.svg",
-    price: 102.38,
-    priceChange24h: 3.5,
-    fundingRate: 0.0025,
-    maxLeverage: 50,
-    volume24h: 320000000
-  },
-  {
-    id: "bnb-perp",
-    symbol: "BNB-PERP",
-    name: "Binance Coin Perpetual",
-    logo: "/crypto-icons/bnb.svg",
-    price: 304.12,
-    priceChange24h: 0.5,
-    fundingRate: 0.0005,
-    maxLeverage: 50,
-    volume24h: 180000000
-  }
-];
+// Interface for futures contracts
+interface FuturesContract {
+  id: string;
+  symbol: string;
+  name: string;
+  logo: string;
+  price: number;
+  priceChange24h: number;
+  fundingRate: number;
+  maxLeverage: number;
+  volume24h: number;
+}
+
+// Function to generate futures contracts from real-time token data
+const generateFuturesContracts = (tokens: Token[]): FuturesContract[] => {
+  const futuresMap: Record<string, FuturesContract> = {
+    "bitcoin": {
+      id: "btc-perp",
+      symbol: "BTC-PERP",
+      name: "Bitcoin Perpetual",
+      logo: "/assets/icons/btc.svg",
+      price: 0,
+      priceChange24h: 0,
+      fundingRate: 0.0012,
+      maxLeverage: 100,
+      volume24h: 1250000000
+    },
+    "ethereum": {
+      id: "eth-perp",
+      symbol: "ETH-PERP",
+      name: "Ethereum Perpetual",
+      logo: "/assets/icons/eth.svg",
+      price: 0,
+      priceChange24h: 0,
+      fundingRate: -0.0008,
+      maxLeverage: 100,
+      volume24h: 750000000
+    },
+    "solana": {
+      id: "sol-perp",
+      symbol: "SOL-PERP",
+      name: "Solana Perpetual",
+      logo: "/assets/icons/sol.svg",
+      price: 0,
+      priceChange24h: 0,
+      fundingRate: 0.0025,
+      maxLeverage: 50,
+      volume24h: 320000000
+    }
+  };
+
+  // Update futures contracts with real-time data
+  tokens.forEach(token => {
+    if (futuresMap[token.id]) {
+      futuresMap[token.id].price = token.price || 0;
+      futuresMap[token.id].priceChange24h = token.priceChange24h || 0;
+
+      // Adjust funding rate based on price change (for demonstration)
+      if (token.priceChange24h && Math.abs(token.priceChange24h) > 5) {
+        const direction = token.priceChange24h > 0 ? 1 : -1;
+        futuresMap[token.id].fundingRate = direction * 0.0025;
+      }
+
+      // Adjust volume based on price (for demonstration)
+      if (token.price) {
+        futuresMap[token.id].volume24h = token.price * 25000;
+      }
+    }
+  });
+
+  return Object.values(futuresMap);
+};
 
 // Mock data for popular coins
 const bluechipCoins: Token[] = [
@@ -218,58 +246,97 @@ interface StakingToken {
   status?: 'NEW' | 'UNAVAILABLE' | 'FULLY SUBSCRIBED';
 }
 
-// Mock data for staking tokens
+// Function to generate staking tokens with updated APY rates
+const generateStakingTokens = (tokens: Token[]): StakingToken[] => {
+  // Base staking tokens with default APY rates
+  const baseStakingTokens: StakingToken[] = [
+    {
+      id: "bitcoin",
+      name: "Bitcoin",
+      symbol: "BTC",
+      logo: "/assets/icons/btc.svg",
+      apy: 3.8,
+      balance: "0"
+    },
+    {
+      id: "ethereum",
+      name: "Ethereum",
+      symbol: "ETH",
+      logo: "/assets/icons/eth.svg",
+      apy: 4.2,
+      balance: "0"
+    },
+    {
+      id: "tether",
+      name: "Tether",
+      symbol: "USDT",
+      logo: "/assets/icons/usdt.svg",
+      apy: 5.5,
+      balance: "0"
+    },
+    {
+      id: "solana",
+      name: "Solana",
+      symbol: "SOL",
+      logo: "/assets/icons/sol.svg",
+      apy: 6.2,
+      balance: "0"
+    },
+    {
+      id: "polkadot",
+      name: "Polkadot",
+      symbol: "DOT",
+      logo: "/assets/icons/dot.svg",
+      apy: 9.5,
+      balance: "0"
+    },
+    {
+      id: "dogecoin",
+      name: "Dogecoin",
+      symbol: "DOGE",
+      logo: "/assets/icons/doge.svg",
+      apy: 2.5,
+      balance: "0",
+      status: 'NEW'
+    },
+    {
+      id: "shiba-inu",
+      name: "Shiba Inu",
+      symbol: "SHIB",
+      logo: "/assets/icons/shib.svg",
+      apy: 3.0,
+      balance: "0",
+      status: 'NEW'
+    }
+  ];
+
+  // Create a map for quick lookup
+  const stakingMap = new Map<string, StakingToken>();
+  baseStakingTokens.forEach(token => stakingMap.set(token.id, token));
+
+  // Update APY rates based on price changes (for demonstration)
+  tokens.forEach(token => {
+    if (stakingMap.has(token.id)) {
+      const stakingToken = stakingMap.get(token.id)!;
+
+      // Adjust APY based on price change (for demonstration)
+      if (token.priceChange24h) {
+        // Higher volatility = higher APY (simplified model)
+        const volatilityFactor = Math.abs(token.priceChange24h) / 10;
+        const baseApy = stakingToken.apy;
+
+        // Adjust APY within reasonable bounds
+        stakingToken.apy = Math.max(1.0, Math.min(12.0, baseApy + volatilityFactor));
+        stakingToken.apy = parseFloat(stakingToken.apy.toFixed(1));
+      }
+    }
+  });
+
+  return Array.from(stakingMap.values());
+};
+
+// Mock data for staking tokens (fallback)
 const stakingTokens: StakingToken[] = [
-  {
-    id: "casper",
-    name: "Casper",
-    symbol: "CSPR",
-    logo: "/crypto-icons/cspr.svg",
-    apy: 6.0,
-    balance: "0",
-    status: 'NEW'
-  },
-  {
-    id: "tether",
-    name: "Tether",
-    symbol: "USDT",
-    logo: "/crypto-icons/usdt.svg",
-    apy: 5.5,
-    balance: "0"
-  },
-  {
-    id: "solana",
-    name: "Solana",
-    symbol: "SOL",
-    logo: "/crypto-icons/sol.svg",
-    apy: 5.0,
-    balance: "0"
-  },
-  {
-    id: "polkadot",
-    name: "Polkadot",
-    symbol: "DOT",
-    logo: "/crypto-icons/dot.svg",
-    apy: 4.5,
-    balance: "0"
-  },
-  {
-    id: "celestia",
-    name: "Celestia",
-    symbol: "TIA",
-    logo: "/crypto-icons/tia.svg",
-    apy: 4.5,
-    balance: "0",
-    status: 'NEW'
-  },
-  {
-    id: "cosmos",
-    name: "Cosmos",
-    symbol: "ATOM",
-    logo: "/crypto-icons/atom.svg",
-    apy: 4.0,
-    balance: "0"
-  },
   {
     id: "the-graph",
     name: "The Graph",
@@ -421,10 +488,111 @@ const stakingTokens: StakingToken[] = [
 
 const PortfolioPage = () => {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<string>('overview');
+  const {
+    portfolioTokens,
+    mockPortfolioData,
+    totalPortfolioValue,
+    portfolioChange24h,
+    loading,
+    error,
+    refreshData,
+    lastUpdated
+  } = usePortfolioData(activeTab);
+
+  // Get tokens from the global market data context
+  const { tokens } = useGlobalMarketData();
+
+  // Format portfolio change for display
+  const formattedPortfolioChange = portfolioChange24h.toFixed(2);
+  const isPositiveChange = portfolioChange24h >= 0;
+
+  // Format last updated time
+  const formattedLastUpdated = lastUpdated
+    ? new Date(lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : '';
+
+  // Handle tab change
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
+
+  // Loading state
+  if (loading && activeTab === 'overview') {
+    return (
+      <div className="container mx-auto px-4 pt-6 pb-24">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-white">Portfolio</h2>
+          <div className="flex items-center gap-2 text-gray-400">
+            <RefreshCw size={16} className="animate-spin text-dex-primary" />
+            <span className="text-xs">Loading...</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-6 mb-6 bg-dex-dark/50 p-1 rounded-lg border border-dex-secondary/20 shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
+          {['Overview', 'Coins', 'Futures', 'Funds', 'Earn', 'Web 3.0'].map((tab, index) => (
+            <div key={index} className="flex items-center justify-center py-1.5 px-1 h-11 min-h-[44px] rounded-lg text-center text-white bg-dex-secondary/50 animate-pulse">
+              {tab}
+            </div>
+          ))}
+        </div>
+
+        <div className="flex flex-col items-center justify-center py-8">
+          <div className="w-24 h-24 bg-dex-secondary/20 rounded-full animate-pulse mb-6"></div>
+          <div className="h-6 w-48 bg-dex-secondary/20 rounded-md animate-pulse mb-2"></div>
+          <div className="h-4 w-32 bg-dex-secondary/10 rounded-md animate-pulse mb-8"></div>
+
+          <div className="w-full space-y-4">
+            <div className="h-20 bg-dex-secondary/10 rounded-lg animate-pulse"></div>
+            <div className="h-20 bg-dex-secondary/10 rounded-lg animate-pulse"></div>
+            <div className="h-20 bg-dex-secondary/10 rounded-lg animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 pt-6 pb-24">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-white">Portfolio</h2>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refreshData()}
+            className="h-8 px-2 bg-dex-tertiary border-dex-secondary"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <EmptyStateCard
+          title="Error Loading Portfolio Data"
+          description={error.message || "Failed to load portfolio data. Please try again."}
+          icon={<AlertCircle size={40} className="text-dex-negative" />}
+          actionLabel="Retry"
+          onAction={() => refreshData()}
+          className="mb-6"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 pt-6 pb-24">
-      <Tabs defaultValue="overview" className="w-full">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold text-white">Portfolio</h2>
+        {lastUpdated && (
+          <div className="flex items-center gap-2 text-gray-400">
+            <RefreshCw size={16} onClick={() => refreshData()} className="cursor-pointer hover:text-dex-primary transition-colors" />
+            <span className="text-xs">Updated {formattedLastUpdated}</span>
+          </div>
+        )}
+      </div>
+
+      <Tabs defaultValue="overview" className="w-full" onValueChange={handleTabChange}>
         <TabsList className="grid w-full grid-cols-6 mb-6 bg-dex-dark/50 p-1 rounded-lg border border-dex-secondary/20 shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
           <TabsTrigger
             value="overview"
@@ -489,238 +657,460 @@ const PortfolioPage = () => {
         </TabsList>
 
         <TabsContent value="overview">
-          <div className="flex flex-col items-center justify-center py-8">
-            <div className="w-24 h-24 bg-dex-primary/10 rounded-full flex items-center justify-center mb-6">
-              <Wallet size={48} className="text-dex-primary" />
+          {portfolioTokens.length === 0 && mockPortfolioData.futures.length === 0 && mockPortfolioData.funds.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="w-24 h-24 bg-dex-primary/10 rounded-full flex items-center justify-center mb-6">
+                <Wallet size={48} className="text-dex-primary" />
+              </div>
+              <h2 className="text-xl font-bold text-white mb-2">Your account has no assets</h2>
+
+              <div className="flex items-center gap-2 mb-8">
+                <span className="text-dex-text-secondary">Portfolio Value:</span>
+                <span className="text-white font-medium">$0</span>
+                {portfolioChange24h !== 0 && (
+                  <span className={`text-xs font-semibold px-2 py-1 rounded-full ${isPositiveChange ? 'bg-dex-positive/10 text-dex-positive' : 'bg-dex-negative/10 text-dex-negative'}`}>
+                    {isPositiveChange ? '+' : ''}{formattedPortfolioChange}%
+                  </span>
+                )}
+              </div>
+
+              <Card className="w-full bg-dex-dark/80 border-dex-secondary/30 mb-4 mt-8">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-dex-primary/20 flex items-center justify-center">
+                        <span className="text-dex-primary font-bold">₹</span>
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-white">Deposit INR</h3>
+                        <p className="text-sm text-gray-400">via UPI or bank transfer</p>
+                      </div>
+                    </div>
+                    <div className="text-gray-400">
+                      <ChevronRight size={24} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="w-full bg-dex-dark/80 border-dex-secondary/30 mb-8">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-dex-primary/20 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-dex-primary">
+                          <path d="M12 12v6"/>
+                          <path d="M12 6v2"/>
+                          <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-white">Deposit Coins</h3>
+                        <p className="text-sm text-gray-400">from a Coins wallet or exchange</p>
+                      </div>
+                    </div>
+                    <div className="text-gray-400">
+                      <ChevronRight size={24} />
+                    </div>
+                  </div>
+                  <div className="mt-2 text-xs text-dex-positive">Crypto withdrawals available</div>
+                </CardContent>
+              </Card>
+
+              <h3 className="text-lg font-semibold text-white self-start mb-4">Products</h3>
+
+              <Card className="w-full bg-dex-dark/80 border-dex-secondary/30 mb-4">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-dex-secondary/20 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                          <circle cx="12" cy="12" r="10"/>
+                          <path d="M12 6v12"/>
+                          <path d="M6 12h12"/>
+                        </svg>
+                      </div>
+                      <div className="font-medium text-white">Coins</div>
+                    </div>
+                    <div className="text-white font-medium">₹0</div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="w-full bg-dex-dark/80 border-dex-secondary/30 mb-4">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-dex-secondary/20 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                          <rect width="18" height="18" x="3" y="3" rx="2"/>
+                          <path d="M7 7h10"/>
+                          <path d="M7 12h10"/>
+                          <path d="M7 17h10"/>
+                        </svg>
+                      </div>
+                      <div className="font-medium text-white">Futures</div>
+                    </div>
+                    <div className="text-white font-medium">₹0</div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="w-full bg-dex-dark/80 border-dex-secondary/30 mb-4">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-dex-secondary/20 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                          <path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h1"/>
+                          <path d="M17 3h1a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-1"/>
+                          <path d="M12 12v9"/>
+                          <path d="M8 21h8"/>
+                          <path d="M4 8h16"/>
+                        </svg>
+                      </div>
+                      <div className="font-medium text-white">Funds</div>
+                    </div>
+                    <div className="text-white font-medium">₹0</div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="w-full bg-dex-dark/80 border-dex-secondary/30">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-dex-secondary/20 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                          <path d="M18 6 7 17l-5-5"/>
+                          <path d="m22 10-7.5 7.5L13 16"/>
+                        </svg>
+                      </div>
+                      <div className="font-medium text-white">Earn</div>
+                    </div>
+                    <div className="text-gray-400">
+                      <ChevronRight size={24} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-            <h2 className="text-xl font-bold text-white mb-2">Your account has no assets</h2>
-
-            <Card className="w-full bg-dex-dark/80 border-dex-secondary/30 mb-4 mt-8">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-dex-primary/20 flex items-center justify-center">
-                      <span className="text-dex-primary font-bold">₹</span>
+          ) : (
+            <div className="flex flex-col py-4">
+              {/* Portfolio Summary */}
+              <Card className="w-full bg-dex-dark/80 border-dex-secondary/30 mb-6">
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold text-white">Portfolio Summary</h3>
+                    <div className={`text-sm font-medium px-2 py-1 rounded-full ${isPositiveChange ? 'bg-dex-positive/10 text-dex-positive' : 'bg-dex-negative/10 text-dex-negative'}`}>
+                      {isPositiveChange ? '+' : ''}{formattedPortfolioChange}%
                     </div>
+                  </div>
+
+                  <div className="text-3xl font-bold text-white mb-6">$0</div>
+
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <h3 className="font-medium text-white">Deposit INR</h3>
-                      <p className="text-sm text-gray-400">via UPI or bank transfer</p>
+                      <div className="text-sm text-gray-400 mb-1">Coins</div>
+                      <div className="text-base font-medium text-white">$0</div>
                     </div>
-                  </div>
-                  <div className="text-gray-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="m9 18 6-6-6-6"/>
-                    </svg>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card className="w-full bg-dex-dark/80 border-dex-secondary/30 mb-8">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-dex-primary/20 flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-dex-primary">
-                        <path d="M12 12v6"/>
-                        <path d="M12 6v2"/>
-                        <circle cx="12" cy="12" r="10"/>
-                      </svg>
-                    </div>
                     <div>
-                      <h3 className="font-medium text-white">Deposit Coins</h3>
-                      <p className="text-sm text-gray-400">from a Coins wallet or exchange</p>
+                      <div className="text-sm text-gray-400 mb-1">Futures</div>
+                      <div className="text-base font-medium text-white">$0</div>
+                    </div>
+
+                    <div>
+                      <div className="text-sm text-gray-400 mb-1">Funds</div>
+                      <div className="text-base font-medium text-white">$0</div>
+                    </div>
+
+                    <div>
+                      <div className="text-sm text-gray-400 mb-1">Earn</div>
+                      <div className="text-base font-medium text-white">$0</div>
                     </div>
                   </div>
-                  <div className="text-gray-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="m9 18 6-6-6-6"/>
-                    </svg>
-                  </div>
-                </div>
-                <div className="mt-2 text-xs text-dex-positive">Crypto withdrawals available</div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            <h3 className="text-lg font-semibold text-white self-start mb-4">Products</h3>
+              {/* Top Assets */}
+              <h3 className="text-lg font-semibold text-white mb-4">Top Assets</h3>
 
-            <Card className="w-full bg-dex-dark/80 border-dex-secondary/30 mb-4">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-dex-secondary/20 flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="M12 6v12"/>
-                        <path d="M6 12h12"/>
-                      </svg>
+              <div className="space-y-4 mb-6">
+                {/* Tether USD (USDT) */}
+                <Card className="w-full bg-dex-dark/80 border-dex-secondary/30">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <TokenIcon token={mockPortfolioData.coins[0]} size="md" />
+                        <div>
+                          <div className="font-medium text-white">TetherUS</div>
+                          <div className="text-xs text-gray-400">Stablecoin</div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="font-medium text-white">Coins</div>
-                  </div>
-                  <div className="text-white font-medium">₹0</div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="w-full bg-dex-dark/80 border-dex-secondary/30 mb-4">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-dex-secondary/20 flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
-                        <rect width="18" height="18" x="3" y="3" rx="2"/>
-                        <path d="M7 7h10"/>
-                        <path d="M7 12h10"/>
-                        <path d="M7 17h10"/>
-                      </svg>
+                    <div className="flex justify-between items-center mt-2">
+                      <div>
+                        <div className="font-medium text-white">Last Price</div>
+                        <div className="text-xl font-bold text-white">$1</div>
+                      </div>
+                      <div className="text-amber-500 font-medium text-right">
+                        <Button variant="link" className="h-auto p-0 text-amber-500 font-medium">Buy Now</Button>
+                      </div>
                     </div>
-                    <div className="font-medium text-white">Futures</div>
-                  </div>
-                  <div className="text-white font-medium">₹0</div>
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
 
-            <Card className="w-full bg-dex-dark/80 border-dex-secondary/30 mb-4">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-dex-secondary/20 flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
-                        <path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h1"/>
-                        <path d="M17 3h1a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-1"/>
-                        <path d="M12 12v9"/>
-                        <path d="M8 21h8"/>
-                        <path d="M4 8h16"/>
-                      </svg>
+                {/* Bitcoin (BTC) */}
+                <Card className="w-full bg-dex-dark/80 border-dex-secondary/30">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <TokenIcon token={mockPortfolioData.coins[1]} size="md" />
+                        <div>
+                          <div className="font-medium text-white">Bitcoin</div>
+                          <div className="text-xs text-gray-400"></div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-white text-right text-2xl font-bold">+266.98%</div>
+                        <div className="text-xs text-gray-400 text-right">in the last 3 years</div>
+                      </div>
                     </div>
-                    <div className="font-medium text-white">Funds</div>
-                  </div>
-                  <div className="text-white font-medium">₹0</div>
-                </div>
-              </CardContent>
-            </Card>
+                    <div className="flex justify-between items-center mt-2">
+                      <div>
+                        <div className="font-medium text-white">Last Price</div>
+                        <div className="text-xl font-bold text-white">${tokens.find(t => t.id === 'bitcoin')?.price?.toLocaleString() || '11,054.57'}</div>
+                      </div>
+                      <div className="text-amber-500 font-medium text-right">
+                        <Button variant="link" className="h-auto p-0 text-amber-500 font-medium">Buy Now</Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
-            <Card className="w-full bg-dex-dark/80 border-dex-secondary/30">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-dex-secondary/20 flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
-                        <path d="M18 6 7 17l-5-5"/>
-                        <path d="m22 10-7.5 7.5L13 16"/>
-                      </svg>
+                {/* XRP */}
+                <Card className="w-full bg-dex-dark/80 border-dex-secondary/30">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <TokenIcon token={mockPortfolioData.coins[2]} size="md" />
+                        <div>
+                          <div className="font-medium text-white">XRP</div>
+                          <div className="text-xs text-gray-400"></div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-white text-right text-2xl font-bold">+369.78%</div>
+                        <div className="text-xs text-gray-400 text-right">in the last three years</div>
+                      </div>
                     </div>
-                    <div className="font-medium text-white">Earn</div>
-                  </div>
-                  <div className="text-gray-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="m9 18 6-6-6-6"/>
-                    </svg>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                    <div className="flex justify-between items-center mt-2">
+                      <div>
+                        <div className="font-medium text-white">Last Price</div>
+                        <div className="text-xl font-bold text-white">${tokens.find(t => t.id === 'ripple')?.price?.toLocaleString() || '680.91'}</div>
+                      </div>
+                      <div className="text-amber-500 font-medium text-right">
+                        <Button variant="link" className="h-auto p-0 text-amber-500 font-medium">Buy Now</Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Quick Actions */}
+              <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <Card className="bg-dex-dark/80 border-dex-secondary/30">
+                  <CardContent className="p-4">
+                    <div className="flex flex-col items-center text-center">
+                      <div className="w-12 h-12 rounded-full bg-dex-primary/20 flex items-center justify-center mb-3">
+                        <Plus size={24} className="text-dex-primary" />
+                      </div>
+                      <h3 className="text-sm font-medium text-white mb-2">Deposit Funds</h3>
+                      <p className="text-xs text-gray-400 mb-3">Add money to your account</p>
+                      <Button className="w-full h-9 bg-dex-primary hover:bg-dex-primary/90 text-white rounded-lg text-xs">
+                        Deposit
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-dex-dark/80 border-dex-secondary/30">
+                  <CardContent className="p-4">
+                    <div className="flex flex-col items-center text-center">
+                      <div className="w-12 h-12 rounded-full bg-dex-secondary/20 flex items-center justify-center mb-3">
+                        <ArrowUpDown size={24} className="text-white" />
+                      </div>
+                      <h3 className="text-sm font-medium text-white mb-2">Trade Assets</h3>
+                      <p className="text-xs text-gray-400 mb-3">Buy or sell cryptocurrencies</p>
+                      <Button className="w-full h-9 bg-dex-secondary hover:bg-dex-secondary/90 text-white rounded-lg text-xs">
+                        Trade
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="coins">
-          <div className="flex flex-col py-4">
-            {/* Deposit Cards */}
-            <Card className="w-full bg-dex-dark/80 border-dex-secondary/30 mb-4">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-dex-primary/20 flex items-center justify-center">
-                      <span className="text-dex-primary font-bold">₹</span>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-white">Deposit INR</h3>
-                      <p className="text-sm text-gray-400">via UPI or bank transfer</p>
-                    </div>
-                  </div>
-                  <div className="text-gray-400">
-                    <ChevronRight size={24} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {loading ? (
+            <div className="flex flex-col py-4">
+              <div className="h-20 bg-dex-secondary/10 rounded-lg animate-pulse mb-4"></div>
+              <div className="h-20 bg-dex-secondary/10 rounded-lg animate-pulse mb-6"></div>
 
-            <Card className="w-full bg-dex-dark/80 border-dex-secondary/30 mb-6">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-dex-primary/20 flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-dex-primary">
-                        <path d="M12 12v6"/>
-                        <path d="M12 6v2"/>
-                        <circle cx="12" cy="12" r="10"/>
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-white">Deposit Coins</h3>
-                      <p className="text-sm text-gray-400">from a Coins wallet or exchange</p>
-                    </div>
-                  </div>
-                  <div className="text-gray-400">
-                    <ChevronRight size={24} />
-                  </div>
-                </div>
-                <div className="mt-2 text-xs text-dex-positive">Crypto withdrawals available</div>
-              </CardContent>
-            </Card>
+              <div className="h-6 w-48 bg-dex-secondary/20 rounded-md animate-pulse mb-4"></div>
 
-            {/* Coins for you section */}
-            <h3 className="text-lg font-semibold text-white mb-4">Coins for you</h3>
-
-            {/* Bluechip tokens section */}
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-3">
-                <BarChart3 size={18} className="text-dex-primary" />
-                <span className="text-sm font-medium text-white">Bluechip tokens</span>
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                <div className="h-16 bg-dex-secondary/10 rounded-lg animate-pulse"></div>
+                <div className="h-16 bg-dex-secondary/10 rounded-lg animate-pulse"></div>
               </div>
+
+              <div className="h-6 w-48 bg-dex-secondary/20 rounded-md animate-pulse mb-4"></div>
 
               <div className="grid grid-cols-2 gap-3">
-                {bluechipCoins.map(coin => (
-                  <Card key={coin.id} className="bg-dex-dark/80 border-dex-secondary/30">
-                    <CardContent className="p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <TokenIcon token={coin} size="sm" />
-                        <span className="font-medium text-white">{coin.symbol}</span>
-                      </div>
-                      <div className={`text-sm ${coin.priceChange24h >= 0 ? 'text-dex-positive' : 'text-dex-negative'}`}>
-                        {coin.priceChange24h >= 0 ? '+' : ''}{coin.priceChange24h}%
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                <div className="h-16 bg-dex-secondary/10 rounded-lg animate-pulse"></div>
+                <div className="h-16 bg-dex-secondary/10 rounded-lg animate-pulse"></div>
               </div>
             </div>
+          ) : (
+            <div className="flex flex-col py-4">
+              {/* Deposit Cards */}
+              <Card className="w-full bg-dex-dark/80 border-dex-secondary/30 mb-4">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-dex-primary/20 flex items-center justify-center">
+                        <span className="text-dex-primary font-bold">₹</span>
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-white">Deposit INR</h3>
+                        <p className="text-sm text-gray-400">via UPI or bank transfer</p>
+                      </div>
+                    </div>
+                    <div className="text-gray-400">
+                      <ChevronRight size={24} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-            {/* Most bought Meme section */}
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-3">
-                <Flame size={18} className="text-dex-primary" />
-                <span className="text-sm font-medium text-white">Most bought Meme</span>
+              <Card className="w-full bg-dex-dark/80 border-dex-secondary/30 mb-6">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-dex-primary/20 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-dex-primary">
+                          <path d="M12 12v6"/>
+                          <path d="M12 6v2"/>
+                          <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-white">Deposit Coins</h3>
+                        <p className="text-sm text-gray-400">from a Coins wallet or exchange</p>
+                      </div>
+                    </div>
+                    <div className="text-gray-400">
+                      <ChevronRight size={24} />
+                    </div>
+                  </div>
+                  <div className="mt-2 text-xs text-dex-positive">Crypto withdrawals available</div>
+                </CardContent>
+              </Card>
+
+              {portfolioTokens.length > 0 ? (
+                <>
+                  {/* Your Coins section */}
+                  <h3 className="text-lg font-semibold text-white mb-4">Your Coins</h3>
+
+                  <div className="space-y-4 mb-6">
+                    {portfolioTokens.map(token => (
+                      <Card key={token.id} className="w-full bg-dex-dark/80 border-dex-secondary/30">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <TokenIcon token={token} size="md" />
+                              <div>
+                                <div className="font-medium text-white">{token.name}</div>
+                                <div className="text-xs text-gray-400">{token.balance} {token.symbol}</div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-medium text-white">${formatCurrency(parseFloat(token.balance || '0') * (token.price || 0))}</div>
+                              <div className={`text-xs ${token.priceChange24h >= 0 ? 'text-dex-positive' : 'text-dex-negative'}`}>
+                                {token.priceChange24h >= 0 ? '+' : ''}{token.priceChange24h?.toFixed(2)}%
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </>
+              ) : null}
+
+              {/* Coins for you section */}
+              <h3 className="text-lg font-semibold text-white mb-4">Coins for you</h3>
+
+              {/* Bluechip tokens section */}
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <BarChart3 size={18} className="text-dex-primary" />
+                  <span className="text-sm font-medium text-white">Bluechip tokens</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {/* USDT and BTC with real-time data */}
+                  {tokens
+                    .filter(token => token.id === 'tether' || token.id === 'bitcoin')
+                    .map(token => (
+                      <Card key={token.id} className="bg-dex-dark/80 border-dex-secondary/30">
+                        <CardContent className="p-3">
+                          <div className="flex items-center gap-2 mb-1">
+                            <TokenIcon token={token} size="sm" />
+                            <span className="font-medium text-white">{token.symbol}</span>
+                          </div>
+                          <div className={`text-sm ${token.priceChange24h >= 0 ? 'text-dex-positive' : 'text-dex-negative'}`}>
+                            {token.priceChange24h >= 0 ? '+' : ''}{token.priceChange24h?.toFixed(2)}%
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                {memeCoins.map(coin => (
-                  <Card key={coin.id} className="bg-dex-dark/80 border-dex-secondary/30">
-                    <CardContent className="p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <TokenIcon token={coin} size="sm" />
-                        <span className="font-medium text-white">{coin.symbol}</span>
-                      </div>
-                      <div className={`text-sm ${coin.priceChange24h >= 0 ? 'text-dex-positive' : 'text-dex-negative'}`}>
-                        {coin.priceChange24h >= 0 ? '+' : ''}{coin.priceChange24h}%
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+              {/* Meme coins section */}
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <Flame size={18} className="text-dex-primary" />
+                  <span className="text-sm font-medium text-white">Popular Meme Coins</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {/* DOGE and SHIB with real-time data */}
+                  {tokens
+                    .filter(token => token.id === 'dogecoin' || token.id === 'shiba-inu')
+                    .map(token => (
+                      <Card key={token.id} className="bg-dex-dark/80 border-dex-secondary/30">
+                        <CardContent className="p-3">
+                          <div className="flex items-center gap-2 mb-1">
+                            <TokenIcon token={token} size="sm" />
+                            <span className="font-medium text-white">{token.symbol}</span>
+                          </div>
+                          <div className={`text-sm ${token.priceChange24h >= 0 ? 'text-dex-positive' : 'text-dex-negative'}`}>
+                            {token.priceChange24h >= 0 ? '+' : ''}{token.priceChange24h?.toFixed(2)}%
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </TabsContent>
 
         <TabsContent value="futures">
@@ -833,7 +1223,8 @@ const PortfolioPage = () => {
               </div>
 
               <div className="space-y-4">
-                {futuresContracts.map(contract => (
+                {/* Generate futures contracts from real-time token data */}
+                {generateFuturesContracts(tokens).map(contract => (
                   <Card key={contract.id} className="w-full bg-dex-dark/80 border-dex-secondary/30">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-3">
@@ -847,7 +1238,7 @@ const PortfolioPage = () => {
                         <div className="text-right">
                           <div className="font-medium text-white">${contract.price.toLocaleString()}</div>
                           <div className={`text-xs ${contract.priceChange24h >= 0 ? 'text-dex-positive' : 'text-dex-negative'}`}>
-                            {contract.priceChange24h >= 0 ? '+' : ''}{contract.priceChange24h}%
+                            {contract.priceChange24h >= 0 ? '+' : ''}{contract.priceChange24h.toFixed(2)}%
                           </div>
                         </div>
                       </div>
@@ -1066,7 +1457,8 @@ const PortfolioPage = () => {
               <h3 className="text-xl font-semibold text-white mb-4">Simple</h3>
 
               <div className="space-y-4">
-                {stakingTokens.map(token => (
+                {/* Use real-time data for staking tokens */}
+                {generateStakingTokens(tokens).map(token => (
                   <div key={token.id} className="flex items-center justify-between py-4 border-b border-dex-secondary/30">
                     <div className="flex items-center gap-3">
                       <TokenIcon token={{ id: token.id, symbol: token.symbol, name: token.name, logo: token.logo, decimals: 8 }} size="sm" />
