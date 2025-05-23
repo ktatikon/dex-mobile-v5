@@ -13,7 +13,7 @@ const buttonVariants = cva(
         destructive:
           "bg-gradient-to-r from-dex-primary to-dex-primary/80 text-white shadow-md shadow-dex-primary/30 backdrop-blur-sm border border-dex-primary/30 hover:shadow-lg hover:shadow-dex-primary/50 hover:scale-[1.02] hover:shadow-[0_0_10px_rgba(255,255,255,0.3)] active:scale-[0.98] active:shadow-[0_0_8px_rgba(0,0,0,0.5)] transition-all duration-200",
         outline:
-          "border border-dex-secondary bg-dex-secondary/10 text-dex-secondary hover:bg-dex-secondary/20 backdrop-blur-sm shadow-sm hover:shadow-md hover:shadow-dex-secondary/30 hover:shadow-[0_0_8px_rgba(255,255,255,0.2)] active:shadow-[0_0_5px_rgba(0,0,0,0.3)] transition-all duration-200",
+          "border border-dex-secondary/50 bg-dex-secondary/10 text-white hover:bg-dex-secondary/20 backdrop-blur-sm shadow-sm hover:shadow-md hover:shadow-dex-secondary/30 hover:shadow-[0_0_8px_rgba(255,255,255,0.2)] active:shadow-[0_0_5px_rgba(0,0,0,0.3)] transition-all duration-200",
         secondary:
           "bg-gradient-to-r from-dex-accent/90 to-dex-accent/70 text-white shadow-md shadow-dex-accent/30 backdrop-blur-sm border border-dex-accent/30 hover:shadow-lg hover:shadow-dex-accent/50 hover:scale-[1.02] hover:shadow-[0_0_10px_rgba(255,255,255,0.3)] active:scale-[0.98] active:shadow-[0_0_8px_rgba(0,0,0,0.5)] transition-all duration-200",
         ghost: "hover:bg-dex-secondary/10 hover:text-dex-secondary hover:shadow-[0_0_8px_rgba(255,255,255,0.15)] active:shadow-[0_0_5px_rgba(0,0,0,0.2)] transition-all duration-200",

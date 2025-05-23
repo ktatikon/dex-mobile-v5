@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { KYCProvider } from "@/contexts/KYCContext";
 import { MarketDataProvider } from "@/contexts/MarketDataContext";
+import { TestnetProvider } from "@/contexts/TestnetContext";
 import PrivateRoute from "@/components/PrivateRoute";
 import DexNavigation from "@/components/DexNavigation";
 import DexHeader from "@/components/DexHeader";
@@ -19,6 +20,7 @@ import PortfolioPageWithErrorBoundary from "./pages/PortfolioPageWithErrorBounda
 import SettingsPage from "./pages/SettingsPage";
 import ProfileSettingsPage from "./pages/ProfileSettingsPage";
 import WalletPageWithErrorBoundary from "./pages/WalletPageWithErrorBoundary";
+import TestnetWalletPageWithErrorBoundary from "./pages/TestnetWalletPageWithErrorBoundary";
 import ActivityPage from "./pages/ActivityPage";
 import BuyPage from "./pages/BuyPage";
 import SellPage from "./pages/SellPage";
@@ -56,11 +58,12 @@ const App = () => {
       <AuthProvider>
         <KYCProvider>
           <MarketDataProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-              <div className="min-h-screen dark bg-gradient-to-br from-dex-dark via-dex-primary/10 to-dex-secondary/10">
+            <TestnetProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                <div className="min-h-screen dark bg-gradient-to-br from-dex-dark via-dex-primary/10 to-dex-secondary/10">
                 <Routes>
                 <Route path="/auth" element={<AuthPage />} />
                 <Route
@@ -353,6 +356,24 @@ const App = () => {
                 }
               />
               <Route
+                path="/testnet-wallet"
+                element={
+                  <PrivateRoute>
+                    <DexHeader
+                      wallet={wallet}
+                      onConnectWallet={handleConnectWallet}
+                      onDisconnectWallet={handleDisconnectWallet}
+                    />
+                    <div className="pt-16 pb-20">
+                      <div className="container mx-auto px-4 mb-4">
+                        <TestnetWalletPageWithErrorBoundary />
+                      </div>
+                      <DexNavigation />
+                    </div>
+                  </PrivateRoute>
+                }
+              />
+              <Route
                 path="/security"
                 element={
                   <PrivateRoute>
@@ -427,8 +448,9 @@ const App = () => {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
-            </BrowserRouter>
-          </TooltipProvider>
+              </BrowserRouter>
+            </TooltipProvider>
+          </TestnetProvider>
         </MarketDataProvider>
       </KYCProvider>
     </AuthProvider>

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { formatAddress } from '@/services/mockData';
 import { WalletInfo } from '@/types';
+import { Beaker } from 'lucide-react';
 
 // Custom settings icon
 const SettingsIcon = ({ size = 24, className = "" }) => (
@@ -44,25 +45,16 @@ const DexHeader: React.FC<DexHeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-4">
-        {wallet ? (
+        <Link to="/testnet-wallet">
           <Button
             variant="primary"
             size="sm"
-            className="text-white font-medium rounded-lg px-4 py-2 h-11"
-            onClick={onDisconnectWallet}
+            className="text-white font-medium rounded-lg px-4 py-2 h-11 flex items-center"
           >
-            {formatAddress(wallet.address)}
+            <Beaker size={18} className="mr-2" />
+            Testnet Wallet
           </Button>
-        ) : (
-          <Button
-            variant="primary"
-            size="sm"
-            className="text-white font-medium rounded-lg px-4 py-2 h-11"
-            onClick={onConnectWallet}
-          >
-            Connect
-          </Button>
-        )}
+        </Link>
 
         <Link to="/settings">
           <Button
