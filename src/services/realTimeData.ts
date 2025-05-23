@@ -6,7 +6,7 @@ const COINGECKO_API_KEY = "CG-NChZphXHW5fgeAauutarcXF5";
 const COINGECKO_BASE_URL = "https://api.coingecko.com/api/v3";
 
 // Cache management
-const CACHE_DURATION = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 // Advanced cache implementation with memoization
 interface CacheEntry<T> {
@@ -32,7 +32,7 @@ class CacheManager<T> {
 
     // Check memory cache first
     if (this.memoryCache[key] && now - this.memoryCache[key].timestamp < this.cacheDuration) {
-      console.log(`Cache hit (memory): ${key}`);
+      console.log(`Cache hit (memory): ${key} - 5 minute cache duration`);
       return this.memoryCache[key].data;
     }
 
@@ -459,7 +459,7 @@ export async function fetchTokenList(vsCurrency = 'usd'): Promise<CoinGeckoToken
       }
     };
 
-    console.log('Fetching market data with enhanced dynamic programming approach');
+    console.log('Fetching market data with enhanced dynamic programming approach - 5 minute refresh rate');
 
     // Use the data fetcher with memoization
     const cacheKey = `coinGecko_${vsCurrency}`;

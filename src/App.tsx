@@ -27,8 +27,6 @@ import SellPage from "./pages/SellPage";
 import LimitPage from "./pages/LimitPage";
 import SendPage from "./pages/SendPage";
 import ReceivePage from "./pages/ReceivePage";
-import WalletGenerationPage from "./pages/WalletGenerationPage";
-import WalletDiagnosticPage from "./pages/WalletDiagnosticPage";
 import KYCPage from "./pages/KYCPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import SecurityPage from "./pages/SecurityPage";
@@ -268,24 +266,6 @@ const App = () => {
                 }
               />
               <Route
-                path="/wallet-generation"
-                element={
-                  <PrivateRoute>
-                    <DexHeader
-                      wallet={wallet}
-                      onConnectWallet={handleConnectWallet}
-                      onDisconnectWallet={handleDisconnectWallet}
-                    />
-                    <div className="pt-16 pb-20">
-                      <div className="container mx-auto px-4 mb-4">
-                        <WalletGenerationPage />
-                      </div>
-                      <DexNavigation />
-                    </div>
-                  </PrivateRoute>
-                }
-              />
-              <Route
                 path="/settings"
                 element={
                   <PrivateRoute>
@@ -459,24 +439,6 @@ const App = () => {
                     <div className="pt-16 pb-20">
                       <div className="container mx-auto px-4 mb-4">
                         <ContactPage />
-                      </div>
-                      <DexNavigation />
-                    </div>
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/wallet-diagnostic"
-                element={
-                  <PrivateRoute>
-                    <DexHeader
-                      wallet={wallet}
-                      onConnectWallet={handleConnectWallet}
-                      onDisconnectWallet={handleDisconnectWallet}
-                    />
-                    <div className="pt-16 pb-20">
-                      <div className="container mx-auto px-4 mb-4">
-                        <WalletDiagnosticPage />
                       </div>
                       <DexNavigation />
                     </div>

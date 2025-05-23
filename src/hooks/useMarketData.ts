@@ -74,13 +74,13 @@ export function useMarketData(vsCurrency = 'usd') {
     // Fetch data immediately
     fetchData();
 
-    // Set up refresh interval (2 hours)
+    // Set up refresh interval (5 minutes)
     const interval = setInterval(() => {
       if (isMounted.current && !isRefreshing.current) {
-        console.log('Scheduled refresh triggered');
+        console.log('Scheduled refresh triggered - 5 minute interval');
         fetchData(false); // Don't show loading state on refresh
       }
-    }, 2 * 60 * 60 * 1000);
+    }, 5 * 60 * 1000);
 
     // Cleanup function
     return () => {
