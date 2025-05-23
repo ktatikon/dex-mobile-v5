@@ -339,6 +339,41 @@ export type Database = {
           id?: number
         }
         Relationships: []
+      },
+      generated_wallets: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          encrypted_seed_phrase: string
+          addresses: { [key: string]: string }
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          encrypted_seed_phrase: string
+          addresses: { [key: string]: string }
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          encrypted_seed_phrase?: string
+          addresses?: { [key: string]: string }
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_wallets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       users: {
         Row: {

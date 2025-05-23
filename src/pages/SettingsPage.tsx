@@ -22,7 +22,8 @@ import {
   FileCheck,
   AlertTriangle,
   CheckCircle,
-  Clock
+  Clock,
+  Wallet
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -87,6 +88,20 @@ const SettingsPage = () => {
               <div>
                 <p className="text-white font-medium">Security</p>
                 <p className="text-sm text-gray-400">Password and authentication</p>
+              </div>
+            </div>
+            <ChevronRight className="text-dex-secondary" size={18} />
+          </div>
+
+          <div
+            className="flex items-center justify-between p-2 rounded-lg hover:bg-dex-secondary/5 cursor-pointer transition-all duration-200"
+            onClick={() => navigate('/wallet')}
+          >
+            <div className="flex items-center gap-3">
+              <Wallet className="text-dex-secondary" size={20} />
+              <div>
+                <p className="text-white font-medium">Wallet Management</p>
+                <p className="text-sm text-gray-400">Manage your crypto wallets</p>
               </div>
             </div>
             <ChevronRight className="text-dex-secondary" size={18} />
