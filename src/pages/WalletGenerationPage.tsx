@@ -214,17 +214,21 @@ const WalletGenerationPage: React.FC = () => {
 
   // Generate wallet addresses from the seed phrase
   const generateWalletAddresses = async () => {
+    console.log('Starting wallet address generation...');
     setIsGenerating(true);
 
     try {
+      console.log('Calling generateAddressesFromMnemonic with seed phrase length:', seedPhrase.split(' ').length);
       const addresses = await generateAddressesFromMnemonic(seedPhrase);
+      console.log('Address generation successful:', addresses);
       setGeneratedAddresses(addresses);
       return addresses;
     } catch (error) {
       console.error('Error generating addresses:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
-        title: 'Generation Error',
-        description: 'Failed to generate wallet addresses. Please try again.',
+        title: 'Address Generation Error',
+        description: `Failed to generate wallet addresses: ${errorMessage}. Please try again.`,
         variant: 'destructive',
       });
       return null;
@@ -269,12 +273,20 @@ const WalletGenerationPage: React.FC = () => {
       const encryptedSeedPhrase = encryptSeedPhrase(seedPhrase, password);
 
       // Save the wallet to Supabase
+      console.log('Attempting to save wallet with data:', {
+        userId: user.id,
+        walletName,
+        addressesCount: Object.keys(addresses).length
+      });
+
       const wallet = await saveGeneratedWallet(
         user.id,
         walletName,
         encryptedSeedPhrase,
         addresses
       );
+
+      console.log('Wallet save result:', wallet);
 
       if (wallet) {
         toast({
@@ -283,13 +295,14 @@ const WalletGenerationPage: React.FC = () => {
         });
         setCurrentStep(GenerationStep.COMPLETE);
       } else {
-        throw new Error('Failed to save wallet');
+        throw new Error('Failed to save wallet - no wallet returned');
       }
     } catch (error) {
       console.error('Error saving wallet:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
         title: 'Save Error',
-        description: 'Failed to save your wallet. Please try again.',
+        description: `Failed to save your wallet: ${errorMessage}. Please try again.`,
         variant: 'destructive',
       });
     } finally {

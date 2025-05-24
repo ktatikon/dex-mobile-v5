@@ -9,6 +9,190 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          id: string
+          user_id: string
+          role: string
+          permissions: Json
+          is_active: boolean
+          created_at: string
+          updated_at: string
+          created_by: string | null
+          last_login: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          role?: string
+          permissions?: Json
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          last_login?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          role?: string
+          permissions?: Json
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          last_login?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_users_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_users_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      admin_activity_logs: {
+        Row: {
+          id: string
+          admin_user_id: string
+          action: string
+          target_type: string | null
+          target_id: string | null
+          details: Json | null
+          ip_address: string | null
+          user_agent: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          admin_user_id: string
+          action: string
+          target_type?: string | null
+          target_id?: string | null
+          details?: Json | null
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          admin_user_id?: string
+          action?: string
+          target_type?: string | null
+          target_id?: string | null
+          details?: Json | null
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_activity_logs_admin_user_id_fkey"
+            columns: ["admin_user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      user_login_history: {
+        Row: {
+          id: string
+          user_id: string
+          login_time: string
+          ip_address: string | null
+          user_agent: string | null
+          device_info: Json | null
+          location_info: Json | null
+          success: boolean
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          login_time?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          device_info?: Json | null
+          location_info?: Json | null
+          success?: boolean
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          login_time?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          device_info?: Json | null
+          location_info?: Json | null
+          success?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_login_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      user_status_changes: {
+        Row: {
+          id: string
+          user_id: string
+          admin_user_id: string
+          old_status: string | null
+          new_status: string
+          reason: string | null
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          admin_user_id: string
+          old_status?: string | null
+          new_status: string
+          reason?: string | null
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          admin_user_id?: string
+          old_status?: string | null
+          new_status?: string
+          reason?: string | null
+          notes?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_status_changes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_status_changes_admin_user_id_fkey"
+            columns: ["admin_user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       wallet_balances: {
         Row: {
           id: string
@@ -388,6 +572,7 @@ export type Database = {
           bio: string | null
           website: string | null
           avatar_url: string | null
+          status: string
         }
         Insert: {
           auth_id?: string | null
@@ -401,6 +586,7 @@ export type Database = {
           bio?: string | null
           website?: string | null
           avatar_url?: string | null
+          status?: string
         }
         Update: {
           auth_id?: string | null
@@ -414,6 +600,7 @@ export type Database = {
           bio?: string | null
           website?: string | null
           avatar_url?: string | null
+          status?: string
         }
         Relationships: []
       }

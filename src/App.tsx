@@ -22,6 +22,8 @@ import PortfolioPageWithErrorBoundary from "./pages/PortfolioPageWithErrorBounda
 import SettingsPage from "./pages/SettingsPage";
 import ProfileSettingsPage from "./pages/ProfileSettingsPage";
 import WalletPageWithErrorBoundary from "./pages/WalletPageWithErrorBoundary";
+import WalletGenerationPage from "./pages/WalletGenerationPage";
+import WalletDiagnosticPage from "./pages/WalletDiagnosticPage";
 import TestnetWalletPageWithErrorBoundary from "./pages/TestnetWalletPageWithErrorBoundary";
 import ActivityPage from "./pages/ActivityPage";
 import BuyPage from "./pages/BuyPage";
@@ -38,6 +40,11 @@ import ContactPage from "./pages/ContactPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/TermsOfServicePage";
 import LiveChatPage from "./pages/LiveChatPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
+import AdminDebugPage from "./pages/AdminDebugPage";
+import AdminRoute from "./components/AdminRoute";
+import AdminHeader from "./components/AdminHeader";
+import { AdminProvider } from "./contexts/AdminContext";
 import { useState } from "react";
 
 const queryClient = new QueryClient();
@@ -61,11 +68,12 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <KYCProvider>
-          <MarketDataProvider>
-            <TestnetProvider>
-              <ChatProvider>
-                <LanguageProvider>
+        <AdminProvider>
+          <KYCProvider>
+            <MarketDataProvider>
+              <TestnetProvider>
+                <ChatProvider>
+                  <LanguageProvider>
               <TooltipProvider>
                 <Toaster />
                 <Sonner />
@@ -122,6 +130,42 @@ const App = () => {
                     <div className="pt-16 pb-20">
                       <div className="container mx-auto px-4 mb-4">
                         <WalletPageWithErrorBoundary />
+                      </div>
+                      <DexNavigation />
+                    </div>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/wallet-generation"
+                element={
+                  <PrivateRoute>
+                    <DexHeader
+                      wallet={wallet}
+                      onConnectWallet={handleConnectWallet}
+                      onDisconnectWallet={handleDisconnectWallet}
+                    />
+                    <div className="pt-16 pb-20">
+                      <div className="container mx-auto px-4 mb-4">
+                        <WalletGenerationPage />
+                      </div>
+                      <DexNavigation />
+                    </div>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/wallet-diagnostic"
+                element={
+                  <PrivateRoute>
+                    <DexHeader
+                      wallet={wallet}
+                      onConnectWallet={handleConnectWallet}
+                      onDisconnectWallet={handleDisconnectWallet}
+                    />
+                    <div className="pt-16 pb-20">
+                      <div className="container mx-auto px-4 mb-4">
+                        <WalletDiagnosticPage />
                       </div>
                       <DexNavigation />
                     </div>
@@ -506,6 +550,35 @@ const App = () => {
                   </PrivateRoute>
                 }
               />
+
+              {/* Admin Routes */}
+              <Route
+                path="/admin"
+                element={
+                  <PrivateRoute>
+                    <AdminRoute>
+                      <AdminHeader title="Admin Dashboard" />
+                      <div className="pt-16 pb-20">
+                        <AdminDashboardPage />
+                      </div>
+                    </AdminRoute>
+                  </PrivateRoute>
+                }
+              />
+
+              {/* Admin Debug Route - No admin protection for debugging */}
+              <Route
+                path="/admin-debug"
+                element={
+                  <PrivateRoute>
+                    <AdminHeader title="Admin Debug" />
+                    <div className="pt-16 pb-20">
+                      <AdminDebugPage />
+                    </div>
+                  </PrivateRoute>
+                }
+              />
+
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
@@ -516,6 +589,7 @@ const App = () => {
           </TestnetProvider>
         </MarketDataProvider>
       </KYCProvider>
+      </AdminProvider>
     </AuthProvider>
   </QueryClientProvider>
   );

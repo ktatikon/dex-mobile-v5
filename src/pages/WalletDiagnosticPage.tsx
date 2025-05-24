@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { testGeneratedWalletsTableAccess } from '@/services/walletGenerationService';
+import { testGeneratedWalletsTableAccess, testAddressGeneration } from '@/services/walletGenerationService';
 import { supabase } from '@/integrations/supabase/client';
 
 const WalletDiagnosticPage: React.FC = () => {
@@ -21,6 +21,8 @@ const WalletDiagnosticPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [diagnosticResults, setDiagnosticResults] = useState<any>(null);
   const [userInfo, setUserInfo] = useState<any>(null);
+  const [addressTestResults, setAddressTestResults] = useState<any>(null);
+  const [addressTestLoading, setAddressTestLoading] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -40,17 +42,17 @@ const WalletDiagnosticPage: React.FC = () => {
     try {
       // Test table access
       const tableAccessResults = await testGeneratedWalletsTableAccess();
-      
+
       // Get current session
       const { data: sessionData } = await supabase.auth.getSession();
-      
+
       // Combine results
       setDiagnosticResults({
         tableAccess: tableAccessResults,
         session: sessionData,
         timestamp: new Date().toISOString()
       });
-      
+
       toast({
         title: 'Diagnostics Complete',
         description: 'Wallet diagnostics have been run successfully.',
@@ -64,6 +66,42 @@ const WalletDiagnosticPage: React.FC = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const testAddressGenerationFunction = async () => {
+    setAddressTestLoading(true);
+    try {
+      console.log('Starting address generation test...');
+      const results = await testAddressGeneration();
+      setAddressTestResults(results);
+
+      if (results.success) {
+        toast({
+          title: 'Address Test Successful',
+          description: `Generated ${Object.keys(results.addresses || {}).length} addresses successfully.`,
+        });
+      } else {
+        toast({
+          title: 'Address Test Failed',
+          description: results.error || 'Unknown error occurred.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error testing address generation:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setAddressTestResults({
+        success: false,
+        error: errorMessage
+      });
+      toast({
+        title: 'Address Test Error',
+        description: `Test failed: ${errorMessage}`,
+        variant: 'destructive',
+      });
+    } finally {
+      setAddressTestLoading(false);
     }
   };
 
@@ -97,18 +135,77 @@ const WalletDiagnosticPage: React.FC = () => {
             )}
           </div>
 
-          <Button 
-            onClick={runDiagnostics} 
-            disabled={loading}
-            className="w-full"
-          >
-            {loading ? 'Running Diagnostics...' : 'Run Diagnostics'}
-          </Button>
+          <div className="space-y-2">
+            <Button
+              onClick={runDiagnostics}
+              disabled={loading}
+              className="w-full"
+            >
+              {loading ? 'Running Diagnostics...' : 'Run Diagnostics'}
+            </Button>
+
+            <Button
+              onClick={testAddressGenerationFunction}
+              disabled={addressTestLoading}
+              variant="outline"
+              className="w-full border-dex-secondary/30"
+            >
+              {addressTestLoading ? 'Testing Address Generation...' : 'Test Address Generation'}
+            </Button>
+          </div>
+
+          {addressTestResults && (
+            <>
+              <Separator className="my-4 bg-dex-secondary/30" />
+
+              <div className="bg-dex-dark p-4 rounded-lg">
+                <h3 className="text-white font-medium mb-2">Address Generation Test Results</h3>
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  <div className="text-gray-400">Test Status:</div>
+                  <div className={addressTestResults.success ? "text-green-500" : "text-red-500"}>
+                    {addressTestResults.success ? "Success" : "Failed"}
+                  </div>
+                </div>
+
+                {addressTestResults.success && addressTestResults.addresses && (
+                  <div className="mt-4">
+                    <h4 className="text-white font-medium mb-2">Generated Addresses</h4>
+                    <div className="space-y-2">
+                      {Object.entries(addressTestResults.addresses).map(([currency, address]) => (
+                        <div key={currency} className="grid grid-cols-3 gap-2">
+                          <div className="text-gray-400">{currency}:</div>
+                          <div className="col-span-2 text-xs text-white font-mono break-all">{address}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {addressTestResults.debugInfo && (
+                  <div className="mt-4">
+                    <h4 className="text-white font-medium mb-2">Debug Information</h4>
+                    <pre className="text-xs text-gray-400 overflow-auto bg-black p-2 rounded max-h-40">
+                      {JSON.stringify(addressTestResults.debugInfo, null, 2)}
+                    </pre>
+                  </div>
+                )}
+
+                {!addressTestResults.success && addressTestResults.error && (
+                  <div className="mt-4">
+                    <h4 className="text-red-500 font-medium mb-2">Error Details</h4>
+                    <pre className="text-xs text-gray-400 overflow-auto bg-black p-2 rounded">
+                      {addressTestResults.error}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
 
           {diagnosticResults && (
             <>
               <Separator className="my-4 bg-dex-secondary/30" />
-              
+
               <div className="space-y-4">
                 <h3 className="text-white font-medium">Diagnostic Results</h3>
                 <p className="text-gray-400 text-sm">
@@ -122,22 +219,22 @@ const WalletDiagnosticPage: React.FC = () => {
                     <div className={diagnosticResults.tableAccess.tableExists ? "text-green-500" : "text-red-500"}>
                       {diagnosticResults.tableAccess.tableExists ? "Yes" : "No"}
                     </div>
-                    
+
                     <div className="text-gray-400">Can Select:</div>
                     <div className={diagnosticResults.tableAccess.canSelect ? "text-green-500" : "text-red-500"}>
                       {diagnosticResults.tableAccess.canSelect ? "Yes" : "No"}
                     </div>
-                    
+
                     <div className="text-gray-400">Can Insert:</div>
                     <div className={diagnosticResults.tableAccess.canInsert ? "text-green-500" : "text-red-500"}>
                       {diagnosticResults.tableAccess.canInsert ? "Yes" : "No"}
                     </div>
-                    
+
                     <div className="text-gray-400">Can Update:</div>
                     <div className={diagnosticResults.tableAccess.canUpdate ? "text-green-500" : "text-red-500"}>
                       {diagnosticResults.tableAccess.canUpdate ? "Yes" : "No"}
                     </div>
-                    
+
                     <div className="text-gray-400">Can Delete:</div>
                     <div className={diagnosticResults.tableAccess.canDelete ? "text-green-500" : "text-red-500"}>
                       {diagnosticResults.tableAccess.canDelete ? "Yes" : "No"}
@@ -174,8 +271,8 @@ const WalletDiagnosticPage: React.FC = () => {
           )}
         </CardContent>
         <CardFooter>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="w-full border-dex-secondary/30"
             onClick={() => navigate('/wallet')}
           >

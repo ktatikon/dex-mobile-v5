@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useKYC } from '@/contexts/KYCContext';
+import { useAdmin } from '@/contexts/AdminContext';
 import {
   Card,
   CardContent,
@@ -34,6 +35,7 @@ import { useTranslation } from 'react-i18next';
 const SettingsPage = () => {
   const { user, signOut } = useAuth();
   const { kycStatus } = useKYC();
+  const { isAdmin, adminUser } = useAdmin();
   const navigate = useNavigate();
   const { t } = useTranslation('common');
 
@@ -189,6 +191,38 @@ const SettingsPage = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Admin Panel Access */}
+      {isAdmin && (
+        <Card className="bg-dex-dark/80 border-dex-primary/30 mb-6 shadow-lg shadow-dex-primary/10">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Shield className="text-dex-primary" size={20} />
+              Admin Panel
+            </CardTitle>
+            <CardDescription className="text-gray-400">
+              Administrative tools and system management
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div
+              className="flex items-center justify-between p-3 rounded-lg hover:bg-dex-secondary/5 cursor-pointer transition-all duration-200 border border-dex-primary/20"
+              onClick={() => navigate('/admin')}
+            >
+              <div className="flex items-center gap-3">
+                <Shield className="text-dex-primary" size={20} />
+                <div>
+                  <p className="text-white font-medium">Access Admin Dashboard</p>
+                  <p className="text-sm text-gray-400">
+                    Role: {adminUser?.role.replace('_', ' ').toUpperCase()}
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="text-gray-400" size={20} />
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* App Preferences */}
       <Card className="bg-dex-dark/80 border-dex-secondary/30 mb-6 shadow-lg shadow-dex-secondary/10">
