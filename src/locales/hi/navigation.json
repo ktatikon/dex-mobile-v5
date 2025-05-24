@@ -1,0 +1,61 @@
+{
+  "menu": {
+    "home": "होम",
+    "market": "मार्केट",
+    "trade": "ट्रेड",
+    "wallet": "वॉलेट",
+    "portfolio": "पोर्टफोलियो",
+    "settings": "सेटिंग्स",
+    "profile": "प्रोफाइल",
+    "activity": "गतिविधि",
+    "history": "इतिहास",
+    "orders": "ऑर्डर",
+    "transactions": "लेनदेन",
+    "support": "सहायता",
+    "help": "मदद",
+    "about": "के बारे में",
+    "logout": "लॉग आउट"
+  },
+  "tabs": {
+    "overview": "अवलोकन",
+    "coins": "कॉइन्स",
+    "futures": "फ्यूचर्स",
+    "funds": "फंड्स",
+    "earn": "कमाएं",
+    "web3": "वेब 3.0",
+    "spot": "स्पॉट",
+    "margin": "मार्जिन",
+    "options": "विकल्प",
+    "nft": "NFT",
+    "defi": "DeFi",
+    "staking": "स्टेकिंग",
+    "lending": "उधार देना",
+    "borrowing": "उधार लेना"
+  },
+  "sections": {
+    "dashboard": "डैशबोर्ड",
+    "trading": "ट्रेडिंग",
+    "markets": "मार्केट्स",
+    "assets": "संपत्ति",
+    "balances": "बैलेंस",
+    "positions": "पोजीशन",
+    "orders": "ऑर्डर",
+    "history": "इतिहास",
+    "analytics": "विश्लेषण",
+    "reports": "रिपोर्ट्स",
+    "tools": "उपकरण",
+    "news": "समाचार",
+    "education": "शिक्षा",
+    "community": "समुदाय"
+  },
+  "filters": {
+    "all": "सभी",
+    "favorites": "पसंदीदा",
+    "gainers": "टॉप गेनर्स",
+    "losers": "टॉप लूजर्स",
+    "volume": "वॉल्यूम",
+    "new": "नया",
+    "trending": "ट्रेंडिंग",
+    "watchlist": "वॉचलिस्ट"
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "general": {
+    "trading": "Trading",
+    "trade": "Trader",
+    "market": "Marché",
+    "markets": "Marchés",
+    "order": "Ordre",
+    "orders": "Ordres",
+    "position": "Position",
+    "positions": "Positions",
+    "price": "Prix",
+    "volume": "Volume",
+    "amount": "Montant",
+    "total": "Total",
+    "fee": "Frais",
+    "fees": "Frais"
+  },
+  "orderTypes": {
+    "market": "Marché",
+    "limit": "Limite",
+    "stop": "Stop",
+    "stopLimit": "Stop Limite",
+    "trailingStop": "Stop suiveur",
+    "fillOrKill": "Tout ou rien",
+    "immediateOrCancel": "Immédiat ou annulé",
+    "goodTillCancelled": "Valide jusqu'à annulation",
+    "goodTillDate": "Valide jusqu'à la date"
+  },
+  "orderSides": {
+    "buy": "Acheter",
+    "sell": "Vendre",
+    "long": "Long",
+    "short": "Short"
+  },
+  "orderStatus": {
+    "pending": "En attente",
+    "open": "Ouvert",
+    "filled": "Exécuté",
+    "partiallyFilled": "Partiellement exécuté",
+    "cancelled": "Annulé",
+    "rejected": "Rejeté",
+    "expired": "Expiré"
+  },
+  "timeframes": {
+    "1m": "1 Minute",
+    "5m": "5 Minutes",
+    "15m": "15 Minutes",
+    "30m": "30 Minutes",
+    "1h": "1 Heure",
+    "4h": "4 Heures",
+    "1d": "1 Jour",
+    "1w": "1 Semaine",
+    "1M": "1 Mois"
+  },
+  "analysis": {
+    "technical": "Analyse technique",
+    "fundamental": "Analyse fondamentale",
+    "sentiment": "Analyse de sentiment",
+    "support": "Support",
+    "resistance": "Résistance",
+    "trend": "Tendance",
+    "bullish": "Haussier",
+    "bearish": "Baissier",
+    "neutral": "Neutre",
+    "overbought": "Suracheté",
+    "oversold": "Survendu"
+  },
+  "portfolio": {
+    "totalValue": "Valeur totale",
+    "totalBalance": "Solde total",
+    "availableBalance": "Solde disponible",
+    "lockedBalance": "Solde bloqué",
+    "unrealizedPnL": "P&L non réalisé",
+    "realizedPnL": "P&L réalisé",
+    "dayChange": "Variation 24h",
+    "weekChange": "Variation 7j",
+    "monthChange": "Variation 30j"
+  },
+  "actions": {
+    "placeOrder": "Passer un ordre",
+    "cancelOrder": "Annuler l'ordre",
+    "modifyOrder": "Modifier l'ordre",
+    "closePosition": "Fermer la position",
+    "viewChart": "Voir le graphique",
+    "viewOrderBook": "Voir le carnet d'ordres"
+  },
+  "errors": {
+    "insufficientBalance": "Solde insuffisant",
+    "minimumOrderSize": "En dessous de la taille minimale d'ordre",
+    "maximumOrderSize": "Dépasse la taille maximale d'ordre",
+    "invalidPrice": "Prix invalide",
+    "marketClosed": "Marché fermé"
+  },
+  "success": {
+    "orderPlaced": "Ordre passé avec succès",
+    "orderCancelled": "Ordre annulé avec succès",
+    "positionClosed": "Position fermée avec succès"
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "buttons": {
+    "save": "ಉಳಿಸಿ",
+    "cancel": "ರದ್ದುಮಾಡಿ",
+    "delete": "ಅಳಿಸಿ",
+    "edit": "ಸಂಪಾದಿಸಿ",
+    "back": "ಹಿಂದೆ",
+    "next": "ಮುಂದೆ",
+    "previous": "ಹಿಂದಿನ",
+    "submit": "ಸಲ್ಲಿಸಿ",
+    "confirm": "ದೃಢೀಕರಿಸಿ",
+    "close": "ಮುಚ್ಚಿ",
+    "open": "ತೆರೆಯಿರಿ",
+    "refresh": "ರಿಫ್ರೆಶ್ ಮಾಡಿ",
+    "loading": "ಲೋಡ್ ಆಗುತ್ತಿದೆ...",
+    "search": "ಹುಡುಕಿ",
+    "copy": "ಕಾಪಿ ಮಾಡಿ",
+    "share": "ಹಂಚಿಕೊಳ್ಳಿ",
+    "connect": "ಸಂಪರ್ಕಿಸಿ"
+  },
+  "status": {
+    "success": "ಯಶಸ್ವಿ",
+    "error": "ದೋಷ",
+    "warning": "ಎಚ್ಚರಿಕೆ",
+    "info": "ಮಾಹಿತಿ",
+    "pending": "ಬಾಕಿ",
+    "completed": "ಪೂರ್ಣಗೊಂಡಿದೆ",
+    "failed": "ವಿಫಲವಾಗಿದೆ",
+    "active": "ಸಕ್ರಿಯ",
+    "inactive": "ನಿಷ್ಕ್ರಿಯ",
+    "online": "ಆನ್‌ಲೈನ್",
+    "offline": "ಆಫ್‌ಲೈನ್"
+  },
+  "time": {
+    "now": "ಈಗ",
+    "today": "ಇಂದು",
+    "yesterday": "ನಿನ್ನೆ",
+    "tomorrow": "ನಾಳೆ",
+    "minute": "ನಿಮಿಷ",
+    "minutes": "ನಿಮಿಷಗಳು",
+    "hour": "ಗಂಟೆ",
+    "hours": "ಗಂಟೆಗಳು",
+    "day": "ದಿನ",
+    "days": "ದಿನಗಳು"
+  },
+  "validation": {
+    "required": "ಈ ಕ್ಷೇತ್ರ ಅಗತ್ಯವಿದೆ",
+    "email": "ದಯವಿಟ್ಟು ಮಾನ್ಯವಾದ ಇಮೇಲ್ ವಿಳಾಸವನ್ನು ನಮೂದಿಸಿ",
+    "password": "ಪಾಸ್‌ವರ್ಡ್ ಕನಿಷ್ಠ 8 ಅಕ್ಷರಗಳಾಗಿರಬೇಕು"
+  },
+  "messages": {
+    "noData": "ಯಾವುದೇ ಡೇಟಾ ಲಭ್ಯವಿಲ್ಲ",
+    "searchPlaceholder": "ಹುಡುಕಿ...",
+    "networkError": "ನೆಟ್‌ವರ್ಕ್ ದೋಷ",
+    "tryAgain": "ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ"
+  },
+  "currency": {
+    "symbol": "₹",
+    "price": "ಬೆಲೆ",
+    "amount": "ಮೊತ್ತ",
+    "balance": "ಬ್ಯಾಲೆನ್ಸ್",
+    "total": "ಒಟ್ಟು",
+    "fee": "ಶುಲ್ಕ"
+  },
+  "settings": {
+    "language": "ಭಾಷೆ",
+    "notifications": "ಅಧಿಸೂಚನೆಗಳು",
+    "security": "ಭದ್ರತೆ",
+    "privacy": "ಗೌಪ್ಯತೆ",
+    "account": "ಖಾತೆ",
+    "profile": "ಪ್ರೊಫೈಲ್",
+    "general": "ಸೆಟ್ಟಿಂಗ್‌ಗಳು"
+  }
+}

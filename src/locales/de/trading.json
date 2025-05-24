@@ -1,0 +1,99 @@
+{
+  "general": {
+    "trading": "Handel",
+    "trade": "Handeln",
+    "market": "Markt",
+    "markets": "Märkte",
+    "order": "Auftrag",
+    "orders": "Aufträge",
+    "position": "Position",
+    "positions": "Positionen",
+    "price": "Preis",
+    "volume": "Volumen",
+    "amount": "Betrag",
+    "total": "Gesamt",
+    "fee": "Gebühr",
+    "fees": "Gebühren"
+  },
+  "orderTypes": {
+    "market": "Markt",
+    "limit": "Limit",
+    "stop": "Stop",
+    "stopLimit": "Stop-Limit",
+    "trailingStop": "Trailing-Stop",
+    "fillOrKill": "Alles oder nichts",
+    "immediateOrCancel": "Sofort oder stornieren",
+    "goodTillCancelled": "Gültig bis storniert",
+    "goodTillDate": "Gültig bis Datum"
+  },
+  "orderSides": {
+    "buy": "Kaufen",
+    "sell": "Verkaufen",
+    "long": "Long",
+    "short": "Short"
+  },
+  "orderStatus": {
+    "pending": "Ausstehend",
+    "open": "Offen",
+    "filled": "Ausgeführt",
+    "partiallyFilled": "Teilweise ausgeführt",
+    "cancelled": "Storniert",
+    "rejected": "Abgelehnt",
+    "expired": "Abgelaufen"
+  },
+  "timeframes": {
+    "1m": "1 Minute",
+    "5m": "5 Minuten",
+    "15m": "15 Minuten",
+    "30m": "30 Minuten",
+    "1h": "1 Stunde",
+    "4h": "4 Stunden",
+    "1d": "1 Tag",
+    "1w": "1 Woche",
+    "1M": "1 Monat"
+  },
+  "analysis": {
+    "technical": "Technische Analyse",
+    "fundamental": "Fundamentalanalyse",
+    "sentiment": "Sentiment-Analyse",
+    "support": "Unterstützung",
+    "resistance": "Widerstand",
+    "trend": "Trend",
+    "bullish": "Bullisch",
+    "bearish": "Bärisch",
+    "neutral": "Neutral",
+    "overbought": "Überkauft",
+    "oversold": "Überverkauft"
+  },
+  "portfolio": {
+    "totalValue": "Gesamtwert",
+    "totalBalance": "Gesamtguthaben",
+    "availableBalance": "Verfügbares Guthaben",
+    "lockedBalance": "Gesperrtes Guthaben",
+    "unrealizedPnL": "Unrealisierter G&V",
+    "realizedPnL": "Realisierter G&V",
+    "dayChange": "24h Änderung",
+    "weekChange": "7d Änderung",
+    "monthChange": "30d Änderung"
+  },
+  "actions": {
+    "placeOrder": "Auftrag erteilen",
+    "cancelOrder": "Auftrag stornieren",
+    "modifyOrder": "Auftrag ändern",
+    "closePosition": "Position schließen",
+    "viewChart": "Chart anzeigen",
+    "viewOrderBook": "Orderbuch anzeigen"
+  },
+  "errors": {
+    "insufficientBalance": "Unzureichendes Guthaben",
+    "minimumOrderSize": "Unter minimaler Auftragsgröße",
+    "maximumOrderSize": "Über maximaler Auftragsgröße",
+    "invalidPrice": "Ungültiger Preis",
+    "marketClosed": "Markt geschlossen"
+  },
+  "success": {
+    "orderPlaced": "Auftrag erfolgreich erteilt",
+    "orderCancelled": "Auftrag erfolgreich storniert",
+    "positionClosed": "Position erfolgreich geschlossen"
+  }
+}

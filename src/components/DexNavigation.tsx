@@ -2,6 +2,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 // Custom icons with our color scheme
 const HomeIcon = ({ size = 26, className = "" }) => (
@@ -104,6 +105,7 @@ const ProfileIcon = ({ size = 26, className = "" }) => (
 
 const DexNavigation = () => {
   const location = useLocation();
+  const { t } = useTranslation('navigation');
   const isActive = (path: string) => location.pathname === path;
 
   return (
@@ -111,7 +113,7 @@ const DexNavigation = () => {
       <Link to="/" className="flex-1">
         <div className={`nav-item ${isActive('/') ? 'text-dex-primary' : 'text-white'}`}>
           <HomeIcon size={26} className={`nav-icon ${isActive('/') ? 'text-dex-primary' : 'text-white'}`} />
-          <span className="nav-text">Home</span>
+          <span className="nav-text">{t('menu.home', 'Home')}</span>
           {isActive('/') && <div className="nav-indicator"></div>}
         </div>
       </Link>
@@ -119,7 +121,7 @@ const DexNavigation = () => {
       <Link to="/trade" className="flex-1">
         <div className={`nav-item ${isActive('/trade') ? 'text-dex-primary' : 'text-white'}`}>
           <MarketIcon size={26} className={`nav-icon ${isActive('/trade') ? 'text-dex-primary' : 'text-white'}`} />
-          <span className="nav-text">Market</span>
+          <span className="nav-text">{t('menu.market', 'Market')}</span>
           {isActive('/trade') && <div className="nav-indicator"></div>}
         </div>
       </Link>
@@ -127,7 +129,7 @@ const DexNavigation = () => {
       <Link to="/wallet" className="flex-1">
         <div className={`nav-item ${isActive('/wallet') ? 'text-dex-primary' : 'text-white'}`}>
           <WalletIcon size={26} className={`nav-icon ${isActive('/wallet') ? 'text-dex-primary' : 'text-white'}`} />
-          <span className="nav-text">Wallet</span>
+          <span className="nav-text">{t('menu.wallet', 'Wallet')}</span>
           {isActive('/wallet') && <div className="nav-indicator"></div>}
         </div>
       </Link>
@@ -135,7 +137,7 @@ const DexNavigation = () => {
       <Link to="/portfolio" className="flex-1">
         <div className={`nav-item ${isActive('/portfolio') ? 'text-dex-primary' : 'text-white'}`}>
           <ProfileIcon size={26} className={`nav-icon ${isActive('/portfolio') ? 'text-dex-primary' : 'text-white'}`} />
-          <span className="nav-text">Portfolio</span>
+          <span className="nav-text">{t('menu.portfolio', 'Portfolio')}</span>
           {isActive('/portfolio') && <div className="nav-indicator"></div>}
         </div>
       </Link>

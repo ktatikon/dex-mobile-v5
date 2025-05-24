@@ -1,0 +1,30 @@
+{
+  "general": {
+    "trading": "Comercio",
+    "trade": "Comerciar",
+    "market": "Mercado",
+    "markets": "Mercados",
+    "order": "Orden",
+    "orders": "Órdenes",
+    "position": "Posición",
+    "positions": "Posiciones",
+    "price": "Precio",
+    "volume": "Volumen",
+    "amount": "Cantidad",
+    "total": "Total",
+    "fee": "Comisión",
+    "fees": "Comisiones"
+  },
+  "orderTypes": {
+    "market": "Mercado",
+    "limit": "Límite",
+    "stop": "Stop",
+    "stopLimit": "Stop Límite"
+  },
+  "orderSides": {
+    "buy": "Comprar",
+    "sell": "Vender",
+    "long": "Largo",
+    "short": "Corto"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "buttons": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "submit": "Soumettre",
+    "confirm": "Confirmer",
+    "close": "Fermer",
+    "loading": "Chargement...",
+    "search": "Rechercher"
+  },
+  "status": {
+    "success": "Succès",
+    "error": "Erreur",
+    "warning": "Avertissement",
+    "pending": "En attente",
+    "completed": "Terminé",
+    "active": "Actif",
+    "inactive": "Inactif"
+  },
+  "settings": {
+    "language": "Langue",
+    "notifications": "Notifications",
+    "security": "Sécurité",
+    "privacy": "Confidentialité",
+    "general": "Paramètres",
+    "preferences": "Préférences de l'application"
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "general": {
+    "wallet": "Portefeuille",
+    "wallets": "Portefeuilles",
+    "balance": "Solde",
+    "balances": "Soldes",
+    "address": "Adresse",
+    "addresses": "Adresses",
+    "transaction": "Transaction",
+    "transactions": "Transactions",
+    "send": "Envoyer",
+    "receive": "Recevoir",
+    "transfer": "Transférer",
+    "deposit": "Dépôt",
+    "withdraw": "Retirer",
+    "swap": "Échanger",
+    "exchange": "Échange"
+  },
+  "types": {
+    "hotWallet": "Portefeuille chaud",
+    "coldWallet": "Portefeuille froid",
+    "hardwareWallet": "Portefeuille matériel",
+    "paperWallet": "Portefeuille papier",
+    "multiSig": "Multi-signature",
+    "custodial": "Dépositaire",
+    "nonCustodial": "Non-dépositaire"
+  },
+  "actions": {
+    "createWallet": "Créer un portefeuille",
+    "importWallet": "Importer un portefeuille",
+    "connectWallet": "Connecter le portefeuille",
+    "disconnectWallet": "Déconnecter le portefeuille",
+    "backupWallet": "Sauvegarder le portefeuille",
+    "restoreWallet": "Restaurer le portefeuille",
+    "copyAddress": "Copier l'adresse",
+    "shareAddress": "Partager l'adresse",
+    "scanQR": "Scanner le code QR",
+    "generateQR": "Générer le code QR"
+  },
+  "security": {
+    "seedPhrase": "Phrase de récupération",
+    "privateKey": "Clé privée",
+    "publicKey": "Clé publique",
+    "mnemonic": "Mnémonique",
+    "passphrase": "Phrase de passe",
+    "encryption": "Chiffrement",
+    "backup": "Sauvegarde",
+    "recovery": "Récupération"
+  },
+  "transactions": {
+    "pending": "En attente",
+    "confirmed": "Confirmé",
+    "failed": "Échoué",
+    "cancelled": "Annulé",
+    "sent": "Envoyé",
+    "received": "Reçu",
+    "fee": "Frais",
+    "gasPrice": "Prix du gaz",
+    "gasLimit": "Limite de gaz",
+    "amount": "Montant",
+    "recipient": "Destinataire",
+    "sender": "Expéditeur"
+  },
+  "networks": {
+    "mainnet": "Réseau principal",
+    "testnet": "Réseau de test",
+    "ethereum": "Ethereum",
+    "bitcoin": "Bitcoin",
+    "binanceSmartChain": "Binance Smart Chain",
+    "polygon": "Polygon",
+    "avalanche": "Avalanche",
+    "solana": "Solana"
+  },
+  "errors": {
+    "insufficientBalance": "Solde insuffisant",
+    "invalidAddress": "Adresse invalide",
+    "networkError": "Erreur réseau",
+    "transactionFailed": "Transaction échouée",
+    "walletNotConnected": "Portefeuille non connecté"
+  },
+  "success": {
+    "walletConnected": "Portefeuille connecté avec succès",
+    "transactionSent": "Transaction envoyée avec succès",
+    "addressCopied": "Adresse copiée dans le presse-papiers",
+    "walletCreated": "Portefeuille créé avec succès"
+  }
+}

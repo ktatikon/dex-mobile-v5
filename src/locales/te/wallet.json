@@ -1,0 +1,25 @@
+{
+  "general": {
+    "wallet": "వాలెట్",
+    "wallets": "వాలెట్‌లు",
+    "balance": "బ్యాలెన్స్",
+    "address": "చిరునామా",
+    "transaction": "లావాదేవీ",
+    "transactions": "లావాదేవీలు",
+    "send": "పంపండి",
+    "receive": "స్వీకరించండి",
+    "transfer": "బదిలీ చేయండి",
+    "deposit": "డిపాజిట్",
+    "withdraw": "ఉపసంహరించండి"
+  },
+  "actions": {
+    "createWallet": "వాలెట్ సృష్టించండి",
+    "connectWallet": "వాలెట్ కనెక్ట్ చేయండి",
+    "copyAddress": "చిరునామా కాపీ చేయండి"
+  },
+  "errors": {
+    "insufficientBalance": "తగినంత బ్యాలెన్స్ లేదు",
+    "invalidAddress": "చెల్లని చిరునామా",
+    "transactionFailed": "లావాదేవీ విఫలమైంది"
+  }
+}

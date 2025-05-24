@@ -1,0 +1,12 @@
+{
+  "general": {
+    "chat": "ಚಾಟ್",
+    "liveChat": "ಲೈವ್ ಚಾಟ್",
+    "support": "ಬೆಂಬಲ",
+    "message": "ಸಂದೇಶ"
+  },
+  "actions": {
+    "startChat": "ಚಾಟ್ ಪ್ರಾರಂಭಿಸಿ",
+    "sendMessage": "ಸಂದೇಶ ಕಳುಹಿಸಿ"
+  }
+}

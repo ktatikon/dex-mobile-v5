@@ -23,15 +23,19 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
-  Wallet
+  Wallet,
+  MessageSquare
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import LanguageSelector from '@/components/LanguageSelector';
+import { useTranslation } from 'react-i18next';
 
 const SettingsPage = () => {
   const { user, signOut } = useAuth();
   const { kycStatus } = useKYC();
   const navigate = useNavigate();
+  const { t } = useTranslation('common');
 
   const handleLogout = async () => {
     await signOut();
@@ -40,7 +44,7 @@ const SettingsPage = () => {
 
   return (
     <div className="container mx-auto px-4 pt-6 pb-24">
-      <h1 className="text-2xl font-bold text-white mb-6">Settings</h1>
+      <h1 className="text-2xl font-bold text-white mb-6">{t('settings.general', 'Settings')}</h1>
 
       {/* Portfolio Section */}
       <Card className="bg-dex-dark/80 border-dex-secondary/30 mb-6 shadow-lg shadow-dex-secondary/10">
@@ -153,6 +157,17 @@ const SettingsPage = () => {
         <CardContent className="space-y-4">
           <div
             className="flex items-center justify-between p-2 rounded-lg hover:bg-dex-secondary/5 cursor-pointer transition-all duration-200"
+            onClick={() => navigate('/live-chat')}
+          >
+            <div className="flex items-center gap-3">
+              <MessageSquare className="text-dex-secondary" size={20} />
+              <p className="text-white font-medium">Live Chat Support</p>
+            </div>
+            <ChevronRight className="text-dex-secondary" size={18} />
+          </div>
+
+          <div
+            className="flex items-center justify-between p-2 rounded-lg hover:bg-dex-secondary/5 cursor-pointer transition-all duration-200"
             onClick={() => navigate('/faq')}
           >
             <div className="flex items-center gap-3">
@@ -169,6 +184,48 @@ const SettingsPage = () => {
             <div className="flex items-center gap-3">
               <Info className="text-dex-secondary" size={20} />
               <p className="text-white font-medium">About</p>
+            </div>
+            <ChevronRight className="text-dex-secondary" size={18} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* App Preferences */}
+      <Card className="bg-dex-dark/80 border-dex-secondary/30 mb-6 shadow-lg shadow-dex-secondary/10">
+        <CardHeader>
+          <CardTitle className="text-white">{t('settings.preferences', 'App Preferences')}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="p-2">
+            <LanguageSelector variant="dropdown" showLabel={true} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Legal & Compliance */}
+      <Card className="bg-dex-dark/80 border-dex-secondary/30 mb-6 shadow-lg shadow-dex-secondary/10">
+        <CardHeader>
+          <CardTitle className="text-white">Legal & Compliance</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div
+            className="flex items-center justify-between p-2 rounded-lg hover:bg-dex-secondary/5 cursor-pointer transition-all duration-200"
+            onClick={() => navigate('/privacy-policy')}
+          >
+            <div className="flex items-center gap-3">
+              <Shield className="text-dex-secondary" size={20} />
+              <p className="text-white font-medium">Privacy Policy</p>
+            </div>
+            <ChevronRight className="text-dex-secondary" size={18} />
+          </div>
+
+          <div
+            className="flex items-center justify-between p-2 rounded-lg hover:bg-dex-secondary/5 cursor-pointer transition-all duration-200"
+            onClick={() => navigate('/terms-of-service')}
+          >
+            <div className="flex items-center gap-3">
+              <FileCheck className="text-dex-secondary" size={20} />
+              <p className="text-white font-medium">Terms of Service</p>
             </div>
             <ChevronRight className="text-dex-secondary" size={18} />
           </div>

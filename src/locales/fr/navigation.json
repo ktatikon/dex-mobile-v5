@@ -1,0 +1,19 @@
+{
+  "menu": {
+    "home": "Accueil",
+    "market": "Marché",
+    "trade": "Commerce",
+    "wallet": "Portefeuille",
+    "portfolio": "Portefeuille",
+    "settings": "Paramètres",
+    "profile": "Profil",
+    "activity": "Activité",
+    "history": "Historique",
+    "orders": "Ordres",
+    "transactions": "Transactions",
+    "support": "Support",
+    "help": "Aide",
+    "about": "À propos",
+    "logout": "Déconnexion"
+  }
+}

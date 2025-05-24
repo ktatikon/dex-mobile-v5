@@ -8,6 +8,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { KYCProvider } from "@/contexts/KYCContext";
 import { MarketDataProvider } from "@/contexts/MarketDataContext";
 import { TestnetProvider } from "@/contexts/TestnetContext";
+import { ChatProvider } from "@/contexts/ChatContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import PrivateRoute from "@/components/PrivateRoute";
 import DexNavigation from "@/components/DexNavigation";
 import DexHeader from "@/components/DexHeader";
@@ -33,6 +35,9 @@ import SecurityPage from "./pages/SecurityPage";
 import FAQPage from "./pages/FAQPage";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import TermsOfServicePage from "./pages/TermsOfServicePage";
+import LiveChatPage from "./pages/LiveChatPage";
 import { useState } from "react";
 
 const queryClient = new QueryClient();
@@ -59,6 +64,8 @@ const App = () => {
         <KYCProvider>
           <MarketDataProvider>
             <TestnetProvider>
+              <ChatProvider>
+                <LanguageProvider>
               <TooltipProvider>
                 <Toaster />
                 <Sonner />
@@ -445,11 +452,67 @@ const App = () => {
                   </PrivateRoute>
                 }
               />
+              <Route
+                path="/privacy-policy"
+                element={
+                  <PrivateRoute>
+                    <DexHeader
+                      wallet={wallet}
+                      onConnectWallet={handleConnectWallet}
+                      onDisconnectWallet={handleDisconnectWallet}
+                    />
+                    <div className="pt-16 pb-20">
+                      <div className="container mx-auto px-4 mb-4">
+                        <PrivacyPolicyPage />
+                      </div>
+                      <DexNavigation />
+                    </div>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/terms-of-service"
+                element={
+                  <PrivateRoute>
+                    <DexHeader
+                      wallet={wallet}
+                      onConnectWallet={handleConnectWallet}
+                      onDisconnectWallet={handleDisconnectWallet}
+                    />
+                    <div className="pt-16 pb-20">
+                      <div className="container mx-auto px-4 mb-4">
+                        <TermsOfServicePage />
+                      </div>
+                      <DexNavigation />
+                    </div>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/live-chat"
+                element={
+                  <PrivateRoute>
+                    <DexHeader
+                      wallet={wallet}
+                      onConnectWallet={handleConnectWallet}
+                      onDisconnectWallet={handleDisconnectWallet}
+                    />
+                    <div className="pt-16 pb-20">
+                      <div className="container mx-auto px-4 mb-4">
+                        <LiveChatPage />
+                      </div>
+                      <DexNavigation />
+                    </div>
+                  </PrivateRoute>
+                }
+              />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
               </BrowserRouter>
             </TooltipProvider>
+                </LanguageProvider>
+              </ChatProvider>
           </TestnetProvider>
         </MarketDataProvider>
       </KYCProvider>

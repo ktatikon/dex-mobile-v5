@@ -1,0 +1,16 @@
+{
+  "general": {
+    "chat": "चैट",
+    "liveChat": "लाइव चैट",
+    "support": "सहायता",
+    "message": "संदेश",
+    "messages": "संदेश"
+  },
+  "actions": {
+    "startChat": "चैट शुरू करें",
+    "sendMessage": "संदेश भेजें"
+  },
+  "placeholders": {
+    "typeMessage": "अपना संदेश टाइप करें..."
+  }
+}

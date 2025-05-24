@@ -1,0 +1,20 @@
+{
+  "general": {
+    "wallet": "वॉलेट",
+    "balance": "बैलेंस",
+    "address": "पता",
+    "transaction": "लेनदेन",
+    "transactions": "लेनदेन",
+    "send": "भेजें",
+    "receive": "प्राप्त करें"
+  },
+  "actions": {
+    "createWallet": "वॉलेट बनाएं",
+    "connectWallet": "वॉलेट कनेक्ट करें",
+    "copyAddress": "पता कॉपी करें"
+  },
+  "errors": {
+    "insufficientBalance": "अपर्याप्त बैलेंस",
+    "invalidAddress": "अमान्य पता"
+  }
+}

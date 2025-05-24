@@ -1,0 +1,14 @@
+{
+  "general": {
+    "trading": "ट्रेडिंग",
+    "trade": "ट्रेड",
+    "market": "मार्केट",
+    "order": "ऑर्डर",
+    "price": "मूल्य",
+    "volume": "वॉल्यूम"
+  },
+  "orderSides": {
+    "buy": "खरीदें",
+    "sell": "बेचें"
+  }
+}
