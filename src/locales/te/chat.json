@@ -1,0 +1,19 @@
+{
+  "general": {
+    "chat": "చాట్",
+    "liveChat": "లైవ్ చాట్",
+    "support": "సపోర్ట్",
+    "message": "సందేశం",
+    "messages": "సందేశాలు",
+    "online": "ఆన్‌లైన్",
+    "offline": "ఆఫ్‌లైన్"
+  },
+  "actions": {
+    "startChat": "చాట్ ప్రారంభించండి",
+    "sendMessage": "సందేశం పంపండి"
+  },
+  "placeholders": {
+    "typeMessage": "మీ సందేశం టైప్ చేయండి...",
+    "enterSubject": "విషయం నమోదు చేయండి..."
+  }
+}

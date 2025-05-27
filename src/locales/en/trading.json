@@ -1,0 +1,139 @@
+{
+  "general": {
+    "trading": "Trading",
+    "trade": "Trade",
+    "market": "Market",
+    "markets": "Markets",
+    "order": "Order",
+    "orders": "Orders",
+    "position": "Position",
+    "positions": "Positions",
+    "price": "Price",
+    "volume": "Volume",
+    "amount": "Amount",
+    "total": "Total",
+    "fee": "Fee",
+    "fees": "Fees"
+  },
+  "orderTypes": {
+    "market": "Market",
+    "limit": "Limit",
+    "stop": "Stop",
+    "stopLimit": "Stop Limit",
+    "trailingStop": "Trailing Stop",
+    "fillOrKill": "Fill or Kill",
+    "immediateOrCancel": "Immediate or Cancel",
+    "goodTillCancelled": "Good Till Cancelled",
+    "goodTillDate": "Good Till Date"
+  },
+  "orderSides": {
+    "buy": "Buy",
+    "sell": "Sell",
+    "long": "Long",
+    "short": "Short"
+  },
+  "orderStatus": {
+    "pending": "Pending",
+    "open": "Open",
+    "filled": "Filled",
+    "partiallyFilled": "Partially Filled",
+    "cancelled": "Cancelled",
+    "rejected": "Rejected",
+    "expired": "Expired"
+  },
+  "timeframes": {
+    "1m": "1 Minute",
+    "5m": "5 Minutes",
+    "15m": "15 Minutes",
+    "30m": "30 Minutes",
+    "1h": "1 Hour",
+    "4h": "4 Hours",
+    "1d": "1 Day",
+    "1w": "1 Week",
+    "1M": "1 Month"
+  },
+  "indicators": {
+    "rsi": "RSI",
+    "macd": "MACD",
+    "ema": "EMA",
+    "sma": "SMA",
+    "bollinger": "Bollinger Bands",
+    "stochastic": "Stochastic",
+    "williams": "Williams %R",
+    "atr": "ATR",
+    "adx": "ADX",
+    "cci": "CCI"
+  },
+  "analysis": {
+    "technical": "Technical Analysis",
+    "fundamental": "Fundamental Analysis",
+    "sentiment": "Sentiment Analysis",
+    "support": "Support",
+    "resistance": "Resistance",
+    "trend": "Trend",
+    "bullish": "Bullish",
+    "bearish": "Bearish",
+    "neutral": "Neutral",
+    "overbought": "Overbought",
+    "oversold": "Oversold"
+  },
+  "portfolio": {
+    "totalValue": "Total Value",
+    "totalBalance": "Total Balance",
+    "availableBalance": "Available Balance",
+    "lockedBalance": "Locked Balance",
+    "unrealizedPnL": "Unrealized P&L",
+    "realizedPnL": "Realized P&L",
+    "dayChange": "24h Change",
+    "weekChange": "7d Change",
+    "monthChange": "30d Change",
+    "yearChange": "1y Change",
+    "allTimeHigh": "All Time High",
+    "allTimeLow": "All Time Low"
+  },
+  "futures": {
+    "futures": "Futures",
+    "perpetual": "Perpetual",
+    "quarterly": "Quarterly",
+    "leverage": "Leverage",
+    "margin": "Margin",
+    "marginRatio": "Margin Ratio",
+    "liquidationPrice": "Liquidation Price",
+    "fundingRate": "Funding Rate",
+    "markPrice": "Mark Price",
+    "indexPrice": "Index Price",
+    "openInterest": "Open Interest"
+  },
+  "actions": {
+    "placeOrder": "Place Order",
+    "cancelOrder": "Cancel Order",
+    "modifyOrder": "Modify Order",
+    "closePosition": "Close Position",
+    "addMargin": "Add Margin",
+    "reduceMargin": "Reduce Margin",
+    "setStopLoss": "Set Stop Loss",
+    "setTakeProfit": "Set Take Profit",
+    "viewChart": "View Chart",
+    "viewOrderBook": "View Order Book",
+    "viewTrades": "View Trades"
+  },
+  "errors": {
+    "insufficientBalance": "Insufficient balance",
+    "minimumOrderSize": "Below minimum order size",
+    "maximumOrderSize": "Exceeds maximum order size",
+    "invalidPrice": "Invalid price",
+    "marketClosed": "Market is closed",
+    "orderNotFound": "Order not found",
+    "positionNotFound": "Position not found",
+    "liquidationRisk": "High liquidation risk",
+    "marginCallRequired": "Margin call required"
+  },
+  "success": {
+    "orderPlaced": "Order placed successfully",
+    "orderCancelled": "Order cancelled successfully",
+    "positionClosed": "Position closed successfully",
+    "marginAdded": "Margin added successfully",
+    "stopLossSet": "Stop loss set successfully",
+    "takeProfitSet": "Take profit set successfully"
+  }
+}

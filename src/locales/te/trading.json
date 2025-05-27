@@ -1,0 +1,22 @@
+{
+  "general": {
+    "trading": "ట్రేడింగ్",
+    "trade": "ట్రేడ్",
+    "market": "మార్కెట్",
+    "order": "ఆర్డర్",
+    "orders": "ఆర్డర్‌లు",
+    "price": "ధర",
+    "volume": "వాల్యూమ్",
+    "amount": "మొత్తం",
+    "total": "మొత్తం"
+  },
+  "orderSides": {
+    "buy": "కొనుగోలు",
+    "sell": "అమ్మకం"
+  },
+  "orderStatus": {
+    "pending": "పెండింగ్‌లో",
+    "filled": "పూర్తయింది",
+    "cancelled": "రద్దు చేయబడింది"
+  }
+}

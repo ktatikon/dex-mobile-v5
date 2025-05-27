@@ -1,0 +1,67 @@
+{
+  "menu": {
+    "home": "హోమ్",
+    "market": "మార్కెట్",
+    "trade": "ట్రేడ్",
+    "wallet": "వాలెట్",
+    "portfolio": "పోర్ట్‌ఫోలియో",
+    "settings": "సెట్టింగ్‌లు",
+    "profile": "ప్రొఫైల్",
+    "activity": "కార్యకలాపం",
+    "history": "చరిత్ర",
+    "orders": "ఆర్డర్‌లు",
+    "transactions": "లావాదేవీలు",
+    "support": "సపోర్ట్",
+    "help": "సహాయం",
+    "about": "గురించి",
+    "logout": "లాగ్ అవుట్"
+  },
+  "tabs": {
+    "overview": "అవలోకనం",
+    "coins": "కాయిన్‌లు",
+    "futures": "ఫ్యూచర్స్",
+    "funds": "ఫండ్స్",
+    "earn": "సంపాదించండి",
+    "web3": "వెబ్ 3.0",
+    "spot": "స్పాట్",
+    "margin": "మార్జిన్",
+    "options": "ఆప్షన్‌లు",
+    "nft": "NFT",
+    "defi": "DeFi",
+    "staking": "స్టేకింగ్",
+    "lending": "రుణం ఇవ్వడం",
+    "borrowing": "రుణం తీసుకోవడం"
+  },
+  "sections": {
+    "dashboard": "డ్యాష్‌బోర్డ్",
+    "trading": "ట్రేడింగ్",
+    "markets": "మార్కెట్‌లు",
+    "assets": "ఆస్తులు",
+    "balances": "బ్యాలెన్స్‌లు",
+    "positions": "పొజిషన్‌లు",
+    "orders": "ఆర్డర్‌లు",
+    "history": "చరిత్ర",
+    "analytics": "విశ్లేషణలు",
+    "reports": "నివేదికలు",
+    "tools": "సాధనాలు",
+    "news": "వార్తలు",
+    "education": "విద్య",
+    "community": "కమ్యూనిటీ"
+  },
+  "filters": {
+    "all": "అన్నీ",
+    "favorites": "ఇష్టమైనవి",
+    "gainers": "టాప్ గెయినర్స్",
+    "losers": "టాప్ లూజర్స్",
+    "volume": "వాల్యూమ్",
+    "new": "కొత్తవి",
+    "trending": "ట్రెండింగ్",
+    "watchlist": "వాచ్‌లిస్ట్"
+  },
+  "breadcrumbs": {
+    "home": "హోమ్",
+    "back": "వెనుకకు",
+    "previous": "మునుపటి",
+    "current": "ప్రస్తుత"
+  }
+}

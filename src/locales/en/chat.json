@@ -1,0 +1,126 @@
+{
+  "general": {
+    "chat": "Chat",
+    "liveChat": "Live Chat",
+    "support": "Support",
+    "helpDesk": "Help Desk",
+    "message": "Message",
+    "messages": "Messages",
+    "conversation": "Conversation",
+    "session": "Session",
+    "agent": "Agent",
+    "user": "User",
+    "online": "Online",
+    "offline": "Offline",
+    "typing": "Typing...",
+    "lastSeen": "Last seen"
+  },
+  "actions": {
+    "startChat": "Start Chat",
+    "endChat": "End Chat",
+    "sendMessage": "Send Message",
+    "attachFile": "Attach File",
+    "sendFile": "Send File",
+    "downloadFile": "Download File",
+    "copyMessage": "Copy Message",
+    "deleteMessage": "Delete Message",
+    "reportMessage": "Report Message",
+    "blockUser": "Block User",
+    "unblockUser": "Unblock User",
+    "muteChat": "Mute Chat",
+    "unmuteChat": "Unmute Chat"
+  },
+  "status": {
+    "open": "Open",
+    "closed": "Closed",
+    "waiting": "Waiting",
+    "inProgress": "In Progress",
+    "resolved": "Resolved",
+    "escalated": "Escalated",
+    "pending": "Pending",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "priority": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "urgent": "Urgent",
+    "critical": "Critical"
+  },
+  "categories": {
+    "trading": "Trading Issues",
+    "wallet": "Wallet Support",
+    "kyc": "KYC Verification",
+    "security": "Security Concerns",
+    "technical": "Technical Support",
+    "general": "General Inquiry",
+    "billing": "Billing",
+    "account": "Account Issues",
+    "api": "API Support",
+    "mobile": "Mobile App"
+  },
+  "form": {
+    "subject": "Subject",
+    "category": "Category",
+    "priority": "Priority",
+    "description": "Description",
+    "attachments": "Attachments",
+    "contactInfo": "Contact Information",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "createTicket": "Create Ticket",
+    "submitRequest": "Submit Request"
+  },
+  "placeholders": {
+    "typeMessage": "Type your message...",
+    "searchMessages": "Search messages...",
+    "enterSubject": "Enter subject...",
+    "describeIssue": "Describe your issue...",
+    "selectCategory": "Select a category",
+    "selectPriority": "Select priority level"
+  },
+  "notifications": {
+    "newMessage": "New message received",
+    "agentJoined": "Agent joined the chat",
+    "agentLeft": "Agent left the chat",
+    "chatClosed": "Chat session closed",
+    "fileUploaded": "File uploaded successfully",
+    "fileFailed": "File upload failed",
+    "messageSent": "Message sent",
+    "messageFailed": "Failed to send message",
+    "connectionLost": "Connection lost",
+    "connectionRestored": "Connection restored"
+  },
+  "errors": {
+    "connectionFailed": "Failed to connect to chat",
+    "messageFailed": "Failed to send message",
+    "fileUploadFailed": "File upload failed",
+    "fileTooLarge": "File size too large",
+    "unsupportedFileType": "Unsupported file type",
+    "chatNotFound": "Chat session not found",
+    "agentUnavailable": "No agents available",
+    "sessionExpired": "Chat session expired",
+    "rateLimited": "Too many messages, please slow down"
+  },
+  "success": {
+    "chatStarted": "Chat session started",
+    "messageSent": "Message sent successfully",
+    "fileUploaded": "File uploaded successfully",
+    "chatClosed": "Chat session closed",
+    "ticketCreated": "Support ticket created",
+    "issueResolved": "Issue resolved successfully"
+  },
+  "info": {
+    "waitingForAgent": "Waiting for an agent to join...",
+    "agentWillRespond": "An agent will respond shortly",
+    "chatHistory": "Chat history",
+    "noMessages": "No messages yet",
+    "startConversation": "Start the conversation!",
+    "chatEnded": "This chat session has ended",
+    "averageResponseTime": "Average response time: 2-5 minutes",
+    "supportHours": "Support hours: 24/7",
+    "fileLimit": "Maximum file size: 10MB"
+  }
+}

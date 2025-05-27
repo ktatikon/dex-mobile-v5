@@ -1,0 +1,30 @@
+{
+  "menu": {
+    "home": "ಮುಖ್ಯಪುಟ",
+    "market": "ಮಾರುಕಟ್ಟೆ",
+    "trade": "ವ್ಯಾಪಾರ",
+    "wallet": "ವಾಲೆಟ್",
+    "portfolio": "ಪೋರ್ಟ್‌ಫೋಲಿಯೋ",
+    "settings": "ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
+    "profile": "ಪ್ರೊಫೈಲ್",
+    "activity": "ಚಟುವಟಿಕೆ",
+    "history": "ಇತಿಹಾಸ",
+    "orders": "ಆದೇಶಗಳು",
+    "transactions": "ವಹಿವಾಟುಗಳು",
+    "support": "ಬೆಂಬಲ",
+    "help": "ಸಹಾಯ",
+    "about": "ಬಗ್ಗೆ",
+    "logout": "ಲಾಗ್ ಔಟ್"
+  },
+  "tabs": {
+    "overview": "ಅವಲೋಕನ",
+    "coins": "ನಾಣ್ಯಗಳು",
+    "futures": "ಫ್ಯೂಚರ್ಸ್",
+    "funds": "ಫಂಡ್‌ಗಳು",
+    "earn": "ಗಳಿಸಿ"
+  },
+  "filters": {
+    "all": "ಎಲ್ಲಾ",
+    "favorites": "ಮೆಚ್ಚಿನವುಗಳು"
+  }
+}

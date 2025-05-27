@@ -1,0 +1,1 @@
+git remote remove origin

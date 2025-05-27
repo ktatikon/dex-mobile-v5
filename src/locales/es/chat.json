@@ -1,0 +1,30 @@
+{
+  "general": {
+    "chat": "Chat",
+    "liveChat": "Chat en Vivo",
+    "support": "Soporte",
+    "helpDesk": "Mesa de Ayuda",
+    "message": "Mensaje",
+    "messages": "Mensajes",
+    "conversation": "Conversación",
+    "session": "Sesión",
+    "agent": "Agente",
+    "user": "Usuario",
+    "online": "En línea",
+    "offline": "Desconectado",
+    "typing": "Escribiendo...",
+    "lastSeen": "Visto por última vez"
+  },
+  "actions": {
+    "startChat": "Iniciar Chat",
+    "endChat": "Finalizar Chat",
+    "sendMessage": "Enviar Mensaje",
+    "attachFile": "Adjuntar Archivo",
+    "sendFile": "Enviar Archivo"
+  },
+  "placeholders": {
+    "typeMessage": "Escribe tu mensaje...",
+    "enterSubject": "Ingresa el asunto...",
+    "selectCategory": "Selecciona una categoría"
+  }
+}

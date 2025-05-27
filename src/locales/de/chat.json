@@ -1,0 +1,110 @@
+{
+  "general": {
+    "chat": "Chat",
+    "liveChat": "Live-Chat",
+    "support": "Support",
+    "helpDesk": "Helpdesk",
+    "message": "Nachricht",
+    "messages": "Nachrichten",
+    "conversation": "Unterhaltung",
+    "session": "Sitzung",
+    "agent": "Agent",
+    "user": "Benutzer",
+    "online": "Online",
+    "offline": "Offline",
+    "typing": "Tippt...",
+    "lastSeen": "Zuletzt gesehen"
+  },
+  "actions": {
+    "startChat": "Chat starten",
+    "endChat": "Chat beenden",
+    "sendMessage": "Nachricht senden",
+    "attachFile": "Datei anhängen",
+    "sendFile": "Datei senden",
+    "downloadFile": "Datei herunterladen",
+    "copyMessage": "Nachricht kopieren",
+    "deleteMessage": "Nachricht löschen"
+  },
+  "status": {
+    "open": "Offen",
+    "closed": "Geschlossen",
+    "waiting": "Wartend",
+    "inProgress": "In Bearbeitung",
+    "resolved": "Gelöst",
+    "escalated": "Eskaliert",
+    "pending": "Ausstehend",
+    "active": "Aktiv",
+    "inactive": "Inaktiv"
+  },
+  "priority": {
+    "low": "Niedrig",
+    "medium": "Mittel",
+    "high": "Hoch",
+    "urgent": "Dringend",
+    "critical": "Kritisch"
+  },
+  "categories": {
+    "trading": "Handelsprobleme",
+    "wallet": "Wallet-Support",
+    "kyc": "KYC-Verifizierung",
+    "security": "Sicherheitsbedenken",
+    "technical": "Technischer Support",
+    "general": "Allgemeine Anfrage",
+    "billing": "Abrechnung",
+    "account": "Kontoprobleme"
+  },
+  "form": {
+    "subject": "Betreff",
+    "category": "Kategorie",
+    "priority": "Priorität",
+    "description": "Beschreibung",
+    "attachments": "Anhänge",
+    "createTicket": "Ticket erstellen",
+    "submitRequest": "Anfrage senden"
+  },
+  "placeholders": {
+    "typeMessage": "Nachricht eingeben...",
+    "searchMessages": "Nachrichten suchen...",
+    "enterSubject": "Betreff eingeben...",
+    "describeIssue": "Problem beschreiben...",
+    "selectCategory": "Kategorie auswählen",
+    "selectPriority": "Prioritätsstufe auswählen"
+  },
+  "notifications": {
+    "newMessage": "Neue Nachricht erhalten",
+    "agentJoined": "Agent ist dem Chat beigetreten",
+    "agentLeft": "Agent hat den Chat verlassen",
+    "chatClosed": "Chat-Sitzung geschlossen",
+    "fileUploaded": "Datei erfolgreich hochgeladen",
+    "messageSent": "Nachricht gesendet",
+    "connectionLost": "Verbindung verloren",
+    "connectionRestored": "Verbindung wiederhergestellt"
+  },
+  "errors": {
+    "connectionFailed": "Verbindung zum Chat fehlgeschlagen",
+    "messageFailed": "Nachricht senden fehlgeschlagen",
+    "fileUploadFailed": "Datei-Upload fehlgeschlagen",
+    "fileTooLarge": "Datei zu groß",
+    "unsupportedFileType": "Nicht unterstützter Dateityp",
+    "chatNotFound": "Chat-Sitzung nicht gefunden",
+    "agentUnavailable": "Kein Agent verfügbar"
+  },
+  "success": {
+    "chatStarted": "Chat-Sitzung gestartet",
+    "messageSent": "Nachricht erfolgreich gesendet",
+    "fileUploaded": "Datei erfolgreich hochgeladen",
+    "chatClosed": "Chat-Sitzung geschlossen",
+    "ticketCreated": "Support-Ticket erstellt"
+  },
+  "info": {
+    "waitingForAgent": "Warten auf einen Agent...",
+    "agentWillRespond": "Ein Agent wird in Kürze antworten",
+    "chatHistory": "Chat-Verlauf",
+    "noMessages": "Noch keine Nachrichten",
+    "startConversation": "Unterhaltung beginnen!",
+    "chatEnded": "Diese Chat-Sitzung ist beendet",
+    "averageResponseTime": "Durchschnittliche Antwortzeit: 2-5 Minuten",
+    "supportHours": "Support-Zeiten: 24/7",
+    "fileLimit": "Maximale Dateigröße: 10 MB"
+  }
+}

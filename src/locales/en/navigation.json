@@ -1,0 +1,67 @@
+{
+  "menu": {
+    "home": "Home",
+    "market": "Market",
+    "trade": "Trade",
+    "wallet": "Wallet",
+    "portfolio": "Portfolio",
+    "settings": "Settings",
+    "profile": "Profile",
+    "activity": "Activity",
+    "history": "History",
+    "orders": "Orders",
+    "transactions": "Transactions",
+    "support": "Support",
+    "help": "Help",
+    "about": "About",
+    "logout": "Logout"
+  },
+  "tabs": {
+    "overview": "Overview",
+    "coins": "Coins",
+    "futures": "Futures",
+    "funds": "Funds",
+    "earn": "Earn",
+    "web3": "Web 3.0",
+    "spot": "Spot",
+    "margin": "Margin",
+    "options": "Options",
+    "nft": "NFT",
+    "defi": "DeFi",
+    "staking": "Staking",
+    "lending": "Lending",
+    "borrowing": "Borrowing"
+  },
+  "sections": {
+    "dashboard": "Dashboard",
+    "trading": "Trading",
+    "markets": "Markets",
+    "assets": "Assets",
+    "balances": "Balances",
+    "positions": "Positions",
+    "orders": "Orders",
+    "history": "History",
+    "analytics": "Analytics",
+    "reports": "Reports",
+    "tools": "Tools",
+    "news": "News",
+    "education": "Education",
+    "community": "Community"
+  },
+  "filters": {
+    "all": "All",
+    "favorites": "Favorites",
+    "gainers": "Top Gainers",
+    "losers": "Top Losers",
+    "volume": "Volume",
+    "new": "New",
+    "trending": "Trending",
+    "watchlist": "Watchlist"
+  },
+  "breadcrumbs": {
+    "home": "Home",
+    "back": "Back",
+    "previous": "Previous",
+    "current": "Current"
+  }
+}

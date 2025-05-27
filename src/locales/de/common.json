@@ -1,0 +1,31 @@
+{
+  "buttons": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "back": "Zurück",
+    "next": "Weiter",
+    "previous": "Vorherige",
+    "submit": "Senden",
+    "confirm": "Bestätigen",
+    "close": "Schließen",
+    "loading": "Laden...",
+    "search": "Suchen"
+  },
+  "status": {
+    "success": "Erfolg",
+    "error": "Fehler",
+    "warning": "Warnung",
+    "pending": "Ausstehend",
+    "completed": "Abgeschlossen",
+    "active": "Aktiv",
+    "inactive": "Inaktiv"
+  },
+  "settings": {
+    "language": "Sprache",
+    "notifications": "Benachrichtigungen",
+    "security": "Sicherheit",
+    "privacy": "Datenschutz"
+  }
+}

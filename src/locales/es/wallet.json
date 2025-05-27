@@ -1,0 +1,33 @@
+{
+  "general": {
+    "wallet": "Billetera",
+    "wallets": "Billeteras",
+    "balance": "Saldo",
+    "balances": "Saldos",
+    "address": "Dirección",
+    "addresses": "Direcciones",
+    "transaction": "Transacción",
+    "transactions": "Transacciones",
+    "send": "Enviar",
+    "receive": "Recibir",
+    "transfer": "Transferir",
+    "deposit": "Depositar",
+    "withdraw": "Retirar",
+    "swap": "Intercambiar",
+    "exchange": "Intercambio"
+  },
+  "actions": {
+    "createWallet": "Crear Billetera",
+    "importWallet": "Importar Billetera",
+    "connectWallet": "Conectar Billetera",
+    "disconnectWallet": "Desconectar Billetera",
+    "copyAddress": "Copiar Dirección",
+    "shareAddress": "Compartir Dirección"
+  },
+  "errors": {
+    "insufficientBalance": "Saldo insuficiente",
+    "invalidAddress": "Dirección inválida",
+    "networkError": "Error de red",
+    "transactionFailed": "Transacción fallida"
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "general": {
+    "chat": "Chat",
+    "liveChat": "Chat en direct",
+    "support": "Support",
+    "helpDesk": "Service d'aide",
+    "message": "Message",
+    "messages": "Messages",
+    "conversation": "Conversation",
+    "session": "Session",
+    "agent": "Agent",
+    "user": "Utilisateur",
+    "online": "En ligne",
+    "offline": "Hors ligne",
+    "typing": "En train d'écrire...",
+    "lastSeen": "Vu pour la dernière fois"
+  },
+  "actions": {
+    "startChat": "Démarrer le chat",
+    "endChat": "Terminer le chat",
+    "sendMessage": "Envoyer un message",
+    "attachFile": "Joindre un fichier",
+    "sendFile": "Envoyer un fichier",
+    "downloadFile": "Télécharger le fichier",
+    "copyMessage": "Copier le message",
+    "deleteMessage": "Supprimer le message"
+  },
+  "status": {
+    "open": "Ouvert",
+    "closed": "Fermé",
+    "waiting": "En attente",
+    "inProgress": "En cours",
+    "resolved": "Résolu",
+    "escalated": "Escaladé",
+    "pending": "En attente",
+    "active": "Actif",
+    "inactive": "Inactif"
+  },
+  "priority": {
+    "low": "Faible",
+    "medium": "Moyen",
+    "high": "Élevé",
+    "urgent": "Urgent",
+    "critical": "Critique"
+  },
+  "categories": {
+    "trading": "Problèmes de trading",
+    "wallet": "Support portefeuille",
+    "kyc": "Vérification KYC",
+    "security": "Préoccupations de sécurité",
+    "technical": "Support technique",
+    "general": "Demande générale",
+    "billing": "Facturation",
+    "account": "Problèmes de compte"
+  },
+  "form": {
+    "subject": "Sujet",
+    "category": "Catégorie",
+    "priority": "Priorité",
+    "description": "Description",
+    "attachments": "Pièces jointes",
+    "createTicket": "Créer un ticket",
+    "submitRequest": "Soumettre la demande"
+  },
+  "placeholders": {
+    "typeMessage": "Tapez votre message...",
+    "searchMessages": "Rechercher des messages...",
+    "enterSubject": "Entrez le sujet...",
+    "describeIssue": "Décrivez votre problème...",
+    "selectCategory": "Sélectionnez une catégorie",
+    "selectPriority": "Sélectionnez le niveau de priorité"
+  },
+  "notifications": {
+    "newMessage": "Nouveau message reçu",
+    "agentJoined": "L'agent a rejoint le chat",
+    "agentLeft": "L'agent a quitté le chat",
+    "chatClosed": "Session de chat fermée",
+    "fileUploaded": "Fichier téléchargé avec succès",
+    "messageSent": "Message envoyé",
+    "connectionLost": "Connexion perdue",
+    "connectionRestored": "Connexion rétablie"
+  },
+  "errors": {
+    "connectionFailed": "Échec de la connexion au chat",
+    "messageFailed": "Échec de l'envoi du message",
+    "fileUploadFailed": "Échec du téléchargement du fichier",
+    "fileTooLarge": "Fichier trop volumineux",
+    "unsupportedFileType": "Type de fichier non pris en charge",
+    "chatNotFound": "Session de chat introuvable",
+    "agentUnavailable": "Aucun agent disponible"
+  },
+  "success": {
+    "chatStarted": "Session de chat démarrée",
+    "messageSent": "Message envoyé avec succès",
+    "fileUploaded": "Fichier téléchargé avec succès",
+    "chatClosed": "Session de chat fermée",
+    "ticketCreated": "Ticket de support créé"
+  },
+  "info": {
+    "waitingForAgent": "En attente qu'un agent se joigne...",
+    "agentWillRespond": "Un agent répondra sous peu",
+    "chatHistory": "Historique du chat",
+    "noMessages": "Aucun message pour le moment",
+    "startConversation": "Commencez la conversation !",
+    "chatEnded": "Cette session de chat est terminée",
+    "averageResponseTime": "Temps de réponse moyen : 2-5 minutes",
+    "supportHours": "Heures de support : 24h/24 7j/7",
+    "fileLimit": "Taille maximale du fichier : 10 Mo"
+  }
+}
