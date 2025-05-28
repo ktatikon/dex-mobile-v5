@@ -3,6 +3,7 @@
  * Intelligently detects current phase and provides appropriate testing
  */
 
+import React from 'react';
 import { PHASE2_CONFIG } from '@/services/mockData';
 
 export interface EnhancedDiagnosticReport {
