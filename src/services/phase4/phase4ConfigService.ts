@@ -20,9 +20,9 @@ export const PHASE4_CONFIG = {
   enableDeFiAnalytics: true,
 
   // Cross-Chain Features
-  enableCrossChainBridge: false,
-  enableMultiNetworkPortfolio: false,
-  enableCrossChainArbitrage: false,
+  enableCrossChainBridge: true,
+  enableMultiNetworkPortfolio: true,
+  enableCrossChainArbitrage: true,
 
   // Advanced Analytics & AI
   enableAIOptimization: false,
