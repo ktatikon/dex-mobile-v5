@@ -14,10 +14,10 @@ export const PHASE4_CONFIG = {
   enableDCAAutomation: true,
 
   // DeFi Integration Features
-  enableLiveStaking: false,
-  enableYieldFarming: false,
-  enableLiquidityProvision: false,
-  enableDeFiAnalytics: false,
+  enableLiveStaking: true,
+  enableYieldFarming: true,
+  enableLiquidityProvision: true,
+  enableDeFiAnalytics: true,
 
   // Cross-Chain Features
   enableCrossChainBridge: false,

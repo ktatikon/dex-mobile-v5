@@ -77,6 +77,7 @@ import {
 
 // Phase 4 Advanced Trading Components
 import AdvancedTradingPanel from '@/components/phase4/AdvancedTradingPanel';
+import DeFiIntegrationPanel from '@/components/phase4/DeFiIntegrationPanel';
 import { phase4ConfigManager } from '@/services/phase4/phase4ConfigService';
 import { getRealTimeTokens } from '@/services/fallbackDataService';
 
@@ -394,6 +395,9 @@ const WalletDashboardPage: React.FC = () => {
   const [phase4Enabled, setPhase4Enabled] = useState(false);
   const [availableTokens, setAvailableTokens] = useState<any[]>([]);
 
+  // Phase 4.2 DeFi Integration states
+  const [defiEnabled, setDefiEnabled] = useState(false);
+
   // Transaction filtering states
   const [transactionFilters, setTransactionFilters] = useState<TransactionFilters>({});
   const [showTransactionFilters, setShowTransactionFilters] = useState(false);
@@ -429,11 +433,18 @@ const WalletDashboardPage: React.FC = () => {
       const config = phase4ConfigManager.getConfig();
       setPhase4Enabled(config.enableAdvancedTrading);
 
-      // Load available tokens for trading
+      // Check Phase 4.2 DeFi availability
+      setDefiEnabled(
+        config.enableLiveStaking ||
+        config.enableYieldFarming ||
+        config.enableLiquidityProvision
+      );
+
+      // Load available tokens for trading and DeFi
       const tokens = await getRealTimeTokens();
       setAvailableTokens(tokens);
 
-      console.log('✅ Phase 4 initialized successfully');
+      console.log('✅ Phase 4 and Phase 4.2 initialized successfully');
     } catch (error) {
       console.error('❌ Error initializing Phase 4:', error);
     }
@@ -1129,88 +1140,102 @@ const WalletDashboardPage: React.FC = () => {
 
         <TabsContent value="defi">
           <div className="space-y-6">
-            {/* DeFi Portfolio Summary */}
-            <Card className="p-6 bg-dex-dark border-dex-secondary/30">
-              <h3 className="text-lg font-medium text-white mb-4">DeFi Portfolio</h3>
+            {/* Phase 4.2 DeFi Integration Panel */}
+            {defiEnabled ? (
+              <DeFiIntegrationPanel
+                tokens={availableTokens}
+                onPositionCreate={(position) => {
+                  console.log('DeFi position created:', position);
+                  // Refresh dashboard data
+                  fetchDashboardData();
+                }}
+              />
+            ) : (
+              <>
+                {/* Legacy DeFi Portfolio Summary */}
+                <Card className="p-6 bg-dex-dark border-dex-secondary/30">
+                  <h3 className="text-lg font-medium text-white mb-4">DeFi Portfolio</h3>
 
-              {defiSummary ? (
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="p-4 bg-dex-secondary/10 rounded-lg">
-                    <p className="text-sm text-gray-400">Total Staked</p>
-                    <p className="text-xl font-bold text-white">
-                      {showBalances ? `$${parseFloat(defiSummary.totalStaked).toFixed(2)}` : '••••••'}
-                    </p>
-                  </div>
-                  <div className="p-4 bg-dex-secondary/10 rounded-lg">
-                    <p className="text-sm text-gray-400">Total Rewards</p>
-                    <p className="text-xl font-bold text-dex-positive">
-                      {showBalances ? `$${parseFloat(defiSummary.totalRewards).toFixed(2)}` : '••••••'}
-                    </p>
-                  </div>
-                  <div className="p-4 bg-dex-secondary/10 rounded-lg">
-                    <p className="text-sm text-gray-400">Active Positions</p>
-                    <p className="text-xl font-bold text-white">{defiSummary.activePositions}</p>
-                  </div>
-                  <div className="p-4 bg-dex-secondary/10 rounded-lg">
-                    <p className="text-sm text-gray-400">Average APY</p>
-                    <p className="text-xl font-bold text-white">{defiSummary.averageApy.toFixed(1)}%</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-400">
-                  <TrendingUp size={32} className="mx-auto mb-2 opacity-50" />
-                  <p>No DeFi positions found</p>
-                </div>
-              )}
-            </Card>
-
-            {/* Staking Opportunities */}
-            <Card className="p-6 bg-dex-dark border-dex-secondary/30">
-              <h3 className="text-lg font-medium text-white mb-4">Staking Opportunities</h3>
-
-              {stakingOpportunities.length > 0 ? (
-                <div className="space-y-3">
-                  {stakingOpportunities.map((opportunity) => (
-                    <div key={opportunity.id} className="p-4 bg-dex-secondary/10 border border-dex-secondary/20 rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-dex-primary/20 flex items-center justify-center">
-                            <TrendingUp size={20} className="text-dex-primary" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-white">{opportunity.protocol}</span>
-                              <Badge
-                                variant="outline"
-                                className={`text-xs ${
-                                  opportunity.risk === 'low' ? 'border-green-500 text-green-500' :
-                                  opportunity.risk === 'medium' ? 'border-yellow-500 text-yellow-500' :
-                                  'border-red-500 text-red-500'
-                                }`}
-                              >
-                                {opportunity.risk.toUpperCase()} RISK
-                              </Badge>
-                            </div>
-                            <span className="text-sm text-gray-400">{opportunity.token} • Min: {opportunity.minimumStake}</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium text-dex-positive">{opportunity.apy}% APY</p>
-                          <p className="text-sm text-gray-400">
-                            {opportunity.lockPeriod > 0 ? `${opportunity.lockPeriod} days lock` : 'No lock'}
-                          </p>
-                        </div>
+                  {defiSummary ? (
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div className="p-4 bg-dex-secondary/10 rounded-lg">
+                        <p className="text-sm text-gray-400">Total Staked</p>
+                        <p className="text-xl font-bold text-white">
+                          {showBalances ? `$${parseFloat(defiSummary.totalStaked).toFixed(2)}` : '••••••'}
+                        </p>
+                      </div>
+                      <div className="p-4 bg-dex-secondary/10 rounded-lg">
+                        <p className="text-sm text-gray-400">Total Rewards</p>
+                        <p className="text-xl font-bold text-dex-positive">
+                          {showBalances ? `$${parseFloat(defiSummary.totalRewards).toFixed(2)}` : '••••••'}
+                        </p>
+                      </div>
+                      <div className="p-4 bg-dex-secondary/10 rounded-lg">
+                        <p className="text-sm text-gray-400">Active Positions</p>
+                        <p className="text-xl font-bold text-white">{defiSummary.activePositions}</p>
+                      </div>
+                      <div className="p-4 bg-dex-secondary/10 rounded-lg">
+                        <p className="text-sm text-gray-400">Average APY</p>
+                        <p className="text-xl font-bold text-white">{defiSummary.averageApy.toFixed(1)}%</p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-400">
-                  <Coins size={32} className="mx-auto mb-2 opacity-50" />
-                  <p>No staking opportunities available</p>
-                </div>
-              )}
-            </Card>
+                  ) : (
+                    <div className="text-center py-8 text-gray-400">
+                      <TrendingUp size={32} className="mx-auto mb-2 opacity-50" />
+                      <p>No DeFi positions found</p>
+                    </div>
+                  )}
+                </Card>
+
+                {/* Legacy Staking Opportunities */}
+                <Card className="p-6 bg-dex-dark border-dex-secondary/30">
+                  <h3 className="text-lg font-medium text-white mb-4">Staking Opportunities</h3>
+
+                  {stakingOpportunities.length > 0 ? (
+                    <div className="space-y-3">
+                      {stakingOpportunities.map((opportunity) => (
+                        <div key={opportunity.id} className="p-4 bg-dex-secondary/10 border border-dex-secondary/20 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-dex-primary/20 flex items-center justify-center">
+                                <TrendingUp size={20} className="text-dex-primary" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-white">{opportunity.protocol}</span>
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-xs ${
+                                      opportunity.risk === 'low' ? 'border-green-500 text-green-500' :
+                                      opportunity.risk === 'medium' ? 'border-yellow-500 text-yellow-500' :
+                                      'border-red-500 text-red-500'
+                                    }`}
+                                  >
+                                    {opportunity.risk.toUpperCase()} RISK
+                                  </Badge>
+                                </div>
+                                <span className="text-sm text-gray-400">{opportunity.token} • Min: {opportunity.minimumStake}</span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-medium text-dex-positive">{opportunity.apy}% APY</p>
+                              <p className="text-sm text-gray-400">
+                                {opportunity.lockPeriod > 0 ? `${opportunity.lockPeriod} days lock` : 'No lock'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-400">
+                      <Coins size={32} className="mx-auto mb-2 opacity-50" />
+                      <p>No staking opportunities available</p>
+                    </div>
+                  )}
+                </Card>
+              </>
+            )}
           </div>
         </TabsContent>
 
