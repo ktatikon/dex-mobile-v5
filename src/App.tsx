@@ -49,6 +49,7 @@ import AdminDebugPage from "./pages/AdminDebugPage";
 import AdminRoute from "./components/AdminRoute";
 import AdminHeader from "./components/AdminHeader";
 import { AdminProvider } from "./contexts/AdminContext";
+import DiagnosticsPage from "./pages/DiagnosticsPage";
 import { useState } from "react";
 
 const queryClient = new QueryClient();
@@ -153,6 +154,24 @@ const App = () => {
                     <div className="pt-16 pb-20">
                       <div className="container mx-auto px-4 mb-4">
                         <WalletDiagnosticPage />
+                      </div>
+                      <DexNavigation />
+                    </div>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/diagnostics"
+                element={
+                  <PrivateRoute>
+                    <DexHeader
+                      wallet={wallet}
+                      onConnectWallet={handleConnectWallet}
+                      onDisconnectWallet={handleDisconnectWallet}
+                    />
+                    <div className="pt-16 pb-20">
+                      <div className="container mx-auto px-4 mb-4">
+                        <DiagnosticsPage />
                       </div>
                       <DexNavigation />
                     </div>

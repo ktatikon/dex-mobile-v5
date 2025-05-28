@@ -7,6 +7,33 @@ const COINGECKO_BASE_URL = "https://api.coingecko.com/api/v3";
 
 // Cache management
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+const MAX_TOKENS_PER_REQUEST = 100; // CoinGecko limit
+
+// Rate limiting configuration
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const MAX_REQUESTS_PER_MINUTE = 50; // Conservative limit for free tier
+let requestCount = 0;
+let rateLimitWindowStart = Date.now();
+
+// Rate limiting function
+function checkRateLimit(): boolean {
+  const now = Date.now();
+
+  // Reset counter if window has passed
+  if (now - rateLimitWindowStart >= RATE_LIMIT_WINDOW) {
+    requestCount = 0;
+    rateLimitWindowStart = now;
+  }
+
+  // Check if we're within limits
+  if (requestCount >= MAX_REQUESTS_PER_MINUTE) {
+    console.warn('Rate limit exceeded, request blocked');
+    return false;
+  }
+
+  requestCount++;
+  return true;
+}
 
 // Advanced cache implementation with memoization
 interface CacheEntry<T> {
@@ -440,26 +467,42 @@ class DataFetcher {
 const dataFetcher = new DataFetcher(CACHE_DURATION, FALLBACK_MOCK_DATA);
 
 /**
- * Fetches token list from CoinGecko API with enhanced dynamic programming approach
+ * Fetches token list from CoinGecko API with enhanced dynamic programming approach and rate limiting
  */
 export async function fetchTokenList(vsCurrency = 'usd'): Promise<CoinGeckoToken[]> {
   try {
+    // Check rate limiting first
+    if (!checkRateLimit()) {
+      console.warn('Rate limit exceeded, using cached or fallback data');
+      const cacheKey = `coinGecko_${vsCurrency}`;
+      const cachedData = tokenCache.get(cacheKey);
+      if (cachedData) {
+        console.log('Returning cached data due to rate limit');
+        return cachedData;
+      }
+      console.log('No cached data available, returning fallback data');
+      return FALLBACK_MOCK_DATA;
+    }
+
     // Prepare API request
     const url = new URL(`${COINGECKO_BASE_URL}/coins/markets`);
     url.searchParams.append('vs_currency', vsCurrency);
     url.searchParams.append('order', 'market_cap_desc');
-    url.searchParams.append('per_page', '100'); // Reduced to 100 for better performance
+    url.searchParams.append('per_page', MAX_TOKENS_PER_REQUEST.toString());
     url.searchParams.append('page', '1');
     url.searchParams.append('sparkline', 'false');
+    url.searchParams.append('price_change_percentage', '24h');
 
     const apiUrl = url.toString();
     const options = {
       headers: {
-        'x-cg-api-key': COINGECKO_API_KEY
+        'x-cg-api-key': COINGECKO_API_KEY,
+        'Accept': 'application/json',
+        'User-Agent': 'DEX-Mobile-App/1.0'
       }
     };
 
-    console.log('Fetching market data with enhanced dynamic programming approach - 5 minute refresh rate');
+    console.log(`Fetching market data with 5-minute refresh rate (${MAX_TOKENS_PER_REQUEST} tokens max)`);
 
     // Use the data fetcher with memoization
     const cacheKey = `coinGecko_${vsCurrency}`;
@@ -471,9 +514,23 @@ export async function fetchTokenList(vsCurrency = 'usd'): Promise<CoinGeckoToken
       return FALLBACK_MOCK_DATA;
     }
 
+    // Store in our token cache as well
+    tokenCache.set(cacheKey, result);
+
+    console.log(`Successfully fetched ${result.length} tokens from CoinGecko API`);
     return result;
   } catch (error) {
     console.error('Unexpected error in fetchTokenList:', error);
+
+    // Try to get cached data as fallback
+    const cacheKey = `coinGecko_${vsCurrency}`;
+    const cachedData = tokenCache.get(cacheKey);
+    if (cachedData) {
+      console.log('Using cached data due to API error');
+      return cachedData;
+    }
+
+    console.log('No cached data available, using fallback mock data');
     return FALLBACK_MOCK_DATA;
   }
 }

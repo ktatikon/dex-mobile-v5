@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { formatCurrency, generateOrderBook, generateRecentTrades } from '@/services/realTimeData';
+import { formatCurrency } from '@/services/realTimeData';
+import { realTimeOrderBookService } from '@/services/realTimeOrderBook';
 import { Token } from '@/types';
 import { useMarketData } from '@/hooks/useMarketData';
 import { MarketFilterType, AltFilterType } from '@/types/api';
@@ -12,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, TrendingDown, ChevronDown, RefreshCw } from 'lucide-react';
+import { TrendingUp, TrendingDown, ChevronDown, RefreshCw, Activity } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -75,11 +76,15 @@ const TradePage = () => {
     }
   }, [tokens, selectedToken]);
 
-  // Generate order book data for the selected token
-  const orderBook = generateOrderBook(selectedToken?.price || 0);
+  // Generate real-time order book data for the selected token
+  const orderBook = selectedToken
+    ? realTimeOrderBookService.generateRealTimeOrderBook(selectedToken.id, selectedToken.price || 0)
+    : { bids: [], asks: [] };
 
-  // Generate recent trades for the selected token
-  const recentTrades = generateRecentTrades(selectedToken?.price || 0);
+  // Generate real-time recent trades for the selected token
+  const recentTrades = selectedToken
+    ? realTimeOrderBookService.generateRealTimeRecentTrades(selectedToken.id, selectedToken.price || 0)
+    : [];
 
   // Format the last updated time
   const formattedLastUpdated = lastUpdated
@@ -459,9 +464,15 @@ const TradePage = () => {
         <div className="lg:col-span-2">
           <Card className="bg-dex-dark/80 border-dex-primary/30 h-full">
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg text-white">
-                {showOrderBook ? 'Order Book' : 'Recent Trades'}
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg text-white">
+                  {showOrderBook ? 'Order Book' : 'Recent Trades'}
+                </CardTitle>
+                <div className="flex items-center gap-2 text-xs text-dex-text-secondary">
+                  <Activity size={12} className="text-green-500" />
+                  <span>Live Data</span>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               {showOrderBook ? (

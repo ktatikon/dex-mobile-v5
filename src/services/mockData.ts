@@ -1,8 +1,21 @@
 
 import { Token, Transaction, TransactionStatus, TransactionType, WalletInfo } from "@/types";
+import { fetchTokenList, adaptCoinGeckoData } from "./realTimeData";
 
-// Mock token list with logos and data
-export const mockTokens: Token[] = [
+// Mock balances for demo purposes (these would come from user's actual wallet in production)
+const MOCK_BALANCES: Record<string, string> = {
+  "ethereum": "1.5263",
+  "bitcoin": "0.0358",
+  "usd-coin": "523.67",
+  "tether": "745.21",
+  "solana": "12.431",
+  "cardano": "452.16",
+  "binancecoin": "3.482",
+  "ripple": "1250.32",
+};
+
+// Fallback mock tokens (used when API fails)
+const FALLBACK_MOCK_TOKENS: Token[] = [
   {
     id: "ethereum",
     symbol: "ETH",
@@ -84,6 +97,46 @@ export const mockTokens: Token[] = [
     priceChange24h: -0.5,
   },
 ];
+
+/**
+ * Gets real-time token data with mock balances
+ * This function fetches live prices from CoinGecko but uses mock balances for demo
+ */
+export async function getRealTimeTokens(): Promise<Token[]> {
+  try {
+    console.log('Fetching real-time token data...');
+
+    // Fetch real-time data from CoinGecko
+    const coinGeckoData = await fetchTokenList('usd');
+    const realTimeTokens = adaptCoinGeckoData(coinGeckoData);
+
+    // Add mock balances to the real-time data
+    const tokensWithBalances = realTimeTokens.map(token => ({
+      ...token,
+      balance: MOCK_BALANCES[token.id] || "0",
+      // Ensure we have proper logo paths
+      logo: token.logo.startsWith('http') ? token.logo : `/crypto-icons/${token.symbol.toLowerCase()}.svg`
+    }));
+
+    console.log(`Successfully loaded ${tokensWithBalances.length} tokens with real-time prices`);
+    return tokensWithBalances;
+
+  } catch (error) {
+    console.error('Error fetching real-time tokens, using fallback data:', error);
+    return FALLBACK_MOCK_TOKENS;
+  }
+}
+
+// Export the real-time tokens as mockTokens for backward compatibility
+export let mockTokens: Token[] = FALLBACK_MOCK_TOKENS;
+
+// Initialize real-time data
+getRealTimeTokens().then(tokens => {
+  mockTokens = tokens;
+  console.log('Mock tokens updated with real-time data');
+}).catch(error => {
+  console.error('Failed to initialize real-time data:', error);
+});
 
 // Mock transactions
 export const mockTransactions: Transaction[] = [

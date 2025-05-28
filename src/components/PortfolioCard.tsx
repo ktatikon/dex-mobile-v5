@@ -11,26 +11,64 @@ interface PortfolioCardProps {
 }
 
 const PortfolioCard: React.FC<PortfolioCardProps> = ({ tokens, chartData }) => {
-  // Calculate total balance
-  const totalBalance = useMemo(() => {
-    if (!tokens || tokens.length === 0) return 0;
+  // Calculate total balance and portfolio change
+  const { totalBalance, portfolioChange24h } = useMemo(() => {
+    if (!tokens || tokens.length === 0) return { totalBalance: 0, portfolioChange24h: 0 };
 
-    return tokens.reduce((total, token) => {
+    let currentValue = 0;
+    let previousValue = 0;
+
+    tokens.forEach(token => {
       const balance = parseFloat(token.balance || '0');
-      const price = token.price || 0;
-      return total + (balance * price);
-    }, 0);
+      const currentPrice = token.price || 0;
+      const priceChange24h = token.priceChange24h || 0;
+
+      // Calculate current value
+      currentValue += balance * currentPrice;
+
+      // Calculate previous price (24h ago) and previous value
+      const previousPrice = currentPrice / (1 + priceChange24h / 100);
+      previousValue += balance * previousPrice;
+    });
+
+    // Calculate portfolio percentage change
+    const portfolioChange = previousValue > 0
+      ? ((currentValue - previousValue) / previousValue) * 100
+      : 0;
+
+    return {
+      totalBalance: currentValue,
+      portfolioChange24h: portfolioChange
+    };
   }, [tokens]);
 
-  // Mock chart data if not provided
-  const mockChartData = chartData || Array(30).fill(0).map((_, i) => ({
-    time: i,
-    value: Math.random() * 1000 + 4000
-  }));
+  // Generate realistic chart data based on portfolio change
+  const portfolioChartData = useMemo(() => {
+    if (chartData) return chartData;
 
-  // Calculate 24h change (mock data)
-  const percentChange = totalBalance > 0 ? 2.34 : 0; // Mock value
-  const isPositive = percentChange >= 0;
+    // Generate chart data that reflects the actual portfolio change
+    const dataPoints = 30;
+    const data = [];
+    const endValue = totalBalance;
+    const startValue = endValue / (1 + portfolioChange24h / 100);
+
+    for (let i = 0; i < dataPoints; i++) {
+      const progress = i / (dataPoints - 1);
+      // Add some realistic volatility
+      const volatility = (Math.random() - 0.5) * 0.02; // ±1% random variation
+      const baseValue = startValue + (endValue - startValue) * progress;
+      const value = baseValue * (1 + volatility);
+
+      data.push({
+        time: i,
+        value: Math.max(value, 0) // Ensure no negative values
+      });
+    }
+
+    return data;
+  }, [totalBalance, portfolioChange24h, chartData]);
+
+  const isPositive = portfolioChange24h >= 0;
 
   // Determine if this is a new user with zero balance
   const isNewUser = totalBalance === 0;
@@ -41,7 +79,7 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ tokens, chartData }) => {
         <h2 className="text-gray-400 font-medium text-lg">Portfolio Value</h2>
         {!isNewUser && (
           <span className={`text-base font-semibold px-3 py-1 rounded-full ${isPositive ? 'bg-dex-positive/10 text-dex-positive' : 'bg-dex-negative/10 text-dex-negative'}`}>
-            {isPositive ? '+' : ''}{percentChange.toFixed(2)}%
+            {isPositive ? '+' : ''}{portfolioChange24h.toFixed(2)}%
           </span>
         )}
       </div>
@@ -53,6 +91,11 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ tokens, chartData }) => {
             Start by adding funds to your wallet
           </div>
         )}
+        {!isNewUser && (
+          <div className="text-dex-text-secondary text-sm mt-2">
+            24h change: {isPositive ? '+' : ''}${formatCurrency(totalBalance * portfolioChange24h / 100)}
+          </div>
+        )}
       </div>
 
       <div className="h-24 w-full">
@@ -62,11 +105,11 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ tokens, chartData }) => {
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={mockChartData}>
+            <LineChart data={portfolioChartData}>
               <Line
                 type="monotone"
                 dataKey="value"
-                stroke="#FF3B30"
+                stroke={isPositive ? "#34C759" : "#FF3B30"}
                 strokeWidth={2.5}
                 dot={false}
                 isAnimationActive={true}

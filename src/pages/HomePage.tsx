@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useGlobalMarketData } from '@/contexts/MarketDataContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRealTimeTokens } from '@/hooks/useRealTimeTokens';
 import EmptyStateCard from '@/components/EmptyStateCard';
-import { RefreshCw, TrendingUp, Wallet } from 'lucide-react';
+import { RefreshCw, TrendingUp, Wallet, Clock } from 'lucide-react';
 import { getUserTransactions } from '@/services/walletService';
 import { getPortfolioHoldings } from '@/services/portfolioService';
 import { Token, Transaction } from '@/types';
@@ -17,19 +18,42 @@ import { Token, Transaction } from '@/types';
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  // Use real-time token data with automatic updates
   const {
-    tokens,
+    tokens: realTimeTokens,
+    loading: realTimeLoading,
+    error: realTimeError,
+    lastUpdated,
+    isStale,
+    refreshData: refreshRealTimeData,
+    status
+  } = useRealTimeTokens({
+    autoRefresh: true,
+    refreshOnMount: true,
+    sortBy: 'marketCap',
+    sortOrder: 'desc'
+  });
+
+  // Fallback to global market data if needed
+  const {
+    tokens: fallbackTokens,
     sortedByMarketCap,
     sortedByPriceChange,
-    loading,
-    error,
-    refreshData
+    loading: fallbackLoading,
+    error: fallbackError,
+    refreshData: refreshFallbackData
   } = useGlobalMarketData();
 
   const [userTokens, setUserTokens] = useState<Token[]>([]);
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState<Error | null>(null);
+
+  // Use real-time data if available, otherwise fallback
+  const tokens = realTimeTokens.length > 0 ? realTimeTokens : fallbackTokens;
+  const loading = realTimeLoading || fallbackLoading;
+  const error = realTimeError || fallbackError;
 
   // Fetch user data from Supabase
   useEffect(() => {
@@ -106,6 +130,29 @@ const HomePage: React.FC = () => {
 
   const handleGoToWallet = () => {
     navigate('/wallet-dashboard');
+  };
+
+  const handleRefresh = async () => {
+    try {
+      await refreshRealTimeData();
+      await refreshFallbackData();
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    }
+  };
+
+  // Format last updated time
+  const formatLastUpdated = (date: Date | null) => {
+    if (!date) return 'Never';
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return date.toLocaleDateString();
   };
 
   // Loading state
@@ -194,6 +241,31 @@ const HomePage: React.FC = () => {
       {/* Portfolio section */}
       <div className="mb-6">
         <PortfolioCard tokens={userTokens} />
+      </div>
+
+      {/* Real-time status indicator */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between text-sm text-dex-text-secondary">
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${isStale ? 'bg-yellow-500' : 'bg-green-500'} ${status.isRefreshing ? 'animate-pulse' : ''}`} />
+            <span>
+              {status.isRefreshing ? 'Updating...' : isStale ? 'Data may be stale' : 'Live data'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Clock size={12} />
+            <span>Updated {formatLastUpdated(lastUpdated)}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={status.isRefreshing}
+              className="h-6 w-6 p-0 hover:bg-dex-secondary/10"
+            >
+              <RefreshCw size={12} className={status.isRefreshing ? 'animate-spin' : ''} />
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Quick actions */}
