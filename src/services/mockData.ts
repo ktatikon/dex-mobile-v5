@@ -2,8 +2,17 @@
 import { Token, Transaction, TransactionStatus, TransactionType, WalletInfo } from "@/types";
 import { fetchTokenList, adaptCoinGeckoData } from "./realTimeData";
 
-// Mock balances for demo purposes (these would come from user's actual wallet in production)
-const MOCK_BALANCES: Record<string, string> = {
+// Phase 2 Configuration - Added for backward compatibility
+export const PHASE2_CONFIG = {
+  enableRealWallets: false,
+  enableRealTransactions: false,
+  supportedNetworks: ['ethereum', 'polygon', 'bitcoin'],
+  maxWalletsPerUser: 10,
+  transactionHistoryLimit: 1000
+};
+
+// Mock balances for demo purposes
+const mockBalances: Record<string, string> = {
   "ethereum": "1.5263",
   "bitcoin": "0.0358",
   "usd-coin": "523.67",
@@ -14,8 +23,8 @@ const MOCK_BALANCES: Record<string, string> = {
   "ripple": "1250.32",
 };
 
-// Fallback mock tokens (used when API fails)
-const FALLBACK_MOCK_TOKENS: Token[] = [
+// Mock tokens with static data
+export const mockTokens: Token[] = [
   {
     id: "ethereum",
     symbol: "ETH",
@@ -99,8 +108,8 @@ const FALLBACK_MOCK_TOKENS: Token[] = [
 ];
 
 /**
- * Gets real-time token data with mock balances
- * This function fetches live prices from CoinGecko but uses mock balances for demo
+ * Gets real-time token data with live prices from CoinGecko
+ * This function fetches live prices and applies them to mock balances
  */
 export async function getRealTimeTokens(): Promise<Token[]> {
   try {
@@ -110,11 +119,10 @@ export async function getRealTimeTokens(): Promise<Token[]> {
     const coinGeckoData = await fetchTokenList('usd');
     const realTimeTokens = adaptCoinGeckoData(coinGeckoData);
 
-    // Add mock balances to the real-time data
+    // Apply mock balances to tokens
     const tokensWithBalances = realTimeTokens.map(token => ({
       ...token,
-      balance: MOCK_BALANCES[token.id] || "0",
-      // Ensure we have proper logo paths
+      balance: mockBalances[token.id] || "0",
       logo: token.logo.startsWith('http') ? token.logo : `/crypto-icons/${token.symbol.toLowerCase()}.svg`
     }));
 
@@ -123,20 +131,9 @@ export async function getRealTimeTokens(): Promise<Token[]> {
 
   } catch (error) {
     console.error('Error fetching real-time tokens, using fallback data:', error);
-    return FALLBACK_MOCK_TOKENS;
+    return mockTokens;
   }
 }
-
-// Export the real-time tokens as mockTokens for backward compatibility
-export let mockTokens: Token[] = FALLBACK_MOCK_TOKENS;
-
-// Initialize real-time data
-getRealTimeTokens().then(tokens => {
-  mockTokens = tokens;
-  console.log('Mock tokens updated with real-time data');
-}).catch(error => {
-  console.error('Failed to initialize real-time data:', error);
-});
 
 // Mock transactions
 export const mockTransactions: Transaction[] = [
@@ -206,6 +203,26 @@ export const mockTransactions: Transaction[] = [
     account: "0xabc...def",
   },
 ];
+
+/**
+ * Gets real-time transaction data (fallback to mock data for Phase 1)
+ * This function provides backward compatibility for components expecting real-time transactions
+ */
+export async function getRealTimeTransactions(): Promise<Transaction[]> {
+  try {
+    console.log('Fetching real-time transaction data (using mock data for Phase 1)...');
+
+    // In Phase 1, we return mock transactions
+    // In Phase 2, this would fetch real transaction data
+    return mockTransactions;
+
+  } catch (error) {
+    console.error('Error fetching real-time transactions, using fallback data:', error);
+    return mockTransactions;
+  }
+}
+
+
 
 // Mock wallet data
 export const mockWallet: WalletInfo = {
