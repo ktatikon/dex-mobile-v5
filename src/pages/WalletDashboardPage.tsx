@@ -71,8 +71,14 @@ import {
   FileDown,
   X,
   Search,
-  ChevronDown
+  ChevronDown,
+  Target
 } from 'lucide-react';
+
+// Phase 4 Advanced Trading Components
+import AdvancedTradingPanel from '@/components/phase4/AdvancedTradingPanel';
+import { phase4ConfigManager } from '@/services/phase4/phase4ConfigService';
+import { getRealTimeTokens } from '@/services/fallbackDataService';
 
 // Real analytics calculation from user data
 const calculateRealAnalytics = async (userId: string) => {
@@ -384,6 +390,10 @@ const WalletDashboardPage: React.FC = () => {
   const [stakingOpportunities, setStakingOpportunities] = useState<any[]>([]);
   const [defiSummary, setDefiSummary] = useState<any>(null);
 
+  // Phase 4 Advanced Trading states
+  const [phase4Enabled, setPhase4Enabled] = useState(false);
+  const [availableTokens, setAvailableTokens] = useState<any[]>([]);
+
   // Transaction filtering states
   const [transactionFilters, setTransactionFilters] = useState<TransactionFilters>({});
   const [showTransactionFilters, setShowTransactionFilters] = useState(false);
@@ -408,8 +418,26 @@ const WalletDashboardPage: React.FC = () => {
   useEffect(() => {
     if (user) {
       fetchDashboardData();
+      initializePhase4();
     }
   }, [user]);
+
+  // Initialize Phase 4 features
+  const initializePhase4 = async () => {
+    try {
+      // Check Phase 4 availability
+      const config = phase4ConfigManager.getConfig();
+      setPhase4Enabled(config.enableAdvancedTrading);
+
+      // Load available tokens for trading
+      const tokens = await getRealTimeTokens();
+      setAvailableTokens(tokens);
+
+      console.log('✅ Phase 4 initialized successfully');
+    } catch (error) {
+      console.error('❌ Error initializing Phase 4:', error);
+    }
+  };
 
   // Function to categorize transactions and cache results
   const categorizeTransactions = async (transactions: any[]) => {
@@ -910,10 +938,16 @@ const WalletDashboardPage: React.FC = () => {
 
       {/* Tabs for different views */}
       <Tabs defaultValue="wallets" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 mb-6 bg-dex-dark/50 p-1.5 rounded-lg border border-dex-secondary/20">
+        <TabsList className={`grid w-full ${phase4Enabled ? 'grid-cols-5' : 'grid-cols-4'} mb-6 bg-dex-dark/50 p-1.5 rounded-lg border border-dex-secondary/20`}>
           <TabsTrigger value="wallets" className="text-white data-[state=active]:bg-dex-primary">
             Wallets
           </TabsTrigger>
+          {phase4Enabled && (
+            <TabsTrigger value="trading" className="text-white data-[state=active]:bg-dex-primary">
+              <Target size={16} className="mr-1" />
+              Trading
+            </TabsTrigger>
+          )}
           <TabsTrigger value="defi" className="text-white data-[state=active]:bg-dex-primary">
             DeFi
           </TabsTrigger>
@@ -1077,6 +1111,21 @@ const WalletDashboardPage: React.FC = () => {
             )}
           </div>
         </TabsContent>
+
+        {/* Phase 4 Advanced Trading Tab */}
+        {phase4Enabled && (
+          <TabsContent value="trading">
+            <div className="space-y-6">
+              {/* Phase 4 Advanced Trading Panel */}
+              <AdvancedTradingPanel
+                tokens={availableTokens}
+                onTokenSelect={(fromToken, toToken) => {
+                  console.log('Token selection:', fromToken.symbol, '→', toToken.symbol);
+                }}
+              />
+            </div>
+          </TabsContent>
+        )}
 
         <TabsContent value="defi">
           <div className="space-y-6">
