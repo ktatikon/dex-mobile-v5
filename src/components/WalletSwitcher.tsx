@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Select,
   SelectContent,
@@ -35,6 +35,22 @@ interface WalletSwitcherProps {
   compact?: boolean;
 }
 
+// Wallet interface based on the service response structure
+interface WalletWithPreferences {
+  id: string;
+  name?: string;
+  wallet_name?: string;
+  type: 'generated' | 'hot' | 'hardware';
+  address?: string;
+  addresses?: Record<string, string>;
+  category: 'personal' | 'business' | 'defi' | 'trading' | 'savings' | 'other';
+  isDefault: boolean;
+  categoryInfo: {
+    name: string;
+    color: string;
+  };
+}
+
 const categoryIcons = {
   personal: User,
   business: Briefcase,
@@ -57,17 +73,11 @@ const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
 }) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [wallets, setWallets] = useState<any[]>([]);
+  const [wallets, setWallets] = useState<WalletWithPreferences[]>([]);
   const [selectedWallet, setSelectedWallet] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user) {
-      fetchWallets();
-    }
-  }, [user]);
-
-  const fetchWallets = async () => {
+  const fetchWallets = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -92,7 +102,13 @@ const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]);
+
+  useEffect(() => {
+    if (user) {
+      fetchWallets();
+    }
+  }, [user, fetchWallets]);
 
   const handleWalletChange = async (walletId: string) => {
     const wallet = wallets.find(w => w.id === walletId);
@@ -101,9 +117,9 @@ const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
     try {
       // Update default wallet preference
       await updateDefaultWallet(user.id, walletId, wallet.type);
-      
+
       setSelectedWallet(walletId);
-      
+
       // Notify parent component
       if (onWalletChange) {
         onWalletChange(walletId, wallet.type);
@@ -123,11 +139,11 @@ const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
     }
   };
 
-  const getWalletDisplayName = (wallet: any) => {
+  const getWalletDisplayName = (wallet: WalletWithPreferences) => {
     return wallet.name || wallet.wallet_name || 'Unnamed Wallet';
   };
 
-  const getWalletAddress = (wallet: any) => {
+  const getWalletAddress = (wallet: WalletWithPreferences) => {
     if (wallet.type === 'generated' && wallet.addresses) {
       // Get first address from generated wallet
       const firstAddress = Object.values(wallet.addresses)[0] as string;
@@ -172,7 +188,7 @@ const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
           {wallets.map((wallet) => {
             const CategoryIcon = categoryIcons[wallet.category as keyof typeof categoryIcons] || Folder;
             const TypeIcon = typeIcons[wallet.type as keyof typeof typeIcons] || Wallet;
-            
+
             return (
               <SelectItem key={wallet.id} value={wallet.id} className="text-white hover:bg-dex-secondary/20">
                 <div className="flex items-center gap-2 w-full">
@@ -220,9 +236,9 @@ const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
             {selectedWalletData && (
               <>
                 <div className="w-10 h-10 rounded-full bg-dex-primary/20 flex items-center justify-center">
-                  {React.createElement(typeIcons[selectedWalletData.type as keyof typeof typeIcons], { 
-                    size: 20, 
-                    className: "text-dex-primary" 
+                  {React.createElement(typeIcons[selectedWalletData.type as keyof typeof typeIcons], {
+                    size: 20,
+                    className: "text-dex-primary"
                   })}
                 </div>
                 <div className="flex-1 min-w-0 text-left">
@@ -247,7 +263,7 @@ const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
           {wallets.map((wallet) => {
             const CategoryIcon = categoryIcons[wallet.category as keyof typeof categoryIcons] || Folder;
             const TypeIcon = typeIcons[wallet.type as keyof typeof typeIcons] || Wallet;
-            
+
             return (
               <SelectItem key={wallet.id} value={wallet.id} className="text-white hover:bg-dex-secondary/20 h-16">
                 <div className="flex items-center gap-3 w-full">

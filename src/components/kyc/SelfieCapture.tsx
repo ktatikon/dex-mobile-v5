@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useKYC } from '@/contexts/KYCContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,18 +22,7 @@ const SelfieCapture: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Start camera when component mounts
-  useEffect(() => {
-    startCamera();
-    return () => {
-      // Clean up by stopping all tracks when component unmounts
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, []);
-
-  const startCamera = async () => {
+  const startCamera = useCallback(async () => {
     try {
       // Reset states
       setCameraError(null);
@@ -64,7 +53,18 @@ const SelfieCapture: React.FC = () => {
       console.error('Error accessing camera:', error);
       setCameraError('Could not access camera. Please ensure you have granted camera permissions.');
     }
-  };
+  }, [stream, updateDocuments]);
+
+  // Start camera when component mounts
+  useEffect(() => {
+    startCamera();
+    return () => {
+      // Clean up by stopping all tracks when component unmounts
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [startCamera, stream]);
 
   const captureWithCountdown = () => {
     setIsCapturing(true);

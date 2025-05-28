@@ -1,11 +1,11 @@
 /**
  * PHASE 4: ADVANCED TRADING PANEL COMPONENT
- * 
+ *
  * Provides advanced trading interface including limit orders, stop-loss, take-profit,
  * and DCA automation with comprehensive error handling and fallback mechanisms.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,12 +17,12 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Token } from '@/types';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Target, 
-  Shield, 
-  Clock, 
+import {
+  TrendingUp,
+  TrendingDown,
+  Target,
+  Shield,
+  Clock,
   AlertTriangle,
   CheckCircle,
   XCircle,
@@ -30,12 +30,12 @@ import {
   Settings
 } from 'lucide-react';
 
-import { 
+import {
   safeAdvancedTradingService,
   AdvancedOrder,
   DCAStrategy,
   AdvancedOrderType,
-  OrderStatus 
+  OrderStatus
 } from '@/services/phase4/advancedTradingService';
 import { phase4ConfigManager } from '@/services/phase4/phase4ConfigService';
 
@@ -54,7 +54,7 @@ const AdvancedTradingPanel: React.FC<AdvancedTradingPanelProps> = ({
 }) => {
   const { toast } = useToast();
   const { user } = useAuth();
-  
+
   // State management
   const [fromToken, setFromToken] = useState<Token | null>(selectedFromToken || null);
   const [toToken, setToToken] = useState<Token | null>(selectedToToken || null);
@@ -63,12 +63,12 @@ const AdvancedTradingPanel: React.FC<AdvancedTradingPanelProps> = ({
   const [stopPrice, setStopPrice] = useState('');
   const [slippage, setSlippage] = useState('0.5');
   const [expirationHours, setExpirationHours] = useState('24');
-  
+
   // DCA specific state
   const [dcaTotalAmount, setDcaTotalAmount] = useState('');
   const [dcaIntervalHours, setDcaIntervalHours] = useState('24');
   const [dcaTotalIntervals, setDcaTotalIntervals] = useState('10');
-  
+
   // UI state
   const [activeTab, setActiveTab] = useState('limit');
   const [isLoading, setIsLoading] = useState(false);
@@ -80,7 +80,7 @@ const AdvancedTradingPanel: React.FC<AdvancedTradingPanelProps> = ({
   useEffect(() => {
     const config = phase4ConfigManager.getConfig();
     setPhase4Enabled(config.enableAdvancedTrading);
-    
+
     // Subscribe to config changes
     const unsubscribe = phase4ConfigManager.subscribe((newConfig) => {
       setPhase4Enabled(newConfig.enableAdvancedTrading);
@@ -89,14 +89,7 @@ const AdvancedTradingPanel: React.FC<AdvancedTradingPanelProps> = ({
     return unsubscribe;
   }, []);
 
-  // Load user orders and strategies
-  useEffect(() => {
-    if (user && phase4Enabled) {
-      loadUserData();
-    }
-  }, [user, phase4Enabled]);
-
-  const loadUserData = async () => {
+  const loadUserData = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -107,7 +100,14 @@ const AdvancedTradingPanel: React.FC<AdvancedTradingPanelProps> = ({
     } catch (error) {
       console.error('Error loading user data:', error);
     }
-  };
+  }, [user]);
+
+  // Load user orders and strategies
+  useEffect(() => {
+    if (user && phase4Enabled) {
+      loadUserData();
+    }
+  }, [user, phase4Enabled, loadUserData]);
 
   const handleCreateLimitOrder = async () => {
     if (!user || !fromToken || !toToken || !fromAmount || !targetPrice) {
@@ -137,11 +137,11 @@ const AdvancedTradingPanel: React.FC<AdvancedTradingPanelProps> = ({
           description: `Limit order created successfully`,
           variant: "default",
         });
-        
+
         // Reset form
         setFromAmount('');
         setTargetPrice('');
-        
+
         // Reload user data
         await loadUserData();
       } else {
@@ -187,7 +187,7 @@ const AdvancedTradingPanel: React.FC<AdvancedTradingPanelProps> = ({
           description: `Stop-loss order created successfully`,
           variant: "default",
         });
-        
+
         setFromAmount('');
         setStopPrice('');
         await loadUserData();
@@ -234,7 +234,7 @@ const AdvancedTradingPanel: React.FC<AdvancedTradingPanelProps> = ({
           description: `DCA strategy created successfully`,
           variant: "default",
         });
-        
+
         setDcaTotalAmount('');
         setDcaIntervalHours('24');
         setDcaTotalIntervals('10');

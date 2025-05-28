@@ -17,6 +17,10 @@ import {
   AlertTriangle
 } from 'lucide-react';
 
+// Type for console arguments - supports any serializable value for debugging
+type ConsoleArgument = string | number | boolean | object | null | undefined;
+type ConsoleArgs = ConsoleArgument[];
+
 const AdminDebugPage = () => {
   const { user } = useAuth();
   const { adminUser, isAdmin, isLoading, refreshAdminStatus } = useAdmin();
@@ -34,7 +38,7 @@ const AdminDebugPage = () => {
 
     let output = '';
 
-    const captureLog = (...args: any[]) => {
+    const captureLog = (...args: ConsoleArgs) => {
       const message = args.map(arg =>
         typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
       ).join(' ');
@@ -42,7 +46,7 @@ const AdminDebugPage = () => {
       originalLog(...args);
     };
 
-    const captureError = (...args: any[]) => {
+    const captureError = (...args: ConsoleArgs) => {
       const message = args.map(arg =>
         typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
       ).join(' ');
@@ -50,7 +54,7 @@ const AdminDebugPage = () => {
       originalError(...args);
     };
 
-    const captureWarn = (...args: any[]) => {
+    const captureWarn = (...args: ConsoleArgs) => {
       const message = args.map(arg =>
         typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
       ).join(' ');
@@ -101,7 +105,7 @@ const AdminDebugPage = () => {
     const originalError = console.error;
     let output = '';
 
-    console.log = (...args: any[]) => {
+    console.log = (...args: ConsoleArgs) => {
       const message = args.map(arg =>
         typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
       ).join(' ');
@@ -109,7 +113,7 @@ const AdminDebugPage = () => {
       originalLog(...args);
     };
 
-    console.error = (...args: any[]) => {
+    console.error = (...args: ConsoleArgs) => {
       const message = args.map(arg =>
         typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
       ).join(' ');

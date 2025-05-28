@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAdmin } from '@/contexts/AdminContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -46,7 +46,7 @@ const AdminDashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchDashboardStats = async () => {
+  const fetchDashboardStats = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -84,11 +84,11 @@ const AdminDashboardPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [logActivity]);
 
   useEffect(() => {
     fetchDashboardStats();
-  }, []);
+  }, [fetchDashboardStats]);
 
   const handleRefresh = () => {
     fetchDashboardStats();
@@ -135,7 +135,7 @@ const AdminDashboardPage = () => {
         <div>
           <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
           <p className="text-gray-400">
-            Welcome back, {adminUser?.role.replace('_', ' ')} 
+            Welcome back, {adminUser?.role.replace('_', ' ')}
             <Badge variant="secondary" className="ml-2 bg-dex-primary/20 text-dex-primary">
               {adminUser?.role.replace('_', ' ').toUpperCase()}
             </Badge>
@@ -243,7 +243,7 @@ const AdminDashboardPage = () => {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         {hasPermission('user_manager') && (
-          <Card 
+          <Card
             className="bg-dex-dark/80 border-dex-secondary/30 cursor-pointer hover:border-dex-primary/50 transition-colors"
             onClick={() => navigateToSection('/admin/users', 'user_management')}
           >
@@ -256,7 +256,7 @@ const AdminDashboardPage = () => {
         )}
 
         {hasPermission('transaction_manager') && (
-          <Card 
+          <Card
             className="bg-dex-dark/80 border-dex-secondary/30 cursor-pointer hover:border-dex-primary/50 transition-colors"
             onClick={() => navigateToSection('/admin/transactions', 'transaction_management')}
           >
@@ -268,7 +268,7 @@ const AdminDashboardPage = () => {
           </Card>
         )}
 
-        <Card 
+        <Card
           className="bg-dex-dark/80 border-dex-secondary/30 cursor-pointer hover:border-dex-primary/50 transition-colors"
           onClick={() => navigateToSection('/admin/reports', 'reports')}
         >
@@ -280,7 +280,7 @@ const AdminDashboardPage = () => {
         </Card>
 
         {hasPermission('super_admin') && (
-          <Card 
+          <Card
             className="bg-dex-dark/80 border-dex-secondary/30 cursor-pointer hover:border-dex-primary/50 transition-colors"
             onClick={() => navigateToSection('/admin/settings', 'admin_settings')}
           >
@@ -292,7 +292,7 @@ const AdminDashboardPage = () => {
           </Card>
         )}
 
-        <Card 
+        <Card
           className="bg-dex-dark/80 border-dex-secondary/30 cursor-pointer hover:border-dex-primary/50 transition-colors"
           onClick={() => navigateToSection('/admin/activity', 'activity_logs')}
         >
@@ -303,7 +303,7 @@ const AdminDashboardPage = () => {
           </CardContent>
         </Card>
 
-        <Card 
+        <Card
           className="bg-dex-dark/80 border-dex-secondary/30 cursor-pointer hover:border-dex-primary/50 transition-colors"
           onClick={() => navigateToSection('/admin/security', 'security')}
         >
@@ -337,7 +337,7 @@ const AdminDashboardPage = () => {
                 Operational
               </Badge>
             </div>
-            
+
             <div className="flex items-center justify-between p-3 bg-dex-secondary/10 rounded-lg">
               <div className="flex items-center gap-3">
                 <div className="w-2 h-2 bg-dex-primary rounded-full"></div>

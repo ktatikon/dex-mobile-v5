@@ -1,11 +1,11 @@
 /**
  * PHASE 4.2: DEFI INTEGRATION PANEL COMPONENT
- * 
+ *
  * Provides DeFi integration interface including live staking, yield farming,
  * and liquidity provision with comprehensive error handling and fallback mechanisms.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,11 +17,11 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Token } from '@/types';
-import { 
-  Coins, 
-  TrendingUp, 
-  Shield, 
-  Zap, 
+import {
+  Coins,
+  TrendingUp,
+  Shield,
+  Zap,
   BarChart3,
   Droplets,
   Target,
@@ -34,7 +34,7 @@ import {
   Settings
 } from 'lucide-react';
 
-import { 
+import {
   safeDeFiIntegrationService,
   StakingPosition,
   YieldFarmingPosition,
@@ -44,9 +44,12 @@ import {
 } from '@/services/phase4/defiIntegrationService';
 import { phase4ConfigManager } from '@/services/phase4/phase4ConfigService';
 
+// Union type for all possible DeFi positions
+type DeFiPosition = StakingPosition | YieldFarmingPosition | LiquidityPosition;
+
 interface DeFiIntegrationPanelProps {
   tokens: Token[];
-  onPositionCreate?: (position: any) => void;
+  onPositionCreate?: (position: DeFiPosition) => void;
 }
 
 const DeFiIntegrationPanel: React.FC<DeFiIntegrationPanelProps> = ({
@@ -55,13 +58,13 @@ const DeFiIntegrationPanel: React.FC<DeFiIntegrationPanelProps> = ({
 }) => {
   const { toast } = useToast();
   const { user } = useAuth();
-  
+
   // State management
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
   const [stakingAmount, setStakingAmount] = useState('');
   const [selectedProtocol, setSelectedProtocol] = useState('');
   const [autoCompound, setAutoCompound] = useState(true);
-  
+
   // Yield farming state
   const [tokenA, setTokenA] = useState<Token | null>(null);
   const [tokenB, setTokenB] = useState<Token | null>(null);
@@ -69,7 +72,7 @@ const DeFiIntegrationPanel: React.FC<DeFiIntegrationPanelProps> = ({
   const [amountB, setAmountB] = useState('');
   const [farmingProtocol, setFarmingProtocol] = useState('');
   const [strategyType, setStrategyType] = useState<'conservative' | 'balanced' | 'aggressive'>('balanced');
-  
+
   // Liquidity provision state
   const [liquidityTokenA, setLiquidityTokenA] = useState<Token | null>(null);
   const [liquidityTokenB, setLiquidityTokenB] = useState<Token | null>(null);
@@ -77,7 +80,7 @@ const DeFiIntegrationPanel: React.FC<DeFiIntegrationPanelProps> = ({
   const [liquidityAmountB, setLiquidityAmountB] = useState('');
   const [feeTier, setFeeTier] = useState('0.3');
   const [ammProtocol, setAmmProtocol] = useState('');
-  
+
   // UI state
   const [activeTab, setActiveTab] = useState('staking');
   const [isLoading, setIsLoading] = useState(false);
@@ -93,16 +96,16 @@ const DeFiIntegrationPanel: React.FC<DeFiIntegrationPanelProps> = ({
   useEffect(() => {
     const config = phase4ConfigManager.getConfig();
     setDefiEnabled(
-      config.enableLiveStaking || 
-      config.enableYieldFarming || 
+      config.enableLiveStaking ||
+      config.enableYieldFarming ||
       config.enableLiquidityProvision
     );
-    
+
     // Subscribe to config changes
     const unsubscribe = phase4ConfigManager.subscribe((newConfig) => {
       setDefiEnabled(
-        newConfig.enableLiveStaking || 
-        newConfig.enableYieldFarming || 
+        newConfig.enableLiveStaking ||
+        newConfig.enableYieldFarming ||
         newConfig.enableLiquidityProvision
       );
     });
@@ -110,14 +113,7 @@ const DeFiIntegrationPanel: React.FC<DeFiIntegrationPanelProps> = ({
     return unsubscribe;
   }, []);
 
-  // Load user data
-  useEffect(() => {
-    if (user && defiEnabled) {
-      loadUserDeFiData();
-    }
-  }, [user, defiEnabled]);
-
-  const loadUserDeFiData = async () => {
+  const loadUserDeFiData = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -131,7 +127,14 @@ const DeFiIntegrationPanel: React.FC<DeFiIntegrationPanelProps> = ({
     } catch (error) {
       console.error('Error loading DeFi data:', error);
     }
-  };
+  }, [user]);
+
+  // Load user data
+  useEffect(() => {
+    if (user && defiEnabled) {
+      loadUserDeFiData();
+    }
+  }, [user, defiEnabled, loadUserDeFiData]);
 
   const handleCreateStakingPosition = async () => {
     if (!user || !selectedToken || !stakingAmount || !selectedProtocol) {
@@ -159,14 +162,14 @@ const DeFiIntegrationPanel: React.FC<DeFiIntegrationPanelProps> = ({
           description: `Staking position created successfully`,
           variant: "default",
         });
-        
+
         // Reset form
         setStakingAmount('');
         setSelectedProtocol('');
-        
+
         // Reload data
         await loadUserDeFiData();
-        
+
         // Notify parent
         onPositionCreate?.(position);
       } else {
@@ -215,7 +218,7 @@ const DeFiIntegrationPanel: React.FC<DeFiIntegrationPanelProps> = ({
           description: `Yield farming position created successfully`,
           variant: "default",
         });
-        
+
         setAmountA('');
         setAmountB('');
         setFarmingProtocol('');
@@ -266,7 +269,7 @@ const DeFiIntegrationPanel: React.FC<DeFiIntegrationPanelProps> = ({
           description: `Liquidity position created successfully`,
           variant: "default",
         });
-        
+
         setLiquidityAmountA('');
         setLiquidityAmountB('');
         setAmmProtocol('');
@@ -494,7 +497,7 @@ const DeFiIntegrationPanel: React.FC<DeFiIntegrationPanelProps> = ({
                 </div>
                 <div>
                   <Label htmlFor="strategy-type">Strategy</Label>
-                  <Select value={strategyType} onValueChange={(value: any) => setStrategyType(value)}>
+                  <Select value={strategyType} onValueChange={(value) => setStrategyType(value as 'conservative' | 'balanced' | 'aggressive')}>
                     <SelectTrigger className="bg-dex-secondary border-dex-primary/30">
                       <SelectValue />
                     </SelectTrigger>

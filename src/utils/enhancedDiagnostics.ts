@@ -244,7 +244,7 @@ class EnhancedDiagnosticTool {
     let mockDataIntegrity = false;
     let tokenDataAvailable = false;
     let transactionDataAvailable = false;
-    let uiComponentsRendering = true; // Assume true if we got this far
+    const uiComponentsRendering = true; // Assume true if we got this far
 
     try {
       // Test fallback data imports
@@ -279,7 +279,7 @@ class EnhancedDiagnosticTool {
     let apiIntegrationStatus: 'active' | 'inactive' | 'error' = 'inactive';
 
     // Service status details for comprehensive monitoring
-    const serviceDetails: any = {};
+    const serviceDetails: Record<string, any> = {};
 
     // Test Real-Time Data Manager (Phase 3 Step 1)
     try {
@@ -476,10 +476,10 @@ ${report.warnings.length > 0 ? `⚠️ WARNINGS:\n${report.warnings.map(w => `  
   /**
    * Generate detailed service status report
    */
-  private generateServiceDetailsReport(serviceDetails: any): string {
+  private generateServiceDetailsReport(serviceDetails: Record<string, any>): string {
     const details: string[] = [];
 
-    Object.entries(serviceDetails).forEach(([serviceKey, service]: [string, any]) => {
+    Object.entries(serviceDetails).forEach(([serviceKey, service]: [string, Record<string, any>]) => {
       if (service.error) {
         details.push(`${service.serviceName || serviceKey}: ❌ ${service.error}`);
       } else {

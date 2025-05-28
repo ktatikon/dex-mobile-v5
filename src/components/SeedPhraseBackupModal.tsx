@@ -14,12 +14,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { exportWalletBackup, verifyWalletPassword } from '@/services/walletGenerationService';
 import { useAuth } from '@/contexts/AuthContext';
-import { 
-  Shield, 
-  Eye, 
-  EyeOff, 
-  Copy, 
-  Download, 
+import {
+  Shield,
+  Eye,
+  EyeOff,
+  Copy,
+  Download,
   AlertTriangle,
   Lock,
   CheckCircle
@@ -32,6 +32,14 @@ interface SeedPhraseBackupModalProps {
   walletName: string;
 }
 
+// Interface for wallet backup data structure
+interface WalletBackupData {
+  name: string;
+  seedPhrase: string;
+  addresses: Record<string, string>;
+  createdAt: string;
+}
+
 const SeedPhraseBackupModal: React.FC<SeedPhraseBackupModalProps> = ({
   isOpen,
   onClose,
@@ -42,7 +50,7 @@ const SeedPhraseBackupModal: React.FC<SeedPhraseBackupModalProps> = ({
   const [password, setPassword] = useState('');
   const [showSeedPhrase, setShowSeedPhrase] = useState(false);
   const [seedPhrase, setSeedPhrase] = useState('');
-  const [backupData, setBackupData] = useState<any>(null);
+  const [backupData, setBackupData] = useState<WalletBackupData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [hasWrittenDown, setHasWrittenDown] = useState(false);
@@ -52,7 +60,7 @@ const SeedPhraseBackupModal: React.FC<SeedPhraseBackupModalProps> = ({
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!user || !password.trim()) {
       setError('Password is required');
       return;
@@ -64,7 +72,7 @@ const SeedPhraseBackupModal: React.FC<SeedPhraseBackupModalProps> = ({
     try {
       // Verify password first
       const isValid = await verifyWalletPassword(walletId, password, user.id);
-      
+
       if (!isValid) {
         setError('Incorrect password. Please try again.');
         setIsLoading(false);
@@ -73,7 +81,7 @@ const SeedPhraseBackupModal: React.FC<SeedPhraseBackupModalProps> = ({
 
       // Get backup data
       const backup = await exportWalletBackup(walletId, password, user.id);
-      
+
       if (!backup) {
         setError('Failed to retrieve wallet backup. Please try again.');
         setIsLoading(false);
@@ -113,8 +121,8 @@ const SeedPhraseBackupModal: React.FC<SeedPhraseBackupModalProps> = ({
       warning: "KEEP THIS FILE SECURE! Anyone with access to this seed phrase can control your wallet."
     };
 
-    const blob = new Blob([JSON.stringify(backupContent, null, 2)], { 
-      type: 'application/json' 
+    const blob = new Blob([JSON.stringify(backupContent, null, 2)], {
+      type: 'application/json'
     });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -156,7 +164,7 @@ const SeedPhraseBackupModal: React.FC<SeedPhraseBackupModalProps> = ({
             Backup Wallet - {walletName}
           </DialogTitle>
           <DialogDescription className="text-gray-400">
-            {step === 'password' 
+            {step === 'password'
               ? 'Enter your password to access your wallet backup'
               : 'Your seed phrase is the master key to your wallet. Keep it safe!'
             }

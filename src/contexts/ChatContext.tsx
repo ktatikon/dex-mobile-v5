@@ -3,6 +3,24 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
+// Error type for proper error handling
+interface ChatError {
+  message: string;
+  code?: string;
+  details?: unknown;
+}
+
+// Helper function to safely extract error message
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    return String((error as { message: unknown }).message);
+  }
+  return 'An unknown error occurred';
+};
+
 export interface ChatMessage {
   id: string;
   room_id: string;
@@ -41,18 +59,18 @@ interface ChatContextType {
   messages: ChatMessage[];
   loading: boolean;
   error: string | null;
-  
+
   // Room management
   createRoom: (subject: string, category?: string, priority?: string) => Promise<ChatRoom | null>;
   joinRoom: (roomId: string) => Promise<void>;
   leaveRoom: () => void;
   closeRoom: (roomId: string) => Promise<void>;
-  
+
   // Message management
   sendMessage: (text: string, type?: 'text' | 'image' | 'file') => Promise<void>;
   sendFile: (file: File) => Promise<void>;
   markMessagesAsRead: (roomId: string) => Promise<void>;
-  
+
   // Real-time updates
   isConnected: boolean;
   connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
@@ -63,7 +81,7 @@ const ChatContext = createContext<ChatContextType>({} as ChatContextType);
 export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  
+
   const [currentRoom, setCurrentRoom] = useState<ChatRoom | null>(null);
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -72,12 +90,62 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
 
+  const fetchRooms = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('chat_rooms')
+        .select(`
+          *,
+          messages:chat_messages(count)
+        `)
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false });
+
+      if (error) throw error;
+
+      setRooms(data || []);
+    } catch (err: unknown) {
+      console.error('Error fetching rooms:', err);
+      setError(getErrorMessage(err));
+      toast({
+        title: "Error",
+        description: "Failed to load chat rooms",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [user, toast]);
+
+  const fetchMessages = useCallback(async (roomId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select(`
+          *,
+          sender:sender_id(full_name, email)
+        `)
+        .eq('room_id', roomId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      setMessages(data || []);
+    } catch (err: unknown) {
+      console.error('Error fetching messages:', err);
+      setError(getErrorMessage(err));
+    }
+  }, []);
+
   // Initialize real-time subscriptions
   useEffect(() => {
     if (!user) return;
 
     setConnectionStatus('connecting');
-    
+
     // Subscribe to chat rooms changes
     const roomsSubscription = supabase
       .channel('chat_rooms_changes')
@@ -135,57 +203,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       setIsConnected(false);
       setConnectionStatus('disconnected');
     };
-  }, [user, currentRoom?.id]);
-
-  const fetchRooms = useCallback(async () => {
-    if (!user) return;
-
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('chat_rooms')
-        .select(`
-          *,
-          messages:chat_messages(count)
-        `)
-        .eq('user_id', user.id)
-        .order('updated_at', { ascending: false });
-
-      if (error) throw error;
-
-      setRooms(data || []);
-    } catch (err: any) {
-      console.error('Error fetching rooms:', err);
-      setError(err.message);
-      toast({
-        title: "Error",
-        description: "Failed to load chat rooms",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [user, toast]);
-
-  const fetchMessages = useCallback(async (roomId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .select(`
-          *,
-          sender:sender_id(full_name, email)
-        `)
-        .eq('room_id', roomId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-
-      setMessages(data || []);
-    } catch (err: any) {
-      console.error('Error fetching messages:', err);
-      setError(err.message);
-    }
-  }, []);
+  }, [user, currentRoom?.id, fetchRooms, fetchMessages]);
 
   const createRoom = async (subject: string, category?: string, priority: string = 'medium'): Promise<ChatRoom | null> => {
     if (!user) return null;
@@ -198,7 +216,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
           user_id: user.id,
           subject,
           category,
-          priority: priority as any,
+          priority: priority as ChatRoom['priority'],
           status: 'open'
         })
         .select()
@@ -227,9 +245,9 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
 
       await fetchRooms();
       return data;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error creating room:', err);
-      setError(err.message);
+      setError(getErrorMessage(err));
       toast({
         title: "Error",
         description: "Failed to create chat room",
@@ -249,9 +267,9 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       setCurrentRoom(room);
       await fetchMessages(roomId);
       await markMessagesAsRead(roomId);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error joining room:', err);
-      setError(err.message);
+      setError(getErrorMessage(err));
     }
   };
 
@@ -264,7 +282,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const { error } = await supabase
         .from('chat_rooms')
-        .update({ 
+        .update({
           status: 'closed',
           closed_at: new Date().toISOString()
         })
@@ -281,9 +299,9 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         title: "Success",
         description: "Chat session closed",
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error closing room:', err);
-      setError(err.message);
+      setError(getErrorMessage(err));
       toast({
         title: "Error",
         description: "Failed to close chat session",
@@ -313,9 +331,9 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         .update({ updated_at: new Date().toISOString() })
         .eq('id', currentRoom.id);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error sending message:', err);
-      setError(err.message);
+      setError(getErrorMessage(err));
       toast({
         title: "Error",
         description: "Failed to send message",
@@ -331,7 +349,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       // Upload file to Supabase Storage
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${currentRoom.id}/${Date.now()}.${fileExt}`;
-      
+
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('chat-attachments')
         .upload(fileName, file);
@@ -362,9 +380,9 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         title: "Success",
         description: "File sent successfully",
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error sending file:', err);
-      setError(err.message);
+      setError(getErrorMessage(err));
       toast({
         title: "Error",
         description: "Failed to send file",
@@ -384,7 +402,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         .neq('sender_id', user.id);
 
       if (error) throw error;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error marking messages as read:', err);
     }
   };

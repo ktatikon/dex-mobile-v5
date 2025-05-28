@@ -69,7 +69,7 @@ const KYCForm = () => {
 
       return () => clearTimeout(timer);
     }
-  }, [kycSubmitted, user, navigate]);
+  }, [kycSubmitted, user, navigate, redirectPath]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,10 +138,11 @@ const KYCForm = () => {
         // Mark KYC as submitted to trigger the auto-approval effect
         setKycSubmitted(true);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
       toast({
         title: "Error",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -220,8 +220,28 @@ const safeGetTransactionAnalytics = async (userId: string) => {
   };
 };
 
+// Transaction interface for type safety
+interface Transaction {
+  id: string;
+  transaction_type?: string;
+  type?: string;
+  from_amount?: string;
+  to_amount?: string;
+  timestamp: Date | string;
+  status: string;
+  hash?: string;
+  category?: string;
+  tokens?: {
+    id: string;
+    symbol: string;
+    name: string;
+    logo?: string;
+    price: number;
+  };
+}
+
 // Safe Phase 3 categorizeTransaction function with local fallback
-const safeCategorizeTransaction = async (transaction: any): Promise<string> => {
+const safeCategorizeTransaction = async (transaction: Transaction): Promise<string> => {
   try {
     if (PHASE2_CONFIG?.enableRealTransactions) {
       const { categorizeTransaction } = await import('@/services/enhancedTransactionService');
@@ -236,7 +256,7 @@ const safeCategorizeTransaction = async (transaction: any): Promise<string> => {
 };
 
 // Local fallback categorization function using existing TRANSACTION_CATEGORIES
-const localCategorizeTransaction = (transaction: any): string => {
+const localCategorizeTransaction = (transaction: Transaction): string => {
   const type = transaction.transaction_type?.toLowerCase() || transaction.type?.toLowerCase();
 
   switch (type) {
@@ -312,7 +332,20 @@ const getRealUserTransactions = async (userId: string, limit: number = 5) => {
   }
 };
 
-const safeGetFilteredTransactions = async (userId: string, filters: any = {}, pagination: any = { page: 1, limit: 5 }) => {
+interface TransactionFilters {
+  category?: string;
+  type?: string;
+  status?: string;
+  dateFrom?: Date;
+  dateTo?: Date;
+}
+
+interface Pagination {
+  page: number;
+  limit: number;
+}
+
+const safeGetFilteredTransactions = async (userId: string, filters: TransactionFilters = {}, pagination: Pagination = { page: 1, limit: 5 }) => {
   try {
     // First try to get real transactions from database
     const realTransactions = await getRealUserTransactions(userId, pagination.limit);
@@ -380,10 +413,37 @@ const WalletDashboardPage: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const [wallets, setWallets] = useState<any[]>([]);
+  interface Wallet {
+    id: string;
+    wallet_name?: string;
+    name?: string;
+    wallet_type?: string;
+    type?: string;
+    wallet_address?: string;
+    address?: string;
+    network?: string;
+    provider?: string;
+    is_active?: boolean;
+    created_at?: string;
+    portfolioValue?: number;
+    category?: string;
+  }
+
+  interface Analytics {
+    totalTransactions: number;
+    totalVolume: number;
+    averageAmount: number;
+    topTokens: Array<{
+      symbol: string;
+      volume: number;
+      transactions: number;
+    }>;
+  }
+
+  const [wallets, setWallets] = useState<Wallet[]>([]);
   const [loading, setLoading] = useState(true);
-  const [analytics, setAnalytics] = useState<any>(null);
-  const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+  const [analytics, setAnalytics] = useState<Analytics | null>(null);
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [showBalances, setShowBalances] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [portfolioSummary, setPortfolioSummary] = useState<PortfolioSummary | null>(null);
@@ -418,59 +478,6 @@ const WalletDashboardPage: React.FC = () => {
 
   // Transaction categorization cache to avoid repeated async calls
   const [transactionCategories, setTransactionCategories] = useState<{ [key: string]: string }>({});
-
-  useEffect(() => {
-    if (user) {
-      fetchDashboardData();
-      initializePhase4();
-    }
-  }, [user]);
-
-  // Initialize Phase 4 features
-  const initializePhase4 = async () => {
-    try {
-      // Check Phase 4 availability
-      const config = phase4ConfigManager.getConfig();
-      setPhase4Enabled(config.enableAdvancedTrading);
-
-      // Check Phase 4.2 DeFi availability
-      setDefiEnabled(
-        config.enableLiveStaking ||
-        config.enableYieldFarming ||
-        config.enableLiquidityProvision
-      );
-
-      // Load available tokens for trading and DeFi
-      const tokens = await getRealTimeTokens();
-      setAvailableTokens(tokens);
-
-      console.log('✅ Phase 4 and Phase 4.2 initialized successfully');
-    } catch (error) {
-      console.error('❌ Error initializing Phase 4:', error);
-    }
-  };
-
-  // Function to categorize transactions and cache results
-  const categorizeTransactions = async (transactions: any[]) => {
-    const categories: { [key: string]: string } = {};
-
-    for (const tx of transactions) {
-      if (!categories[tx.id]) {
-        try {
-          // Use the safe categorization function
-          const categoryId = await safeCategorizeTransaction(tx);
-          categories[tx.id] = categoryId;
-        } catch (error) {
-          console.warn('Error categorizing transaction:', error);
-          // Fallback to local categorization
-          categories[tx.id] = localCategorizeTransaction(tx);
-        }
-      }
-    }
-
-    setTransactionCategories(prev => ({ ...prev, ...categories }));
-    return categories;
-  };
 
   // Real wallet data fetching
   const getRealUserWallets = async (userId: string) => {
@@ -507,7 +514,53 @@ const WalletDashboardPage: React.FC = () => {
     }
   };
 
-  const fetchDashboardData = async () => {
+  // Function to categorize transactions and cache results
+  const categorizeTransactions = async (transactions: any[]) => {
+    const categories: { [key: string]: string } = {};
+
+    for (const tx of transactions) {
+      if (!categories[tx.id]) {
+        try {
+          // Use the safe categorization function
+          const categoryId = await safeCategorizeTransaction(tx);
+          categories[tx.id] = categoryId;
+        } catch (error) {
+          console.warn('Error categorizing transaction:', error);
+          // Fallback to local categorization
+          categories[tx.id] = localCategorizeTransaction(tx);
+        }
+      }
+    }
+
+    setTransactionCategories(prev => ({ ...prev, ...categories }));
+    return categories;
+  };
+
+  // Initialize Phase 4 features
+  const initializePhase4 = async () => {
+    try {
+      // Check Phase 4 availability
+      const config = phase4ConfigManager.getConfig();
+      setPhase4Enabled(config.enableAdvancedTrading);
+
+      // Check Phase 4.2 DeFi availability
+      setDefiEnabled(
+        config.enableLiveStaking ||
+        config.enableYieldFarming ||
+        config.enableLiquidityProvision
+      );
+
+      // Load available tokens for trading and DeFi
+      const tokens = await getRealTimeTokens();
+      setAvailableTokens(tokens);
+
+      console.log('✅ Phase 4 and Phase 4.2 initialized successfully');
+    } catch (error) {
+      console.error('❌ Error initializing Phase 4:', error);
+    }
+  };
+
+  const fetchDashboardData = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -616,7 +669,16 @@ const WalletDashboardPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]);
+
+  useEffect(() => {
+    if (user) {
+      fetchDashboardData();
+      initializePhase4();
+    }
+  }, [user, fetchDashboardData]);
+
+
 
   const handleRefresh = async () => {
     setRefreshing(true);

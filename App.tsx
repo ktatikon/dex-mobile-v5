@@ -40,8 +40,8 @@ const styles = StyleSheet.create({
 export default function App() {
   // Load fonts
   const [fontsLoaded] = useFonts({
-    Inter: require('@tamagui/font-inter/otf/Inter-Medium.otf'),
-    InterBold: require('@tamagui/font-inter/otf/Inter-Bold.otf'),
+    Inter: '@tamagui/font-inter/otf/Inter-Medium.otf',
+    InterBold: '@tamagui/font-inter/otf/Inter-Bold.otf',
   });
 
   // Show loading screen while fonts are loading

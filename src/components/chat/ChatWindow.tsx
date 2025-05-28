@@ -4,12 +4,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { 
-  ArrowLeft, 
-  Send, 
-  Paperclip, 
-  X, 
-  Download, 
+import {
+  ArrowLeft,
+  Send,
+  Paperclip,
+  X,
+  Download,
   Image as ImageIcon,
   File,
   Loader2,
@@ -24,6 +24,18 @@ import { useToast } from '@/hooks/use-toast';
 
 interface ChatWindowProps {
   onBack: () => void;
+}
+
+// Interface for chat message structure
+interface ChatMessage {
+  id: string;
+  sender_id: string;
+  message_type: 'text' | 'image' | 'file' | 'system';
+  message_text: string;
+  attachment_url?: string;
+  attachment_name?: string;
+  attachment_size?: number;
+  created_at: string;
 }
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ onBack }) => {
@@ -104,7 +116,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ onBack }) => {
 
   const handleCloseRoom = async () => {
     if (!currentRoom) return;
-    
+
     try {
       await closeRoom(currentRoom.id);
       onBack();
@@ -126,7 +138,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ onBack }) => {
     }
   };
 
-  const renderMessage = (message: any) => {
+  const renderMessage = (message: ChatMessage) => {
     const isOwnMessage = message.sender_id === user?.id;
     const isSystemMessage = message.message_type === 'system';
 
