@@ -77,26 +77,16 @@ export const KYCProvider = ({ children }: { children: React.ReactNode }) => {
 
       setIsLoading(true);
       try {
-        // Get user's ID from the users table
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('id')
-          .eq('auth_id', user.id)
-          .single();
+        console.log('Checking existing KYC for user:', user.id);
 
-        if (userError) {
-          console.error('Error fetching user:', userError);
-          return;
-        }
-
-        // Check for existing KYC submission
+        // Check for existing KYC submission using auth user ID directly
         const { data: kycData, error: kycError } = await supabase
           .from('kyc')
           .select('*')
-          .eq('user_id', userData.id)
+          .eq('user_id', user.id) // Use auth user ID directly
           .order('submitted_at', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
 
         if (kycError && kycError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
           console.error('Error fetching KYC status:', kycError);
@@ -211,71 +201,66 @@ export const KYCProvider = ({ children }: { children: React.ReactNode }) => {
 
     setIsLoading(true);
     try {
-      // Get user's ID from the users table
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('auth_id', user.id)
-        .single();
-
-      if (userError) {
-        throw new Error('Error fetching user data');
-      }
+      console.log('Saving KYC progress for user:', user.id);
 
       // Check if user already has a KYC submission
       const { data: existingKyc, error: existingKycError } = await supabase
         .from('kyc')
         .select('id')
-        .eq('user_id', userData.id)
+        .eq('user_id', user.id) // Use auth user ID directly
         .order('submitted_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
+
+      if (existingKycError && existingKycError.code !== 'PGRST116') {
+        console.error('Error checking existing KYC:', existingKycError);
+        throw new Error('Error checking existing KYC submission');
+      }
+
+      const kycData = {
+        first_name: formData.firstName,
+        middle_name: formData.middleName,
+        last_name: formData.lastName,
+        date_of_birth: formData.dateOfBirth,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        postal_code: formData.postalCode,
+        country: formData.country,
+        phone: formData.phone,
+        email: formData.email,
+        document_type: formData.documentType,
+        // Don't update document URLs if they're not changed
+      };
 
       // If there's an existing KYC submission, update it
       // Otherwise, create a new one with status 'pending'
-      if (!existingKycError && existingKyc) {
+      if (existingKyc) {
+        console.log('Updating existing KYC progress:', existingKyc.id);
         const { error: updateError } = await supabase
           .from('kyc')
-          .update({
-            first_name: formData.firstName,
-            middle_name: formData.middleName,
-            last_name: formData.lastName,
-            date_of_birth: formData.dateOfBirth,
-            address: formData.address,
-            city: formData.city,
-            state: formData.state,
-            postal_code: formData.postalCode,
-            country: formData.country,
-            phone: formData.phone,
-            email: formData.email,
-            document_type: formData.documentType,
-            // Don't update document URLs if they're not changed
-          })
+          .update(kycData)
           .eq('id', existingKyc.id);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('Error updating KYC progress:', updateError);
+          throw new Error(`Error updating KYC progress: ${updateError.message}`);
+        }
       } else {
+        console.log('Creating new KYC progress record');
         const { error: insertError } = await supabase
           .from('kyc')
           .insert({
-            user_id: userData.id,
-            first_name: formData.firstName,
-            middle_name: formData.middleName,
-            last_name: formData.lastName,
-            date_of_birth: formData.dateOfBirth,
-            address: formData.address,
-            city: formData.city,
-            state: formData.state,
-            postal_code: formData.postalCode,
-            country: formData.country,
-            phone: formData.phone,
-            email: formData.email,
-            document_type: formData.documentType,
+            user_id: user.id, // Use auth user ID directly
+            ...kycData,
             status: 'pending',
             submitted_at: new Date().toISOString(),
           });
 
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.error('Error inserting KYC progress:', insertError);
+          throw new Error(`Error saving KYC progress: ${insertError.message}`);
+        }
       }
 
       toast({
@@ -306,15 +291,18 @@ export const KYCProvider = ({ children }: { children: React.ReactNode }) => {
 
     setIsLoading(true);
     try {
-      // Get user's ID from the users table
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('auth_id', user.id)
-        .single();
+      console.log('Starting KYC submission for user:', user.id);
 
-      if (userError) {
-        throw new Error('Error fetching user data');
+      // Check if KYC already exists for this user
+      const { data: existingKyc, error: existingKycError } = await supabase
+        .from('kyc')
+        .select('id, status')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existingKycError && existingKycError.code !== 'PGRST116') {
+        console.error('Error checking existing KYC:', existingKycError);
+        throw new Error('Error checking existing KYC submission');
       }
 
       // Upload documents if they exist
@@ -324,62 +312,96 @@ export const KYCProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (formData.frontDocument) {
         const frontFileName = `${user.id}/${Date.now()}_front_${formData.frontDocument.name}`;
+        console.log('Uploading front document:', frontFileName);
         const { error: frontUploadError, data: frontData } = await supabase.storage
           .from('kyc')
           .upload(frontFileName, formData.frontDocument);
 
-        if (frontUploadError) throw frontUploadError;
+        if (frontUploadError) {
+          console.error('Front document upload error:', frontUploadError);
+          throw new Error(`Failed to upload front document: ${frontUploadError.message}`);
+        }
         frontDocumentPath = frontData.path;
+        console.log('Front document uploaded successfully:', frontDocumentPath);
       }
 
       if (formData.backDocument) {
         const backFileName = `${user.id}/${Date.now()}_back_${formData.backDocument.name}`;
+        console.log('Uploading back document:', backFileName);
         const { error: backUploadError, data: backData } = await supabase.storage
           .from('kyc')
           .upload(backFileName, formData.backDocument);
 
-        if (backUploadError) throw backUploadError;
+        if (backUploadError) {
+          console.error('Back document upload error:', backUploadError);
+          throw new Error(`Failed to upload back document: ${backUploadError.message}`);
+        }
         backDocumentPath = backData.path;
+        console.log('Back document uploaded successfully:', backDocumentPath);
       }
 
       if (formData.selfie) {
         const selfieFileName = `${user.id}/${Date.now()}_selfie_${formData.selfie.name}`;
+        console.log('Uploading selfie:', selfieFileName);
         const { error: selfieUploadError, data: selfieData } = await supabase.storage
           .from('kyc')
           .upload(selfieFileName, formData.selfie);
 
-        if (selfieUploadError) throw selfieUploadError;
+        if (selfieUploadError) {
+          console.error('Selfie upload error:', selfieUploadError);
+          throw new Error(`Failed to upload selfie: ${selfieUploadError.message}`);
+        }
         selfiePath = selfieData.path;
+        console.log('Selfie uploaded successfully:', selfiePath);
       }
+
+      // Prepare KYC data
+      const kycData = {
+        user_id: user.id, // Use auth user ID directly, not database user ID
+        first_name: formData.firstName,
+        middle_name: formData.middleName,
+        last_name: formData.lastName,
+        date_of_birth: formData.dateOfBirth,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        postal_code: formData.postalCode,
+        country: formData.country,
+        phone: formData.phone,
+        email: formData.email,
+        document_type: formData.documentType,
+        government_id_url: frontDocumentPath,
+        back_document_url: backDocumentPath,
+        selfie_url: selfiePath,
+        status: 'pending' as const,
+        submitted_at: new Date().toISOString(),
+      };
+
+      console.log('Submitting KYC data:', kycData);
 
       // Create or update KYC submission
-      const { error: kycError } = await supabase
-        .from('kyc')
-        .insert({
-          user_id: userData.id,
-          first_name: formData.firstName,
-          middle_name: formData.middleName,
-          last_name: formData.lastName,
-          date_of_birth: formData.dateOfBirth,
-          address: formData.address,
-          city: formData.city,
-          state: formData.state,
-          postal_code: formData.postalCode,
-          country: formData.country,
-          phone: formData.phone,
-          email: formData.email,
-          document_type: formData.documentType,
-          government_id_url: frontDocumentPath,
-          back_document_url: backDocumentPath,
-          selfie_url: selfiePath,
-          status: 'pending',
-          submitted_at: new Date().toISOString(),
-        });
-
-      if (kycError) {
-        throw new Error('Error saving KYC information');
+      let kycError;
+      if (existingKyc) {
+        console.log('Updating existing KYC submission:', existingKyc.id);
+        const { error } = await supabase
+          .from('kyc')
+          .update(kycData)
+          .eq('id', existingKyc.id);
+        kycError = error;
+      } else {
+        console.log('Creating new KYC submission');
+        const { error } = await supabase
+          .from('kyc')
+          .insert(kycData);
+        kycError = error;
       }
 
+      if (kycError) {
+        console.error('KYC submission error:', kycError);
+        throw new Error(`Error saving KYC information: ${kycError.message}`);
+      }
+
+      console.log('KYC submitted successfully');
       setKycStatus('pending');
 
       toast({

@@ -7,8 +7,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
-  CardFooter
+  CardDescription
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,21 +27,18 @@ import {
 import {
   ArrowLeft,
   Camera,
-  User,
-  Mail,
   Phone,
   MapPin,
   Calendar,
   Globe,
   Check,
-  Loader2,
-  X
+  Loader2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { profileSchema, ProfileFormValues } from '@/schemas/profileSchema';
-import { Tables } from '@/integrations/supabase/types';
+import { UserService, UserProfile } from '@/services/userService';
 
 const ProfileSettingsPage = () => {
   const { user } = useAuth();
@@ -50,7 +46,7 @@ const ProfileSettingsPage = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [userData, setUserData] = useState<Tables<'users'> | null>(null);
+  const [userData, setUserData] = useState<UserProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [initials, setInitials] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -61,7 +57,6 @@ const ProfileSettingsPage = () => {
   const {
     register,
     handleSubmit,
-    reset,
     formState: { errors },
     setValue,
     getValues
@@ -78,67 +73,97 @@ const ProfileSettingsPage = () => {
     }
   });
 
-  // Fetch user data from Supabase
+  // Fetch user data from Supabase using UserService
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!user) return;
+      if (!user) {
+        console.log('No user found in auth context');
+        return;
+      }
 
+      console.log('Fetching user data for auth_id:', user.id);
       setIsLoading(true);
+
       try {
-        // Get user data from the users table
-        const { data, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('auth_id', user.id)
-          .single();
+        // Use UserService to get or create user profile
+        const { data: profile, error, created } = await UserService.getOrCreateUserProfile(user);
 
         if (error) {
-          console.error('Error fetching user data:', error);
+          console.error('UserService error:', error);
           toast({
-            title: "Error",
-            description: "Failed to load user data. Please try again.",
+            title: "Profile Error",
+            description: UserService.getErrorMessage(error),
             variant: "destructive",
           });
           return;
         }
 
-        if (data) {
-          setUserData(data);
+        if (!profile) {
+          console.error('No profile returned from UserService');
+          toast({
+            title: "Profile Error",
+            description: "Failed to load or create user profile.",
+            variant: "destructive",
+          });
+          return;
+        }
 
-          // Set form values
-          setValue('full_name', data.full_name);
-          setValue('email', data.email);
-          setValue('phone', data.phone);
-          setValue('birthdate', data.birthdate || '');
-          setValue('location', data.location || '');
-          setValue('bio', data.bio || '');
-          setValue('website', data.website || '');
+        console.log('User profile loaded/created successfully:', profile);
+        setUserData(profile);
 
-          // Set initials for avatar
-          const nameParts = data.full_name.split(' ');
-          if (nameParts.length >= 2) {
-            setInitials(`${nameParts[0][0]}${nameParts[1][0]}`);
-          } else if (nameParts.length === 1 && nameParts[0].length > 0) {
-            setInitials(nameParts[0][0]);
-          } else {
-            setInitials('U');
-          }
+        // Set form values
+        setValue('full_name', profile.full_name || '');
+        setValue('email', profile.email || '');
+        setValue('phone', profile.phone || '');
+        setValue('birthdate', profile.birthdate || '');
+        setValue('location', profile.location || '');
+        setValue('bio', profile.bio || '');
+        setValue('website', profile.website || '');
 
-          // Check if user has an avatar
-          if (data.avatar_url) {
+        // Set initials for avatar
+        const nameParts = (profile.full_name || '').split(' ').filter((part: string) => part.length > 0);
+        if (nameParts.length >= 2) {
+          setInitials(`${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase());
+        } else if (nameParts.length === 1 && nameParts[0].length > 0) {
+          setInitials(nameParts[0][0].toUpperCase());
+        } else {
+          setInitials('U');
+        }
+
+        // Check if user has an avatar
+        if (profile.avatar_url) {
+          try {
             // Get the public URL for the avatar
             const { data: publicUrlData } = supabase
               .storage
               .from('avatars')
-              .getPublicUrl(data.avatar_url);
+              .getPublicUrl(profile.avatar_url);
 
-            if (publicUrlData) {
+            if (publicUrlData?.publicUrl) {
               setAvatarUrl(publicUrlData.publicUrl);
             }
+          } catch (avatarError) {
+            console.warn('Error loading avatar:', avatarError);
+            // Don't fail the whole operation for avatar issues
           }
         }
+
+        // Show success message if profile was created
+        if (created) {
+          toast({
+            title: "Profile Created",
+            description: "Your profile has been set up. Please update your information.",
+            variant: "default",
+          });
+        }
+
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Unexpected error in fetchUserData:', error);
+        toast({
+          title: "Unexpected Error",
+          description: "An unexpected error occurred. Please try again.",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
@@ -147,66 +172,121 @@ const ProfileSettingsPage = () => {
     fetchUserData();
   }, [user, setValue, toast]);
 
-  const handleFormSubmit = (data: ProfileFormValues) => {
+  const handleFormSubmit = (_data: ProfileFormValues) => {
     // Show confirmation dialog
     setShowConfirmDialog(true);
   };
 
   const onSubmit = async (data: ProfileFormValues) => {
-    if (!user || !userData) return;
+    if (!user || !userData) {
+      console.error('Missing user or userData for profile update');
+      return;
+    }
 
+    console.log('Updating profile with data:', data);
     setIsLoading(true);
+
     try {
-      // Update user data in Supabase
-      const { error } = await supabase
-        .from('users')
-        .update({
-          full_name: data.full_name,
-          email: data.email,
-          phone: data.phone,
-          birthdate: data.birthdate || null,
-          location: data.location || null,
-          bio: data.bio || null,
-          website: data.website || null
-        })
-        .eq('auth_id', user.id);
-
-      if (error) {
-        throw error;
-      }
-
-      // Update local state
-      setUserData({
-        ...userData,
+      // Validate the data using UserService
+      const validation = UserService.validateProfileData({
         full_name: data.full_name,
         email: data.email,
         phone: data.phone,
-        birthdate: data.birthdate || null,
-        location: data.location || null,
-        bio: data.bio || null,
-        website: data.website || null
+        website: data.website
       });
 
+      if (!validation.isValid) {
+        throw new Error(validation.errors[0]);
+      }
+
+      // Check if email is being changed and if it already exists
+      if (data.email !== userData.email) {
+        const { inUse, error: checkError } = await UserService.isEmailInUse(data.email, user.id);
+
+        if (checkError) {
+          console.error('Error checking email uniqueness:', checkError);
+          throw new Error('Failed to validate email address');
+        }
+
+        if (inUse) {
+          throw new Error('This email address is already in use by another account');
+        }
+      }
+
+      // Prepare update data
+      const updateData = {
+        full_name: data.full_name.trim(),
+        email: data.email.trim().toLowerCase(),
+        phone: data.phone.trim(),
+        birthdate: data.birthdate || null,
+        location: data.location?.trim() || null,
+        bio: data.bio?.trim() || null,
+        website: data.website?.trim() || null
+      };
+
+      console.log('Sending update to UserService:', updateData);
+
+      // Try to update user data using UserService
+      let result = await UserService.updateUserProfile(user.id, updateData);
+
+      // If user not found, try to use upsert to ensure the user exists
+      if (result.error && result.error.code === 'USER_NOT_FOUND') {
+        console.log('User not found, attempting upsert operation...');
+
+        result = await UserService.upsertUserProfile(user, updateData);
+
+        if (result.error) {
+          console.error('UserService upsert error:', result.error);
+          throw new Error(UserService.getErrorMessage(result.error));
+        }
+      } else if (result.error) {
+        console.error('UserService update error:', result.error);
+        throw new Error(UserService.getErrorMessage(result.error));
+      }
+
+      if (!result.data) {
+        throw new Error('Failed to update profile - no data returned');
+      }
+
+      console.log('Profile updated successfully:', result.data);
+
+      // Update local state with the returned data
+      setUserData(result.data);
+
       // Update initials
-      const nameParts = data.full_name.split(' ');
+      const nameParts = data.full_name.trim().split(' ').filter((part: string) => part.length > 0);
       if (nameParts.length >= 2) {
-        setInitials(`${nameParts[0][0]}${nameParts[1][0]}`);
+        setInitials(`${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase());
       } else if (nameParts.length === 1 && nameParts[0].length > 0) {
-        setInitials(nameParts[0][0]);
+        setInitials(nameParts[0][0].toUpperCase());
+      } else {
+        setInitials('U');
       }
 
       setIsEditing(false);
       setShowConfirmDialog(false);
+
       toast({
-        title: "Portfolio Updated",
-        description: "Your portfolio information has been saved successfully.",
+        title: "Profile Updated",
+        description: "Your profile information has been saved successfully.",
         variant: "default",
       });
+
     } catch (error: any) {
       console.error('Error updating profile:', error);
+
+      let errorMessage = error.message || "Failed to update profile. Please try again.";
+
+      // Provide more specific error messages
+      if (errorMessage.includes('email') && errorMessage.includes('already in use')) {
+        errorMessage = "This email address is already in use by another account. Please use a different email.";
+      } else if (errorMessage.includes('unique constraint')) {
+        errorMessage = "This email address is already in use. Please use a different email.";
+      }
+
       toast({
-        title: "Error",
-        description: error.message || "Failed to update profile. Please try again.",
+        title: "Update Failed",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
