@@ -1,12 +1,10 @@
 /**
- * Enhanced Phase 2: Real Transaction History Service with comprehensive error boundaries
- * Intelligently switches between real blockchain transaction data and Phase 1 mock data fallback
- * Provides robust transaction history with automatic fallback mechanisms
+ * Phase 2: Real Transaction History Service
+ * Replaces mockTransactions with actual blockchain transaction data
  */
 
 import { Transaction, TransactionStatus, TransactionType } from '@/types';
 import { RealTransaction, walletConnectivityService } from './walletConnectivityService';
-import { mockTransactions, PHASE2_CONFIG } from './fallbackDataService';
 
 // Blockchain API configurations for transaction fetching
 const TRANSACTION_APIS = {
@@ -25,89 +23,26 @@ const TRANSACTION_APIS = {
 
 class RealTransactionService {
   private transactionCache: Map<string, { transactions: RealTransaction[], timestamp: number }> = new Map();
-  private phase1FallbackActive = false;
-  private consecutiveFailures = 0;
-  private lastUpdate: Date | null = null;
-
   private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-  private readonly MAX_CONSECUTIVE_FAILURES = 5; // Fallback to Phase 1 after 5 failures
-  private readonly RETRY_DELAY = 2000; // 2 seconds
-
-  constructor() {
-    this.initialize();
-  }
 
   /**
-   * Initialize the transaction service with Phase detection and error boundaries
-   */
-  private async initialize() {
-    try {
-      console.log('🚀 Initializing Enhanced Real Transaction Service...');
-
-      // Detect current phase
-      const isPhase2Enabled = PHASE2_CONFIG?.enableRealTransactions || false;
-      console.log(`📊 Detected Phase: ${isPhase2Enabled ? 'Phase 2' : 'Phase 1'}`);
-
-      // If Phase 2 is not enabled, activate fallback mode immediately
-      if (!isPhase2Enabled) {
-        console.log('⚠️ Phase 2 real transactions not enabled, activating Phase 1 fallback');
-        this.activatePhase1Fallback();
-      }
-
-      console.log('✅ Enhanced Real Transaction Service initialized successfully');
-      console.log(`📈 Current mode: ${this.phase1FallbackActive ? 'Phase 1 Fallback' : 'Phase 2 Active'}`);
-
-    } catch (error) {
-      console.error('❌ Failed to initialize Real Transaction Service:', error);
-      console.log('🔄 Activating Phase 1 fallback mode for stability');
-      this.activatePhase1Fallback();
-    }
-  }
-
-  /**
-   * Activate Phase 1 fallback mode with mock transaction data
-   */
-  private activatePhase1Fallback() {
-    try {
-      console.log('🔄 Activating Phase 1 transaction fallback mode...');
-
-      this.phase1FallbackActive = true;
-      this.consecutiveFailures = 0;
-      this.lastUpdate = new Date();
-
-      console.log('✅ Phase 1 transaction fallback mode activated successfully');
-      console.log(`📊 Using ${mockTransactions.length} mock transactions`);
-
-    } catch (error) {
-      console.error('❌ Failed to activate Phase 1 transaction fallback:', error);
-    }
-  }
-
-  /**
-   * Fetch real transaction history for a wallet address with enhanced error handling
+   * Fetch real transaction history for a wallet address
    */
   async fetchTransactionHistory(
     address: string,
     network: string = 'ethereum',
     limit: number = 50
   ): Promise<RealTransaction[]> {
-    // If in Phase 1 fallback mode, return mock transactions
-    if (this.phase1FallbackActive) {
-      console.log('📊 Phase 1 fallback mode active, returning mock transactions');
-      return this.createMockTransactionsForAddress(address, network, limit);
-    }
-
     const cacheKey = `${address}_${network}_${limit}`;
 
     // Check cache first
     const cached = this.transactionCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
-      console.log('💾 Returning cached transaction history');
+      console.log('Returning cached transaction history');
       return cached.transactions;
     }
 
     try {
-      console.log(`🔄 Fetching real transaction history for ${network} wallet: ${address}`);
       let transactions: RealTransaction[] = [];
 
       switch (network) {
@@ -121,8 +56,8 @@ class RealTransactionService {
           transactions = await this.fetchPolygonTransactions(address, limit);
           break;
         default:
-          console.warn(`⚠️ Transaction fetching not implemented for network: ${network}`);
-          return this.createMockTransactionsForAddress(address, network, limit);
+          console.warn(`Transaction fetching not implemented for network: ${network}`);
+          return [];
       }
 
       // Cache the results
@@ -131,70 +66,19 @@ class RealTransactionService {
         timestamp: Date.now()
       });
 
-      // Reset failure counter on success
-      this.consecutiveFailures = 0;
-      this.lastUpdate = new Date();
-
-      console.log(`✅ Fetched ${transactions.length} real transactions for ${network}`);
+      console.log(`Fetched ${transactions.length} real transactions for ${network}`);
       return transactions;
 
     } catch (error) {
-      console.error(`❌ Error fetching transaction history for ${network}:`, error);
-
-      this.consecutiveFailures++;
-
-      // Check if we should activate fallback mode
-      if (this.consecutiveFailures >= this.MAX_CONSECUTIVE_FAILURES) {
-        console.log(`⚠️ ${this.consecutiveFailures} consecutive transaction fetch failures detected, activating Phase 1 fallback`);
-        this.activatePhase1Fallback();
-        return this.createMockTransactionsForAddress(address, network, limit);
-      }
+      console.error(`Error fetching transaction history for ${network}:`, error);
 
       // Return cached data if available
       const cached = this.transactionCache.get(cacheKey);
       if (cached) {
-        console.log('💾 Returning stale cached transactions due to API error');
+        console.log('Returning stale cached transactions due to API error');
         return cached.transactions;
       }
 
-      // Last resort: return mock transactions
-      console.log('🔄 No cached data available, returning mock transactions');
-      return this.createMockTransactionsForAddress(address, network, limit);
-    }
-  }
-
-  /**
-   * Create mock transactions for a specific address and network
-   */
-  private createMockTransactionsForAddress(address: string, network: string, limit: number): RealTransaction[] {
-    try {
-      const mockTxs: RealTransaction[] = [];
-      const baseTransactions = mockTransactions.slice(0, limit);
-
-      baseTransactions.forEach((mockTx, index) => {
-        const isReceive = Math.random() > 0.5;
-
-        mockTxs.push({
-          id: `${address}_${network}_${index}`,
-          hash: `0x${Math.random().toString(16).substr(2, 64)}`,
-          from: isReceive ? `0x${Math.random().toString(16).substr(2, 40)}` : address,
-          to: isReceive ? address : `0x${Math.random().toString(16).substr(2, 40)}`,
-          value: (Math.random() * 10 + 0.01).toFixed(4),
-          tokenSymbol: network === 'bitcoin' ? 'BTC' : 'ETH',
-          tokenId: network === 'bitcoin' ? 'bitcoin' : 'ethereum',
-          timestamp: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000), // Last 30 days
-          blockNumber: Math.floor(Math.random() * 1000000) + 18000000,
-          gasUsed: Math.floor(Math.random() * 100000) + 21000,
-          gasPrice: Math.floor(Math.random() * 50) + 10,
-          status: Math.random() > 0.1 ? 'confirmed' : 'pending', // 90% confirmed
-          network,
-          type: isReceive ? 'receive' : 'send'
-        });
-      });
-
-      return mockTxs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-    } catch (error) {
-      console.error('❌ Error creating mock transactions:', error);
       return [];
     }
   }
@@ -437,124 +321,31 @@ class RealTransactionService {
   }
 
   /**
-   * Get transaction history for all connected wallets with enhanced error handling
+   * Get transaction history for all connected wallets
    */
   async getAllWalletTransactions(limit: number = 100): Promise<Transaction[]> {
-    try {
-      console.log('🔄 Fetching transaction history for all connected wallets...');
+    const connectedWallets = walletConnectivityService.getConnectedWallets();
+    const allTransactions: RealTransaction[] = [];
 
-      // If in Phase 1 fallback mode, return mock transactions
-      if (this.phase1FallbackActive) {
-        console.log('📊 Phase 1 fallback mode active, returning mock transactions');
-        return this.convertToAppTransactions(
-          this.createMockTransactionsForAddress('mock_address', 'ethereum', limit)
+    for (const wallet of connectedWallets) {
+      try {
+        const transactions = await this.fetchTransactionHistory(
+          wallet.address,
+          wallet.network,
+          limit
         );
+        allTransactions.push(...transactions);
+      } catch (error) {
+        console.error(`Error fetching transactions for wallet ${wallet.address}:`, error);
       }
-
-      const connectedWallets = walletConnectivityService.getConnectedWallets();
-
-      if (connectedWallets.length === 0) {
-        console.log('⚠️ No connected wallets found, returning mock transactions');
-        return this.convertToAppTransactions(
-          this.createMockTransactionsForAddress('mock_address', 'ethereum', limit)
-        );
-      }
-
-      const allTransactions: RealTransaction[] = [];
-
-      for (const wallet of connectedWallets) {
-        try {
-          const transactions = await this.fetchTransactionHistory(
-            wallet.address,
-            wallet.network,
-            Math.ceil(limit / connectedWallets.length) // Distribute limit across wallets
-          );
-          allTransactions.push(...transactions);
-        } catch (error) {
-          console.error(`❌ Error fetching transactions for wallet ${wallet.address}:`, error);
-
-          // Add mock transactions for failed wallet
-          const mockTxs = this.createMockTransactionsForAddress(
-            wallet.address,
-            wallet.network,
-            Math.ceil(limit / connectedWallets.length)
-          );
-          allTransactions.push(...mockTxs);
-        }
-      }
-
-      // Sort all transactions by timestamp and convert to app format
-      const sortedTransactions = allTransactions
-        .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-        .slice(0, limit);
-
-      console.log(`✅ Retrieved ${sortedTransactions.length} transactions from ${connectedWallets.length} wallets`);
-      return this.convertToAppTransactions(sortedTransactions);
-
-    } catch (error) {
-      console.error('❌ Error in getAllWalletTransactions:', error);
-
-      // Fallback to mock transactions
-      console.log('🔄 Falling back to mock transactions');
-      return this.convertToAppTransactions(
-        this.createMockTransactionsForAddress('mock_address', 'ethereum', limit)
-      );
-    }
-  }
-
-  /**
-   * Get comprehensive transaction service status including fallback information
-   */
-  getStatus() {
-    return {
-      lastUpdate: this.lastUpdate,
-      phase1FallbackActive: this.phase1FallbackActive,
-      consecutiveFailures: this.consecutiveFailures,
-      currentMode: this.phase1FallbackActive ? 'Phase 1 Fallback' : 'Phase 2 Active',
-      isPhase2Enabled: PHASE2_CONFIG?.enableRealTransactions || false,
-      transactionCacheSize: this.transactionCache.size,
-      supportedNetworks: ['ethereum', 'bitcoin', 'polygon'],
-      cacheEntries: Array.from(this.transactionCache.keys())
-    };
-  }
-
-  /**
-   * Check if currently in Phase 1 fallback mode
-   */
-  isInFallbackMode(): boolean {
-    return this.phase1FallbackActive;
-  }
-
-  /**
-   * Attempt to recover from fallback mode (manual recovery)
-   */
-  async attemptRecovery(): Promise<boolean> {
-    if (!this.phase1FallbackActive) {
-      console.log('📊 Not in fallback mode, no recovery needed');
-      return true;
     }
 
-    console.log('🔄 Attempting recovery from Phase 1 transaction fallback mode...');
+    // Sort all transactions by timestamp and convert to app format
+    const sortedTransactions = allTransactions
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+      .slice(0, limit);
 
-    try {
-      this.phase1FallbackActive = false;
-      this.consecutiveFailures = 0;
-
-      // Test with a simple transaction fetch
-      const testWallets = walletConnectivityService.getConnectedWallets();
-      if (testWallets.length > 0) {
-        const testWallet = testWallets[0];
-        await this.fetchTransactionHistory(testWallet.address, testWallet.network, 1);
-      }
-
-      console.log('✅ Successfully recovered from transaction fallback mode');
-      return true;
-
-    } catch (error) {
-      console.error('❌ Error during transaction recovery attempt:', error);
-      this.activatePhase1Fallback();
-      return false;
-    }
+    return this.convertToAppTransactions(sortedTransactions);
   }
 
   /**
@@ -562,21 +353,6 @@ class RealTransactionService {
    */
   clearCache(): void {
     this.transactionCache.clear();
-    console.log('🧹 Transaction cache cleared');
-  }
-
-  /**
-   * Cleanup resources
-   */
-  destroy(): void {
-    try {
-      this.clearCache();
-      this.phase1FallbackActive = false;
-      this.consecutiveFailures = 0;
-      console.log('🧹 Real Transaction Service destroyed');
-    } catch (error) {
-      console.error('❌ Error during transaction service cleanup:', error);
-    }
   }
 }
 

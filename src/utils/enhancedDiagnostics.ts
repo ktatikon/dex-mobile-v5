@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { PHASE2_CONFIG } from '@/services/mockData';
+import { PHASE2_CONFIG } from '@/services/fallbackDataService';
 
 export interface EnhancedDiagnosticReport {
   timestamp: Date;
@@ -247,8 +247,8 @@ class EnhancedDiagnosticTool {
     let uiComponentsRendering = true; // Assume true if we got this far
 
     try {
-      // Test mock data imports
-      const { mockTokens, mockTransactions } = await import('@/services/mockData');
+      // Test fallback data imports
+      const { mockTokens, mockTransactions } = await import('@/services/fallbackDataService');
       mockDataIntegrity = !!(mockTokens && mockTransactions);
       tokenDataAvailable = mockTokens?.length > 0;
       transactionDataAvailable = mockTransactions?.length > 0;
@@ -269,45 +269,104 @@ class EnhancedDiagnosticTool {
   }
 
   /**
-   * Run Phase 2 specific tests
+   * Run comprehensive Phase 2/3 service tests with enhanced monitoring
    */
   private async runPhase2Tests() {
     let walletServiceStatus: 'available' | 'unavailable' | 'error' = 'unavailable';
     let transactionServiceStatus: 'available' | 'unavailable' | 'error' = 'unavailable';
     let realTimeDataStatus: 'available' | 'unavailable' | 'error' = 'unavailable';
+    let enhancedAnalyticsStatus: 'available' | 'unavailable' | 'error' = 'unavailable';
     let apiIntegrationStatus: 'active' | 'inactive' | 'error' = 'inactive';
 
-    // Test wallet connectivity service
+    // Service status details for comprehensive monitoring
+    const serviceDetails: any = {};
+
+    // Test Real-Time Data Manager (Phase 3 Step 1)
+    try {
+      const dataManager = await import('@/services/realTimeDataManager.ts');
+      if (dataManager.realTimeDataManager) {
+        realTimeDataStatus = 'available';
+        // Get enhanced status information
+        try {
+          const status = dataManager.realTimeDataManager.getStatus();
+          serviceDetails.realTimeData = {
+            ...status,
+            serviceName: 'Real-Time Data Manager',
+            phase3Step: 1
+          };
+        } catch (error) {
+          serviceDetails.realTimeData = { error: 'Status unavailable' };
+        }
+      }
+    } catch (error) {
+      realTimeDataStatus = 'error';
+      this.warnings.push(`Real-time data service test failed: ${error}`);
+    }
+
+    // Test Wallet Connectivity Service (Phase 3 Step 2)
     try {
       const walletService = await import('@/services/walletConnectivityService.ts');
       if (walletService.walletConnectivityService) {
         walletServiceStatus = 'available';
+        // Get enhanced status information
+        try {
+          const status = walletService.walletConnectivityService.getStatus();
+          serviceDetails.walletConnectivity = {
+            ...status,
+            serviceName: 'Wallet Connectivity Service',
+            phase3Step: 2
+          };
+        } catch (error) {
+          serviceDetails.walletConnectivity = { error: 'Status unavailable' };
+        }
       }
     } catch (error) {
       walletServiceStatus = 'error';
       this.warnings.push(`Wallet service test failed: ${error}`);
     }
 
-    // Test transaction service
+    // Test Transaction Service (Phase 3 Step 3)
     try {
       const transactionService = await import('@/services/realTransactionService.ts');
       if (transactionService.realTransactionService) {
         transactionServiceStatus = 'available';
+        // Get enhanced status information
+        try {
+          const status = transactionService.realTransactionService.getStatus();
+          serviceDetails.transactionService = {
+            ...status,
+            serviceName: 'Transaction Service',
+            phase3Step: 3
+          };
+        } catch (error) {
+          serviceDetails.transactionService = { error: 'Status unavailable' };
+        }
       }
     } catch (error) {
       transactionServiceStatus = 'error';
       this.warnings.push(`Transaction service test failed: ${error}`);
     }
 
-    // Test real-time data manager
+    // Test Enhanced Transaction Analytics (Phase 3 Step 4)
     try {
-      const dataManager = await import('@/services/realTimeDataManager.ts');
-      if (dataManager.realTimeDataManager) {
-        realTimeDataStatus = 'available';
+      const enhancedService = await import('@/services/enhancedTransactionService.ts');
+      if (enhancedService.enhancedTransactionAnalyticsService) {
+        enhancedAnalyticsStatus = 'available';
+        // Get enhanced status information
+        try {
+          const status = enhancedService.enhancedTransactionAnalyticsService.getStatus();
+          serviceDetails.enhancedAnalytics = {
+            ...status,
+            serviceName: 'Enhanced Transaction Analytics',
+            phase3Step: 4
+          };
+        } catch (error) {
+          serviceDetails.enhancedAnalytics = { error: 'Status unavailable' };
+        }
       }
     } catch (error) {
-      realTimeDataStatus = 'error';
-      this.warnings.push(`Real-time data service test failed: ${error}`);
+      enhancedAnalyticsStatus = 'error';
+      this.warnings.push(`Enhanced analytics service test failed: ${error}`);
     }
 
     // Determine API integration status
@@ -315,11 +374,26 @@ class EnhancedDiagnosticTool {
       apiIntegrationStatus = 'active';
     }
 
+    // Calculate Phase 3 completion percentage
+    const availableServices = [
+      realTimeDataStatus === 'available',
+      walletServiceStatus === 'available',
+      transactionServiceStatus === 'available',
+      enhancedAnalyticsStatus === 'available'
+    ].filter(Boolean).length;
+
+    const phase3CompletionPercentage = (availableServices / 4) * 100;
+
     return {
       walletServiceStatus,
       transactionServiceStatus,
       realTimeDataStatus,
-      apiIntegrationStatus
+      enhancedAnalyticsStatus,
+      apiIntegrationStatus,
+      serviceDetails,
+      phase3CompletionPercentage,
+      totalServicesAvailable: availableServices,
+      totalServicesExpected: 4
     };
   }
 
@@ -363,11 +437,17 @@ Token Data: ${report.phase1Tests.tokenDataAvailable ? '✅' : '❌'}
 Transaction Data: ${report.phase1Tests.transactionDataAvailable ? '✅' : '❌'}
 UI Rendering: ${report.phase1Tests.uiComponentsRendering ? '✅' : '❌'}
 
-🚀 PHASE 2 TESTS:
-Wallet Service: ${this.getStatusIcon(report.phase2Tests.walletServiceStatus)}
-Transaction Service: ${this.getStatusIcon(report.phase2Tests.transactionServiceStatus)}
-Real-time Data: ${this.getStatusIcon(report.phase2Tests.realTimeDataStatus)}
+🚀 PHASE 3 SERVICE INTEGRATION STATUS:
+Phase 3 Completion: ${report.phase2Tests.phase3CompletionPercentage}% (${report.phase2Tests.totalServicesAvailable}/${report.phase2Tests.totalServicesExpected} services)
+
+Step 1 - Real-Time Data Manager: ${this.getStatusIcon(report.phase2Tests.realTimeDataStatus)}
+Step 2 - Wallet Connectivity: ${this.getStatusIcon(report.phase2Tests.walletServiceStatus)}
+Step 3 - Transaction Service: ${this.getStatusIcon(report.phase2Tests.transactionServiceStatus)}
+Step 4 - Enhanced Analytics: ${this.getStatusIcon(report.phase2Tests.enhancedAnalyticsStatus)}
 API Integration: ${this.getStatusIcon(report.phase2Tests.apiIntegrationStatus)}
+
+📊 SERVICE DETAILS:
+${this.generateServiceDetailsReport(report.phase2Tests.serviceDetails)}
 
 ${report.recommendations.length > 0 ? `💡 RECOMMENDATIONS:\n${report.recommendations.map(r => `  • ${r}`).join('\n')}` : ''}
 
@@ -391,6 +471,41 @@ ${report.warnings.length > 0 ? `⚠️ WARNINGS:\n${report.warnings.map(w => `  
       default:
         return '❓';
     }
+  }
+
+  /**
+   * Generate detailed service status report
+   */
+  private generateServiceDetailsReport(serviceDetails: any): string {
+    const details: string[] = [];
+
+    Object.entries(serviceDetails).forEach(([serviceKey, service]: [string, any]) => {
+      if (service.error) {
+        details.push(`${service.serviceName || serviceKey}: ❌ ${service.error}`);
+      } else {
+        const mode = service.currentMode || 'Unknown';
+        const fallbackActive = service.phase1FallbackActive ? '(Fallback Active)' : '';
+        const failures = service.consecutiveFailures > 0 ? `(${service.consecutiveFailures} failures)` : '';
+
+        details.push(`${service.serviceName || serviceKey}: ${mode} ${fallbackActive} ${failures}`.trim());
+
+        // Add specific service metrics
+        if (service.tokenCount !== undefined) {
+          details.push(`  └─ Tokens: ${service.tokenCount}`);
+        }
+        if (service.connectedWalletsCount !== undefined) {
+          details.push(`  └─ Wallets: ${service.connectedWalletsCount}`);
+        }
+        if (service.transactionCacheSize !== undefined) {
+          details.push(`  └─ Cached Transactions: ${service.transactionCacheSize}`);
+        }
+        if (service.analyticsCacheSize !== undefined) {
+          details.push(`  └─ Analytics Cache: ${service.analyticsCacheSize}`);
+        }
+      }
+    });
+
+    return details.length > 0 ? details.join('\n') : 'No service details available';
   }
 }
 

@@ -18,7 +18,7 @@ import SwapPage from '@/pages/SwapPage';
 // import WalletPage from '@/pages/WalletPage'; // REMOVED - Use WalletDashboardPage instead
 import ActivityPage from '@/pages/ActivityPage';
 import SplashScreen from '@/components/SplashScreen';
-import { mockWallet } from '@/services/mockData';
+import { mockWallet } from '@/services/fallbackDataService';
 import { WalletInfo } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 

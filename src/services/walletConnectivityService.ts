@@ -5,7 +5,7 @@
  */
 
 import { Token } from '@/types';
-import { mockTokens, PHASE2_CONFIG } from './mockData';
+import { mockTokens, PHASE2_CONFIG } from './fallbackDataService';
 
 // Blockchain API configurations
 const BLOCKCHAIN_APIS = {

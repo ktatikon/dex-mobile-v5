@@ -1,5 +1,5 @@
 import { Token } from '@/types';
-import { getRealTimeTokens, mockTokens, PHASE2_CONFIG } from './mockData';
+import { getRealTimeTokens, mockTokens, PHASE2_CONFIG } from './fallbackDataService';
 
 /**
  * Enhanced Real-time data manager with comprehensive error boundaries and Phase 1 fallback

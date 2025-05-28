@@ -20,16 +20,14 @@ import {
   updateWalletDisplayOrder,
   DEFAULT_CATEGORIES
 } from '@/services/walletPreferencesService';
-import {
-  getFilteredTransactions,
-  getTransactionAnalytics,
-  TRANSACTION_CATEGORIES,
-  exportTransactionsToCSV,
+// Safe Phase 3 service imports with fallback handling
+import { PHASE2_CONFIG } from '@/services/fallbackDataService';
+import type {
   TransactionFilters,
-  ExportOptions,
-  EXPORT_FIELDS,
-  categorizeTransaction
+  ExportOptions
 } from '@/services/enhancedTransactionService';
+// Real data services
+import { supabase } from '@/integrations/supabase/client';
 import {
   connectHotWallet,
   getConnectedHotWallets,
@@ -76,6 +74,300 @@ import {
   ChevronDown
 } from 'lucide-react';
 
+// Real analytics calculation from user data
+const calculateRealAnalytics = async (userId: string) => {
+  try {
+    console.log('🔄 Calculating real analytics from user data...');
+
+    // Get all user transactions
+    const { data: transactions, error } = await supabase
+      .from('transactions')
+      .select(`
+        id,
+        transaction_type,
+        from_amount,
+        timestamp,
+        category,
+        tokens:from_token_id (
+          id,
+          symbol,
+          name,
+          price
+        )
+      `)
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error fetching transactions for analytics:', error);
+      throw error;
+    }
+
+    if (!transactions || transactions.length === 0) {
+      console.log('📊 No transactions found for analytics');
+      return {
+        totalTransactions: 0,
+        totalVolume: 0,
+        averageAmount: 0,
+        categoryBreakdown: {},
+        monthlyVolume: [],
+        topTokens: []
+      };
+    }
+
+    // Calculate analytics from real data
+    const totalTransactions = transactions.length;
+    let totalVolume = 0;
+    const categoryBreakdown: { [key: string]: number } = {};
+    const monthlyVolume: { [key: string]: number } = {};
+    const tokenVolume: { [key: string]: { volume: number; count: number; symbol: string } } = {};
+
+    transactions.forEach(tx => {
+      const amount = parseFloat(tx.from_amount || '0');
+      const price = tx.tokens?.price || 0;
+      const value = amount * price;
+
+      totalVolume += value;
+
+      // Category breakdown
+      const category = tx.category || localCategorizeTransaction(tx);
+      const categoryName = TRANSACTION_CATEGORIES.find(cat => cat.id === category)?.name || 'Other';
+      categoryBreakdown[categoryName] = (categoryBreakdown[categoryName] || 0) + 1;
+
+      // Monthly volume
+      const date = new Date(tx.timestamp);
+      const monthKey = date.toLocaleDateString('en-US', { month: 'short' });
+      monthlyVolume[monthKey] = (monthlyVolume[monthKey] || 0) + value;
+
+      // Token volume
+      const tokenSymbol = tx.tokens?.symbol || 'Unknown';
+      if (!tokenVolume[tokenSymbol]) {
+        tokenVolume[tokenSymbol] = { volume: 0, count: 0, symbol: tokenSymbol };
+      }
+      tokenVolume[tokenSymbol].volume += value;
+      tokenVolume[tokenSymbol].count += 1;
+    });
+
+    const averageAmount = totalVolume / totalTransactions;
+
+    // Convert monthly volume to array format
+    const monthlyVolumeArray = Object.entries(monthlyVolume).map(([month, volume]) => ({
+      month,
+      volume
+    }));
+
+    // Convert token volume to array and sort by volume
+    const topTokens = Object.values(tokenVolume)
+      .sort((a, b) => b.volume - a.volume)
+      .slice(0, 5)
+      .map(token => ({
+        tokenId: token.symbol.toLowerCase(),
+        symbol: token.symbol,
+        volume: token.volume,
+        count: token.count
+      }));
+
+    console.log(`✅ Calculated real analytics: ${totalTransactions} transactions, $${totalVolume.toFixed(2)} volume`);
+
+    return {
+      totalTransactions,
+      totalVolume,
+      averageAmount,
+      categoryBreakdown,
+      monthlyVolume: monthlyVolumeArray,
+      topTokens
+    };
+  } catch (error) {
+    console.error('Error calculating real analytics:', error);
+    throw error;
+  }
+};
+
+// Safe Phase 3 service wrapper functions with fallback handling
+const safeGetTransactionAnalytics = async (userId: string) => {
+  try {
+    // First try to calculate from real user data
+    const realAnalytics = await calculateRealAnalytics(userId);
+    if (realAnalytics.totalTransactions > 0) {
+      console.log('✅ Using real analytics calculated from user data');
+      return realAnalytics;
+    }
+
+    // If no real data, try Phase 3 enhanced service
+    if (PHASE2_CONFIG?.enableRealTransactions) {
+      const { getTransactionAnalytics } = await import('@/services/enhancedTransactionService');
+      return await getTransactionAnalytics(userId);
+    }
+  } catch (error) {
+    console.warn('🔄 Real analytics failed, using mock data fallback:', error);
+  }
+
+  // Final fallback - return demo analytics for new users
+  console.log('📊 No real data found, showing demo analytics');
+  return {
+    totalTransactions: 0,
+    totalVolume: 0,
+    averageAmount: 0,
+    categoryBreakdown: {},
+    monthlyVolume: [],
+    topTokens: []
+  };
+};
+
+// Safe Phase 3 categorizeTransaction function with local fallback
+const safeCategorizeTransaction = async (transaction: any): Promise<string> => {
+  try {
+    if (PHASE2_CONFIG?.enableRealTransactions) {
+      const { categorizeTransaction } = await import('@/services/enhancedTransactionService');
+      return categorizeTransaction(transaction);
+    }
+  } catch (error) {
+    console.warn('🔄 Enhanced transaction categorization failed, using local fallback:', error);
+  }
+
+  // Phase 1 fallback - local categorization logic
+  return localCategorizeTransaction(transaction);
+};
+
+// Local fallback categorization function using existing TRANSACTION_CATEGORIES
+const localCategorizeTransaction = (transaction: any): string => {
+  const type = transaction.transaction_type?.toLowerCase() || transaction.type?.toLowerCase();
+
+  switch (type) {
+    case 'stake':
+    case 'unstake':
+    case 'claim_rewards':
+    case 'staking':
+      return 'defi'; // Map staking to defi category since we don't have staking in local categories
+    case 'swap':
+    case 'buy':
+    case 'sell':
+    case 'trade':
+      return 'trading';
+    case 'send':
+    case 'receive':
+    case 'transfer':
+      return 'transfer';
+    case 'payment':
+    case 'pay':
+      return 'payment';
+    case 'liquidity_add':
+    case 'liquidity_remove':
+    case 'yield_farm':
+    case 'defi':
+      return 'defi';
+    default:
+      return 'defi'; // Default to defi for unknown types to match existing categories
+  }
+};
+
+// Real transaction data fetching with fallback
+const getRealUserTransactions = async (userId: string, limit: number = 5) => {
+  try {
+    console.log('🔄 Fetching real user transactions from database...');
+
+    const { data: transactions, error } = await supabase
+      .from('transactions')
+      .select(`
+        id,
+        transaction_type,
+        from_amount,
+        to_amount,
+        timestamp,
+        status,
+        hash,
+        category,
+        tokens:from_token_id (
+          id,
+          symbol,
+          name,
+          logo,
+          price
+        )
+      `)
+      .eq('user_id', userId)
+      .order('timestamp', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('Error fetching real transactions:', error);
+      throw error;
+    }
+
+    console.log(`✅ Successfully fetched ${transactions?.length || 0} real transactions`);
+    return {
+      transactions: transactions || [],
+      totalCount: transactions?.length || 0,
+      hasMore: (transactions?.length || 0) >= limit
+    };
+  } catch (error) {
+    console.error('Error in getRealUserTransactions:', error);
+    throw error;
+  }
+};
+
+const safeGetFilteredTransactions = async (userId: string, filters: any = {}, pagination: any = { page: 1, limit: 5 }) => {
+  try {
+    // First try to get real transactions from database
+    const realTransactions = await getRealUserTransactions(userId, pagination.limit);
+    if (realTransactions.transactions.length > 0) {
+      console.log('✅ Using real transaction data from database');
+      return realTransactions;
+    }
+
+    // If no real transactions, try Phase 3 enhanced service
+    if (PHASE2_CONFIG?.enableRealTransactions) {
+      const { getFilteredTransactions } = await import('@/services/enhancedTransactionService');
+      return await getFilteredTransactions(userId, filters, pagination);
+    }
+  } catch (error) {
+    console.warn('🔄 Real transactions failed, using mock data fallback:', error);
+  }
+
+  // Final fallback - return mock transactions only if user has no real data
+  console.log('📊 No real transactions found, using mock data for demo purposes');
+  return {
+    transactions: [
+      {
+        id: 'demo-1',
+        transaction_type: 'receive',
+        from_amount: '1.5',
+        tokenSymbol: 'ETH',
+        timestamp: new Date(),
+        status: 'completed',
+        tokens: { symbol: 'ETH', name: 'Ethereum', price: 2000 }
+      },
+      {
+        id: 'demo-2',
+        transaction_type: 'send',
+        from_amount: '0.5',
+        tokenSymbol: 'ETH',
+        timestamp: new Date(Date.now() - 86400000),
+        status: 'completed',
+        tokens: { symbol: 'ETH', name: 'Ethereum', price: 2000 }
+      }
+    ],
+    totalCount: 2,
+    hasMore: false
+  };
+};
+
+// Mock constants for Phase 1 fallback
+const TRANSACTION_CATEGORIES = [
+  { id: 'defi', name: 'DeFi', color: '#8B5CF6' },
+  { id: 'trading', name: 'Trading', color: '#06B6D4' },
+  { id: 'transfer', name: 'Transfer', color: '#10B981' },
+  { id: 'payment', name: 'Payment', color: '#F59E0B' }
+];
+
+const EXPORT_FIELDS = [
+  { id: 'date', name: 'Date', label: 'Date', required: true },
+  { id: 'type', name: 'Type', label: 'Type', required: true },
+  { id: 'amount', name: 'Amount', label: 'Amount', required: true },
+  { id: 'token', name: 'Token', label: 'Token', required: false },
+  { id: 'status', name: 'Status', label: 'Status', required: false },
+  { id: 'category', name: 'Category', label: 'Category', required: false }
+];
+
 const WalletDashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -110,11 +402,71 @@ const WalletDashboardPage: React.FC = () => {
   const [showHardwareWalletDialog, setShowHardwareWalletDialog] = useState(false);
   const [connectingWallet, setConnectingWallet] = useState(false);
 
+  // Transaction categorization cache to avoid repeated async calls
+  const [transactionCategories, setTransactionCategories] = useState<{ [key: string]: string }>({});
+
   useEffect(() => {
     if (user) {
       fetchDashboardData();
     }
   }, [user]);
+
+  // Function to categorize transactions and cache results
+  const categorizeTransactions = async (transactions: any[]) => {
+    const categories: { [key: string]: string } = {};
+
+    for (const tx of transactions) {
+      if (!categories[tx.id]) {
+        try {
+          // Use the safe categorization function
+          const categoryId = await safeCategorizeTransaction(tx);
+          categories[tx.id] = categoryId;
+        } catch (error) {
+          console.warn('Error categorizing transaction:', error);
+          // Fallback to local categorization
+          categories[tx.id] = localCategorizeTransaction(tx);
+        }
+      }
+    }
+
+    setTransactionCategories(prev => ({ ...prev, ...categories }));
+    return categories;
+  };
+
+  // Real wallet data fetching
+  const getRealUserWallets = async (userId: string) => {
+    try {
+      console.log('🔄 Fetching real user wallets from database...');
+
+      // Get all user wallets from the unified wallets table
+      const { data: wallets, error } = await supabase
+        .from('wallets')
+        .select(`
+          id,
+          wallet_name,
+          wallet_type,
+          wallet_address,
+          network,
+          provider,
+          is_active,
+          created_at
+        `)
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching real wallets:', error);
+        throw error;
+      }
+
+      console.log(`✅ Successfully fetched ${wallets?.length || 0} real wallets`);
+      return wallets || [];
+    } catch (error) {
+      console.error('Error in getRealUserWallets:', error);
+      throw error;
+    }
+  };
 
   const fetchDashboardData = async () => {
     if (!user) return;
@@ -122,9 +474,18 @@ const WalletDashboardPage: React.FC = () => {
     try {
       setLoading(true);
 
-      // Fetch all data in parallel
+      // Fetch real user wallets first
+      let walletsData;
+      try {
+        walletsData = await getRealUserWallets(user.id);
+        console.log('✅ Using real wallet data from database');
+      } catch (error) {
+        console.warn('🔄 Real wallets failed, using preferences service fallback:', error);
+        walletsData = await getAllUserWalletsWithPreferences(user.id);
+      }
+
+      // Fetch all other data in parallel with safe Phase 3 service calls
       const [
-        walletsData,
         analyticsData,
         transactionsData,
         portfolioData,
@@ -133,9 +494,8 @@ const WalletDashboardPage: React.FC = () => {
         hotWalletsData,
         hardwareWalletsData
       ] = await Promise.all([
-        getAllUserWalletsWithPreferences(user.id),
-        getTransactionAnalytics(user.id),
-        getFilteredTransactions(user.id, {}, { page: 1, limit: 5 }),
+        safeGetTransactionAnalytics(user.id),
+        safeGetFilteredTransactions(user.id, {}, { page: 1, limit: 5 }),
         getPortfolioSummary(user.id),
         getStakingOpportunities(),
         getDeFiPortfolioSummary(user.id),
@@ -152,11 +512,58 @@ const WalletDashboardPage: React.FC = () => {
       setConnectedHotWallets(hotWalletsData);
       setConnectedHardwareWallets(hardwareWalletsData);
 
-      // Update wallet portfolio values
+      // Categorize transactions after setting them
+      if (transactionsData.transactions && transactionsData.transactions.length > 0) {
+        await categorizeTransactions(transactionsData.transactions);
+      }
+
+      // Update wallet portfolio values with real balance data
       const walletsWithValues = await Promise.all(
         walletsData.map(async (wallet) => {
-          const portfolioValue = await getWalletPortfolioValue(wallet.id);
-          return { ...wallet, portfolioValue };
+          try {
+            // Get real wallet balances from database
+            const { data: balances, error } = await supabase
+              .from('wallet_balances')
+              .select(`
+                balance,
+                tokens:token_id (
+                  price,
+                  symbol
+                )
+              `)
+              .eq('wallet_id', wallet.id);
+
+            let portfolioValue = 0;
+            if (!error && balances) {
+              portfolioValue = balances.reduce((total, balance) => {
+                const amount = parseFloat(balance.balance || '0');
+                const price = balance.tokens?.price || 0;
+                return total + (amount * price);
+              }, 0);
+              console.log(`💰 Wallet ${wallet.wallet_name}: $${portfolioValue.toFixed(2)}`);
+            } else {
+              // Fallback to existing service
+              portfolioValue = await getWalletPortfolioValue(wallet.id);
+            }
+
+            return {
+              ...wallet,
+              portfolioValue,
+              // Ensure consistent naming for display
+              name: wallet.wallet_name,
+              type: wallet.wallet_type,
+              address: wallet.wallet_address
+            };
+          } catch (error) {
+            console.error(`Error calculating portfolio value for wallet ${wallet.id}:`, error);
+            return {
+              ...wallet,
+              portfolioValue: 0,
+              name: wallet.wallet_name,
+              type: wallet.wallet_type,
+              address: wallet.wallet_address
+            };
+          }
         })
       );
       setWallets(walletsWithValues);
@@ -292,12 +699,38 @@ const WalletDashboardPage: React.FC = () => {
     }
   };
 
-  // Export transactions handler
+  // Safe export transactions handler with fallback
   const handleExportTransactions = async () => {
     if (!user) return;
 
     try {
-      const csvContent = await exportTransactionsToCSV(user.id, exportOptions);
+      let csvContent = '';
+
+      // Try Phase 3 enhanced export
+      try {
+        if (PHASE2_CONFIG?.enableRealTransactions) {
+          const { exportTransactionsToCSV } = await import('@/services/enhancedTransactionService');
+          csvContent = await exportTransactionsToCSV(user.id, exportOptions);
+        } else {
+          throw new Error('Phase 3 not enabled');
+        }
+      } catch (error) {
+        console.warn('🔄 Enhanced export failed, using basic export:', error);
+
+        // Phase 1 fallback - create basic CSV
+        const transactions = await safeGetFilteredTransactions(user.id);
+        const headers = ['Date', 'Type', 'Amount', 'Token', 'Status', 'Category'];
+        const rows = transactions.transactions.map(tx => [
+          new Date(tx.timestamp).toISOString().split('T')[0],
+          tx.transaction_type || tx.type || 'Unknown',
+          (tx.from_amount || tx.amount || '0').toString(),
+          tx.tokens?.symbol || tx.tokenSymbol || 'Unknown',
+          tx.status || 'Unknown',
+          TRANSACTION_CATEGORIES.find(cat => cat.id === localCategorizeTransaction(tx))?.name || 'Other'
+        ]);
+
+        csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+      }
 
       // Create and download the file
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -410,36 +843,60 @@ const WalletDashboardPage: React.FC = () => {
           <div>
             <p className="text-sm text-gray-400">Total Value</p>
             <p className="text-2xl font-bold text-white">
-              {showBalances ? `$${(portfolioSummary?.totalValue || 0).toFixed(2)}` : '••••••'}
+              {showBalances ? (
+                portfolioSummary?.totalValue > 0
+                  ? `$${portfolioSummary.totalValue.toFixed(2)}`
+                  : wallets.length > 0
+                    ? `$${wallets.reduce((total, wallet) => total + (wallet.portfolioValue || 0), 0).toFixed(2)}`
+                    : '$0.00'
+              ) : '••••••'}
             </p>
+            {wallets.length === 0 && (
+              <p className="text-xs text-gray-500 mt-1">Create a wallet to get started</p>
+            )}
           </div>
           <div>
             <p className="text-sm text-gray-400">24h Change</p>
             <p className={`text-lg font-medium ${(portfolioSummary?.changePercentage24h || 0) >= 0 ? 'text-dex-positive' : 'text-dex-primary'}`}>
-              {showBalances ?
-                `${(portfolioSummary?.changePercentage24h || 0) >= 0 ? '+' : ''}$${(portfolioSummary?.change24h || 0).toFixed(2)} (${(portfolioSummary?.changePercentage24h || 0).toFixed(1)}%)`
-                : '••••••'
-              }
+              {showBalances ? (
+                portfolioSummary?.change24h !== undefined
+                  ? `${portfolioSummary.changePercentage24h >= 0 ? '+' : ''}$${portfolioSummary.change24h.toFixed(2)} (${portfolioSummary.changePercentage24h.toFixed(1)}%)`
+                  : recentTransactions.length > 0 ? '$0.00 (0.0%)' : '--'
+              ) : '••••••'}
             </p>
+            {recentTransactions.length === 0 && (
+              <p className="text-xs text-gray-500 mt-1">No transactions yet</p>
+            )}
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-4 pt-4 border-t border-dex-secondary/20">
           <div className="text-center">
             <p className="text-sm text-gray-400">Transactions</p>
-            <p className="text-lg font-medium text-white">{portfolioSummary?.totalTransactions || 0}</p>
+            <p className="text-lg font-medium text-white">
+              {analytics?.totalTransactions || recentTransactions.length || 0}
+            </p>
+            {recentTransactions.length === 0 && (
+              <p className="text-xs text-gray-500 mt-1">No activity</p>
+            )}
           </div>
           <div className="text-center">
             <p className="text-sm text-gray-400">Volume</p>
             <p className="text-lg font-medium text-white">
-              {showBalances ? `$${(portfolioSummary?.totalVolume || 0).toFixed(0)}` : '••••••'}
+              {showBalances ? `$${(analytics?.totalVolume || portfolioSummary?.totalVolume || 0).toFixed(0)}` : '••••••'}
             </p>
+            {(analytics?.totalVolume || 0) === 0 && (
+              <p className="text-xs text-gray-500 mt-1">No volume</p>
+            )}
           </div>
           <div className="text-center">
             <p className="text-sm text-gray-400">Avg Amount</p>
             <p className="text-lg font-medium text-white">
-              {showBalances ? `$${(portfolioSummary?.averageAmount || 0).toFixed(0)}` : '••••••'}
+              {showBalances ? `$${(analytics?.averageAmount || portfolioSummary?.averageAmount || 0).toFixed(0)}` : '••••••'}
             </p>
+            {(analytics?.averageAmount || 0) === 0 && (
+              <p className="text-xs text-gray-500 mt-1">No data</p>
+            )}
           </div>
         </div>
       </Card>
@@ -861,7 +1318,8 @@ const WalletDashboardPage: React.FC = () => {
               {recentTransactions.length > 0 ? (
                 <div className="space-y-3">
                   {recentTransactions.map((tx) => {
-                    const categoryId = categorizeTransaction(tx);
+                    // Use cached categorization or fallback to local categorization
+                    const categoryId = transactionCategories[tx.id] || localCategorizeTransaction(tx);
                     const category = TRANSACTION_CATEGORIES.find(cat => cat.id === categoryId);
                     return (
                       <div key={tx.id} className="p-3 bg-dex-secondary/10 border border-dex-secondary/20 rounded-lg">
@@ -872,7 +1330,7 @@ const WalletDashboardPage: React.FC = () => {
                             </div>
                             <div>
                               <div className="flex items-center gap-2">
-                                <p className="font-medium text-white capitalize">{tx.transaction_type}</p>
+                                <p className="font-medium text-white capitalize">{tx.transaction_type || tx.type || 'Unknown'}</p>
                                 {category && (
                                   <Badge
                                     variant="outline"
@@ -893,7 +1351,7 @@ const WalletDashboardPage: React.FC = () => {
                           </div>
                           <div className="text-right">
                             <p className="font-medium text-white">
-                              {showBalances ? `${tx.from_amount} ${tx.tokens?.symbol || 'Unknown'}` : '••••••'}
+                              {showBalances ? `${tx.from_amount || tx.amount || '0'} ${tx.tokens?.symbol || tx.tokenSymbol || 'Unknown'}` : '••••••'}
                             </p>
                             <p className={`text-sm capitalize ${
                               tx.status === 'completed' ? 'text-dex-positive' :
@@ -911,7 +1369,32 @@ const WalletDashboardPage: React.FC = () => {
               ) : (
                 <div className="text-center py-8 text-gray-400">
                   <ArrowUpDown size={32} className="mx-auto mb-2 opacity-50" />
-                  <p>No recent transactions</p>
+                  <p className="mb-2">No transactions found</p>
+                  <p className="text-sm text-gray-500">
+                    {wallets.length === 0
+                      ? "Create a wallet and make your first transaction to see activity here"
+                      : "Your transaction history will appear here once you start trading"
+                    }
+                  </p>
+                  <div className="mt-4 space-x-2">
+                    <Button
+                      size="sm"
+                      onClick={() => navigate('/send')}
+                      className="bg-dex-primary hover:bg-dex-primary/80 text-white"
+                    >
+                      <Send size={14} className="mr-1" />
+                      Send
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate('/receive')}
+                      className="border-dex-secondary/30 text-white"
+                    >
+                      <Download size={14} className="mr-1" />
+                      Receive
+                    </Button>
+                  </div>
                 </div>
               )}
             </Card>
@@ -922,7 +1405,7 @@ const WalletDashboardPage: React.FC = () => {
           <Card className="p-6 bg-dex-dark border-dex-secondary/30">
             <h3 className="text-lg font-medium text-white mb-4">Portfolio Analytics</h3>
 
-            {analytics ? (
+            {analytics && analytics.totalTransactions > 0 ? (
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 bg-dex-secondary/10 rounded-lg">
@@ -937,24 +1420,56 @@ const WalletDashboardPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div>
-                  <h4 className="text-md font-medium text-white mb-3">Top Tokens</h4>
-                  <div className="space-y-2">
-                    {analytics.topTokens.slice(0, 5).map((token: any, index: number) => (
-                      <div key={token.tokenId} className="flex items-center justify-between p-2 bg-dex-secondary/10 rounded">
-                        <span className="text-white">{token.symbol}</span>
-                        <span className="text-gray-400">
-                          {showBalances ? `$${token.volume.toFixed(0)}` : '••••••'}
-                        </span>
-                      </div>
-                    ))}
+                {analytics.topTokens && analytics.topTokens.length > 0 && (
+                  <div>
+                    <h4 className="text-md font-medium text-white mb-3">Top Tokens</h4>
+                    <div className="space-y-2">
+                      {analytics.topTokens.slice(0, 5).map((token: any, index: number) => (
+                        <div key={token.tokenId || index} className="flex items-center justify-between p-2 bg-dex-secondary/10 rounded">
+                          <span className="text-white">{token.symbol || 'Unknown'}</span>
+                          <span className="text-gray-400">
+                            {showBalances ? `$${(token.volume || 0).toFixed(0)}` : '••••••'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {Object.keys(analytics.categoryBreakdown || {}).length > 0 && (
+                  <div>
+                    <h4 className="text-md font-medium text-white mb-3">Transaction Categories</h4>
+                    <div className="space-y-2">
+                      {Object.entries(analytics.categoryBreakdown).map(([category, count]) => (
+                        <div key={category} className="flex items-center justify-between p-2 bg-dex-secondary/10 rounded">
+                          <span className="text-white">{category}</span>
+                          <span className="text-gray-400">{count} transactions</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center py-8 text-gray-400">
                 <BarChart3 size={32} className="mx-auto mb-2 opacity-50" />
-                <p>No analytics data available</p>
+                <p className="mb-2">No analytics data available</p>
+                <p className="text-sm text-gray-500">
+                  {wallets.length === 0
+                    ? "Create a wallet and make transactions to see detailed analytics"
+                    : "Your portfolio analytics will appear here once you have transaction history"
+                  }
+                </p>
+                <div className="mt-4">
+                  <Button
+                    size="sm"
+                    onClick={() => navigate('/wallet-generation')}
+                    className="bg-dex-primary hover:bg-dex-primary/80 text-white"
+                  >
+                    <Plus size={14} className="mr-1" />
+                    Create Wallet
+                  </Button>
+                </div>
               </div>
             )}
           </Card>

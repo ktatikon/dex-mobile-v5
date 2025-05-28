@@ -3,7 +3,7 @@ import { useGlobalMarketData } from '@/contexts/MarketDataContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Token, Transaction } from '@/types';
 import { getWalletBalances, getUserTransactions, getUserWallets, createDefaultWallet } from '@/services/walletService';
-import { mockWallet } from '@/services/mockData';
+import { mockWallet } from '@/services/fallbackDataService';
 
 export function useWalletData() {
   const { tokens, loading: tokensLoading, error: tokensError, refreshData: refreshTokens } = useGlobalMarketData();

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useGlobalMarketData } from '@/contexts/MarketDataContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Token } from '@/types';
-import { mockWallet } from '@/services/mockData';
+import { mockWallet } from '@/services/fallbackDataService';
 import { getPortfolioHoldings, getLiquidityPositions, getPortfolioChange24h } from '@/services/portfolioService';
 
 // Mock portfolio data for different tabs

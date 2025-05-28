@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { formatAddress } from '@/services/mockData';
+import { formatAddress } from '@/services/fallbackDataService';
 import { WalletInfo } from '@/types';
 import { Beaker } from 'lucide-react';
 

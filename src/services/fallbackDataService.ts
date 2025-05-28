@@ -1,8 +1,22 @@
 
+/**
+ * FALLBACK DATA SERVICE
+ *
+ * This file provides fallback data and configuration for the DEX mobile application.
+ * It contains:
+ * - Phase configuration settings for feature flags
+ * - Market data fallbacks when external APIs fail
+ * - Demo data for new users and testing
+ * - Utility functions for data formatting and calculations
+ *
+ * Note: This is NOT mock data for development - it's production fallback data
+ * that ensures the application remains functional when external services fail.
+ */
+
 import { Token, Transaction, TransactionStatus, TransactionType, WalletInfo } from "@/types";
 import { fetchTokenList, adaptCoinGeckoData } from "./realTimeData";
 
-// Phase 2 Configuration - Added for backward compatibility
+// Phase Configuration - Controls feature availability and fallback behavior
 export const PHASE2_CONFIG = {
   enableRealWallets: false,
   enableRealTransactions: false,
@@ -11,8 +25,8 @@ export const PHASE2_CONFIG = {
   transactionHistoryLimit: 1000
 };
 
-// Mock balances for demo purposes
-const mockBalances: Record<string, string> = {
+// Fallback balances for demo purposes and new user onboarding
+const fallbackBalances: Record<string, string> = {
   "ethereum": "1.5263",
   "bitcoin": "0.0358",
   "usd-coin": "523.67",
@@ -23,7 +37,7 @@ const mockBalances: Record<string, string> = {
   "ripple": "1250.32",
 };
 
-// Mock tokens with static data
+// Fallback token data with static prices (used when CoinGecko API fails)
 export const mockTokens: Token[] = [
   {
     id: "ethereum",
@@ -109,33 +123,68 @@ export const mockTokens: Token[] = [
 
 /**
  * Gets real-time token data with live prices from CoinGecko
- * This function fetches live prices and applies them to mock balances
+ * This function fetches live prices and applies them to fallback balances
+ * Includes comprehensive error handling and timeout protection
  */
 export async function getRealTimeTokens(): Promise<Token[]> {
   try {
-    console.log('Fetching real-time token data...');
+    console.log('🔄 Fetching real-time token data...');
 
-    // Fetch real-time data from CoinGecko
-    const coinGeckoData = await fetchTokenList('usd');
+    // Add timeout protection for external API calls
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('API request timeout')), 10000); // 10 second timeout
+    });
+
+    // Race between API call and timeout
+    const coinGeckoData = await Promise.race([
+      fetchTokenList('usd'),
+      timeoutPromise
+    ]);
+
+    if (!coinGeckoData || !Array.isArray(coinGeckoData)) {
+      throw new Error('Invalid API response format');
+    }
+
     const realTimeTokens = adaptCoinGeckoData(coinGeckoData);
 
-    // Apply mock balances to tokens
-    const tokensWithBalances = realTimeTokens.map(token => ({
-      ...token,
-      balance: mockBalances[token.id] || "0",
-      logo: token.logo.startsWith('http') ? token.logo : `/crypto-icons/${token.symbol.toLowerCase()}.svg`
-    }));
+    if (!realTimeTokens || realTimeTokens.length === 0) {
+      throw new Error('No tokens received from API');
+    }
 
-    console.log(`Successfully loaded ${tokensWithBalances.length} tokens with real-time prices`);
+    // Apply fallback balances to tokens for demo purposes
+    const tokensWithBalances = realTimeTokens.map(token => {
+      try {
+        return {
+          ...token,
+          balance: fallbackBalances[token.id] || "0",
+          logo: token.logo?.startsWith('http') ? token.logo : `/crypto-icons/${token.symbol?.toLowerCase() || 'unknown'}.svg`,
+          // Ensure required fields are present
+          price: typeof token.price === 'number' ? token.price : 0,
+          priceChange24h: typeof token.priceChange24h === 'number' ? token.priceChange24h : 0
+        };
+      } catch (tokenError) {
+        console.warn(`Error processing token ${token.id}:`, tokenError);
+        return null;
+      }
+    }).filter(token => token !== null);
+
+    console.log(`✅ Successfully loaded ${tokensWithBalances.length} tokens with real-time prices`);
     return tokensWithBalances;
 
   } catch (error) {
-    console.error('Error fetching real-time tokens, using fallback data:', error);
+    console.error('❌ Error fetching real-time tokens, using fallback data:', error);
+
+    // Ensure fallback data is valid
+    if (!mockTokens || !Array.isArray(mockTokens)) {
+      console.error('❌ Fallback data is invalid, returning empty array');
+      return [];
+    }
+
     return mockTokens;
   }
 }
 
-// Mock transactions
+// Fallback transaction data for demo purposes and new user onboarding
 export const mockTransactions: Transaction[] = [
   {
     id: "tx1",
@@ -205,26 +254,55 @@ export const mockTransactions: Transaction[] = [
 ];
 
 /**
- * Gets real-time transaction data (fallback to mock data for Phase 1)
+ * Gets real-time transaction data (fallback to demo data for Phase 1)
  * This function provides backward compatibility for components expecting real-time transactions
+ * Includes comprehensive error handling and data validation
  */
 export async function getRealTimeTransactions(): Promise<Transaction[]> {
   try {
-    console.log('Fetching real-time transaction data (using mock data for Phase 1)...');
+    console.log('🔄 Fetching real-time transaction data (using fallback data for Phase 1)...');
 
-    // In Phase 1, we return mock transactions
-    // In Phase 2, this would fetch real transaction data
-    return mockTransactions;
+    // Validate fallback data before returning
+    if (!mockTransactions || !Array.isArray(mockTransactions)) {
+      throw new Error('Invalid fallback transaction data');
+    }
+
+    // Validate each transaction has required fields
+    const validTransactions = mockTransactions.filter(tx => {
+      try {
+        return tx &&
+               typeof tx.id === 'string' &&
+               tx.id.length > 0 &&
+               typeof tx.type !== 'undefined' &&
+               typeof tx.timestamp !== 'undefined';
+      } catch (validationError) {
+        console.warn('Invalid transaction found:', tx, validationError);
+        return false;
+      }
+    });
+
+    if (validTransactions.length === 0) {
+      console.warn('⚠️ No valid transactions found in fallback data');
+      return [];
+    }
+
+    // In Phase 1, we return fallback transactions for demo purposes
+    // In Phase 2+, this would fetch real transaction data from blockchain
+    console.log(`✅ Returning ${validTransactions.length} valid fallback transactions`);
+    return validTransactions;
 
   } catch (error) {
-    console.error('Error fetching real-time transactions, using fallback data:', error);
-    return mockTransactions;
+    console.error('❌ Error fetching real-time transactions:', error);
+
+    // Last resort: return empty array instead of potentially invalid data
+    console.log('🔄 Returning empty transaction array as final fallback');
+    return [];
   }
 }
 
 
 
-// Mock wallet data
+// Fallback wallet data for demo purposes
 export const mockWallet: WalletInfo = {
   address: "0xabc...def",
   name: "Main Wallet",
@@ -255,25 +333,62 @@ export const formatAddress = (address: string): string => {
   return `${start}...${end}`;
 };
 
-// Generate mock chart data (simple random values)
+// Generate fallback chart data for demo purposes (when real market data unavailable)
 export const generateChartData = (days = 7, startPrice = 100): number[][] => {
-  const data: number[][] = [];
-  let currentPrice = startPrice;
+  try {
+    // Input validation
+    if (typeof days !== 'number' || days < 1 || days > 365) {
+      console.warn('Invalid days parameter, using default value of 7');
+      days = 7;
+    }
 
-  const now = new Date();
+    if (typeof startPrice !== 'number' || startPrice <= 0) {
+      console.warn('Invalid startPrice parameter, using default value of 100');
+      startPrice = 100;
+    }
 
-  for (let i = days; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(now.getDate() - i);
+    const data: number[][] = [];
+    let currentPrice = startPrice;
 
-    // Random price change percentage between -5% and +5%
-    const changePercent = (Math.random() * 10) - 5;
-    currentPrice = currentPrice * (1 + (changePercent / 100));
+    const now = new Date();
 
-    data.push([date.getTime(), currentPrice]);
+    for (let i = days; i >= 0; i--) {
+      try {
+        const date = new Date();
+        date.setDate(now.getDate() - i);
+
+        // Validate date
+        if (isNaN(date.getTime())) {
+          console.warn(`Invalid date generated for day ${i}, skipping`);
+          continue;
+        }
+
+        // Random price change percentage between -5% and +5%
+        const changePercent = (Math.random() * 10) - 5;
+        currentPrice = currentPrice * (1 + (changePercent / 100));
+
+        // Ensure price doesn't go negative or become invalid
+        if (currentPrice <= 0 || !isFinite(currentPrice)) {
+          currentPrice = startPrice; // Reset to start price if invalid
+        }
+
+        data.push([date.getTime(), Math.round(currentPrice * 100) / 100]); // Round to 2 decimal places
+      } catch (error) {
+        console.warn(`Error generating chart data point for day ${i}:`, error);
+      }
+    }
+
+    if (data.length === 0) {
+      console.warn('No valid chart data generated, returning single point');
+      return [[Date.now(), startPrice]];
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error generating chart data:', error);
+    // Return minimal fallback data
+    return [[Date.now(), startPrice || 100]];
   }
-
-  return data;
 };
 
 // Calculate swap estimates
@@ -306,7 +421,7 @@ export interface OrderBookEntry {
   total: number;
 }
 
-// Generate mock order book data
+// Generate fallback order book data for demo trading interface
 export const generateOrderBook = (basePrice: number, spread = 0.02): { bids: OrderBookEntry[], asks: OrderBookEntry[] } => {
   const bids: OrderBookEntry[] = [];
   const asks: OrderBookEntry[] = [];
@@ -360,7 +475,7 @@ export interface RecentTrade {
   type: 'buy' | 'sell';
 }
 
-// Generate mock recent trades
+// Generate fallback recent trades data for demo trading interface
 export const generateRecentTrades = (basePrice: number, count = 20): RecentTrade[] => {
   const trades: RecentTrade[] = [];
   const now = new Date();

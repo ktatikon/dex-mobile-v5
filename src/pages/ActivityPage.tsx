@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { mockTransactions } from '@/services/mockData';
+import { mockTransactions } from '@/services/fallbackDataService';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TransactionItem from '@/components/TransactionItem';
@@ -11,38 +11,38 @@ import { Button } from '@/components/ui/button';
 const ActivityPage: React.FC = () => {
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  
+
   const handleViewDetails = (tx: Transaction) => {
     setSelectedTx(tx);
     setIsDetailsOpen(true);
   };
-  
+
   const handleOpenExplorer = () => {
     // In a real app, this would open the block explorer with the transaction hash
     window.open(`https://etherscan.io/tx/${selectedTx?.hash}`, '_blank');
   };
-  
+
   // Get transaction type counts
   const swapCount = mockTransactions.filter(tx => tx.type === TransactionType.SWAP).length;
-  const sendReceiveCount = mockTransactions.filter(tx => 
+  const sendReceiveCount = mockTransactions.filter(tx =>
     tx.type === TransactionType.SEND || tx.type === TransactionType.RECEIVE
   ).length;
-  
+
   return (
     <div className="pb-20">
       <h1 className="text-2xl font-bold mb-4">Activity</h1>
-      
+
       <Tabs defaultValue="all" className="w-full mb-4">
         <TabsList className="grid grid-cols-3 mb-4 bg-gray-800">
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="swaps">Swaps ({swapCount})</TabsTrigger>
           <TabsTrigger value="transfers">Transfers ({sendReceiveCount})</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="all">
           <Card className="p-0 bg-dex-dark text-white border-gray-700 overflow-hidden">
             {mockTransactions.map(tx => (
-              <TransactionItem 
+              <TransactionItem
                 key={tx.id}
                 transaction={tx}
                 onViewDetails={handleViewDetails}
@@ -50,13 +50,13 @@ const ActivityPage: React.FC = () => {
             ))}
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="swaps">
           <Card className="p-0 bg-dex-dark text-white border-gray-700 overflow-hidden">
             {mockTransactions
               .filter(tx => tx.type === TransactionType.SWAP)
               .map(tx => (
-                <TransactionItem 
+                <TransactionItem
                   key={tx.id}
                   transaction={tx}
                   onViewDetails={handleViewDetails}
@@ -65,13 +65,13 @@ const ActivityPage: React.FC = () => {
             }
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="transfers">
           <Card className="p-0 bg-dex-dark text-white border-gray-700 overflow-hidden">
             {mockTransactions
               .filter(tx => tx.type === TransactionType.SEND || tx.type === TransactionType.RECEIVE)
               .map(tx => (
-                <TransactionItem 
+                <TransactionItem
                   key={tx.id}
                   transaction={tx}
                   onViewDetails={handleViewDetails}
@@ -81,14 +81,14 @@ const ActivityPage: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
-      
+
       {/* Transaction Details Dialog */}
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
         <DialogContent className="sm:max-w-md text-white bg-dex-dark border-gray-700">
           <DialogHeader>
             <DialogTitle>Transaction Details</DialogTitle>
           </DialogHeader>
-          
+
           {selectedTx && (
             <div className="space-y-4">
               <div className="space-y-2">
@@ -98,21 +98,21 @@ const ActivityPage: React.FC = () => {
                     {selectedTx.type.charAt(0).toUpperCase() + selectedTx.type.slice(1)}
                   </span>
                 </div>
-                
+
                 <div className="flex justify-between">
                   <span className="text-gray-400">Status</span>
                   <span className="font-medium">
                     {selectedTx.status.charAt(0).toUpperCase() + selectedTx.status.slice(1)}
                   </span>
                 </div>
-                
+
                 <div className="flex justify-between">
                   <span className="text-gray-400">Date</span>
                   <span className="font-medium">
                     {new Date(selectedTx.timestamp).toLocaleString()}
                   </span>
                 </div>
-                
+
                 {selectedTx.fromToken && (
                   <div className="flex justify-between">
                     <span className="text-gray-400">From</span>
@@ -121,7 +121,7 @@ const ActivityPage: React.FC = () => {
                     </span>
                   </div>
                 )}
-                
+
                 {selectedTx.toToken && (
                   <div className="flex justify-between">
                     <span className="text-gray-400">To</span>
@@ -130,7 +130,7 @@ const ActivityPage: React.FC = () => {
                     </span>
                   </div>
                 )}
-                
+
                 <div className="flex justify-between">
                   <span className="text-gray-400">Hash</span>
                   <span className="font-medium text-dex-primary">
@@ -138,8 +138,8 @@ const ActivityPage: React.FC = () => {
                   </span>
                 </div>
               </div>
-              
-              <Button 
+
+              <Button
                 className="w-full bg-dex-primary/10 text-dex-primary hover:bg-dex-primary/20"
                 onClick={handleOpenExplorer}
               >
