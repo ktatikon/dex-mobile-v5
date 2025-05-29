@@ -24,11 +24,12 @@ export const PHASE4_CONFIG = {
   enableMultiNetworkPortfolio: true,
   enableCrossChainArbitrage: true,
 
-  // Advanced Analytics & AI
-  enableAIOptimization: false,
-  enablePredictiveAnalytics: false,
-  enableRiskAssessment: false,
-  enablePerformanceMetrics: false,
+  // Advanced Analytics & AI (Phase 4.4)
+  enableAIAnalytics: true,
+  enableAIOptimization: true,
+  enablePredictiveAnalytics: true,
+  enableRiskAssessment: true,
+  enablePerformanceMetrics: true,
 
   // Social Trading Features
   enableCopyTrading: false,
@@ -236,6 +237,7 @@ class Phase4ConfigManager {
     return this.config.enableAdvancedTrading ||
            this.config.enableLiveStaking ||
            this.config.enableCrossChainBridge ||
+           this.config.enableAIAnalytics ||
            this.config.enableAIOptimization ||
            this.config.enableCopyTrading;
   }
@@ -248,7 +250,10 @@ class Phase4ConfigManager {
       advancedTrading: this.config.enableAdvancedTrading,
       defiIntegration: this.config.enableLiveStaking,
       crossChain: this.config.enableCrossChainBridge,
-      aiAnalytics: this.config.enableAIOptimization,
+      aiAnalytics: this.config.enableAIAnalytics,
+      aiOptimization: this.config.enableAIOptimization,
+      predictiveAnalytics: this.config.enablePredictiveAnalytics,
+      performanceMetrics: this.config.enablePerformanceMetrics,
       socialTrading: this.config.enableCopyTrading,
       betaFeatures: this.config.betaFeatures,
       experimentalFeatures: this.config.experimentalFeatures
@@ -344,5 +349,8 @@ export { PHASE4_CONFIG as default };
 export const isAdvancedTradingEnabled = () => phase4ConfigManager.getConfig().enableAdvancedTrading;
 export const isDeFiIntegrationEnabled = () => phase4ConfigManager.getConfig().enableLiveStaking;
 export const isCrossChainEnabled = () => phase4ConfigManager.getConfig().enableCrossChainBridge;
-export const isAIAnalyticsEnabled = () => phase4ConfigManager.getConfig().enableAIOptimization;
+export const isAIAnalyticsEnabled = () => phase4ConfigManager.getConfig().enableAIAnalytics;
+export const isAIOptimizationEnabled = () => phase4ConfigManager.getConfig().enableAIOptimization;
+export const isPredictiveAnalyticsEnabled = () => phase4ConfigManager.getConfig().enablePredictiveAnalytics;
+export const isPerformanceMetricsEnabled = () => phase4ConfigManager.getConfig().enablePerformanceMetrics;
 export const isSocialTradingEnabled = () => phase4ConfigManager.getConfig().enableCopyTrading;

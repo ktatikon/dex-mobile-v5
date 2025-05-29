@@ -72,7 +72,8 @@ import {
   X,
   Search,
   ChevronDown,
-  Target
+  Target,
+  Brain
 } from 'lucide-react';
 
 // Phase 4 Advanced Trading Components
@@ -81,6 +82,8 @@ import DeFiIntegrationPanel from '@/components/phase4/DeFiIntegrationPanel';
 // Phase 4.3 Cross-Chain Components
 import CrossChainBridgePanel from '@/components/phase4/CrossChainBridgePanel';
 import MultiNetworkPortfolio from '@/components/phase4/MultiNetworkPortfolio';
+// Phase 4.4 AI Analytics Components
+import { AIAnalyticsPanel } from '@/components/phase4/AIAnalyticsPanel';
 import { phase4ConfigManager } from '@/services/phase4/phase4ConfigService';
 import { getRealTimeTokens } from '@/services/fallbackDataService';
 
@@ -464,6 +467,9 @@ const WalletDashboardPage: React.FC = () => {
   // Phase 4.3 Cross-Chain Bridge states
   const [crossChainEnabled, setCrossChainEnabled] = useState(false);
 
+  // Phase 4.4 AI Analytics states
+  const [aiAnalyticsEnabled, setAiAnalyticsEnabled] = useState(false);
+
   // Transaction filtering states
   const [transactionFilters, setTransactionFilters] = useState<TransactionFilters>({});
   const [showTransactionFilters, setShowTransactionFilters] = useState(false);
@@ -563,12 +569,20 @@ const WalletDashboardPage: React.FC = () => {
         config.enableCrossChainArbitrage
       );
 
+      // Check Phase 4.4 AI Analytics availability
+      setAiAnalyticsEnabled(
+        config.enableAIAnalytics ||
+        config.enablePredictiveAnalytics ||
+        config.enablePerformanceMetrics
+      );
+
       // Load available tokens for trading, DeFi, and cross-chain
       const tokens = await getRealTimeTokens();
       setAvailableTokens(tokens);
 
-      console.log('✅ Phase 4, Phase 4.2, and Phase 4.3 initialized successfully');
+      console.log('✅ Phase 4, Phase 4.2, Phase 4.3, and Phase 4.4 initialized successfully');
       console.log(`📊 Cross-Chain enabled: ${config.enableCrossChainBridge}`);
+      console.log(`🧠 AI Analytics enabled: ${config.enableAIAnalytics}`);
     } catch (error) {
       console.error('❌ Error initializing Phase 4:', error);
     }
@@ -1025,7 +1039,7 @@ const WalletDashboardPage: React.FC = () => {
 
       {/* Tabs for different views */}
       <Tabs defaultValue="wallets" className="w-full">
-        <TabsList className={`grid w-full ${crossChainEnabled ? 'grid-cols-6' : phase4Enabled ? 'grid-cols-5' : 'grid-cols-4'} mb-6 bg-dex-dark/50 p-1.5 rounded-lg border border-dex-secondary/20`}>
+        <TabsList className={`grid w-full ${aiAnalyticsEnabled ? 'grid-cols-7' : crossChainEnabled ? 'grid-cols-6' : phase4Enabled ? 'grid-cols-5' : 'grid-cols-4'} mb-6 bg-dex-dark/50 p-1.5 rounded-lg border border-dex-secondary/20`}>
           <TabsTrigger value="wallets" className="text-white data-[state=active]:bg-dex-primary">
             Wallets
           </TabsTrigger>
@@ -1050,6 +1064,12 @@ const WalletDashboardPage: React.FC = () => {
           <TabsTrigger value="analytics" className="text-white data-[state=active]:bg-dex-primary">
             Analytics
           </TabsTrigger>
+          {aiAnalyticsEnabled && (
+            <TabsTrigger value="ai-analytics" className="text-white data-[state=active]:bg-dex-primary">
+              <Brain size={16} className="mr-1" />
+              AI Analytics
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="wallets">
@@ -1653,6 +1673,19 @@ const WalletDashboardPage: React.FC = () => {
             )}
           </Card>
         </TabsContent>
+
+        {/* Phase 4.4 AI Analytics Tab */}
+        {aiAnalyticsEnabled && (
+          <TabsContent value="ai-analytics">
+            <div className="space-y-6">
+              {/* AI Analytics Panel */}
+              <AIAnalyticsPanel
+                userId={user?.id || 'current-user'}
+                className="w-full"
+              />
+            </div>
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Hot Wallet Connection Dialog */}
