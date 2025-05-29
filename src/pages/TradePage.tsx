@@ -7,13 +7,14 @@ import { Token } from '@/types';
 import { useMarketData } from '@/hooks/useMarketData';
 import { MarketFilterType, AltFilterType } from '@/types/api';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import TokenIcon from '@/components/TokenIcon';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, TrendingDown, ChevronDown, RefreshCw, Activity } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
+import { TrendingUp, TrendingDown, ChevronDown, RefreshCw, Activity, DollarSign, BarChart3 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -286,37 +287,70 @@ const TradePage = () => {
       <Card className="bg-dex-dark/80 border-dex-primary/30 mb-6">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex items-center gap-3">
-              <Select
-                value={selectedToken?.id || ''}
-                onValueChange={(value) => {
-                  const token = tokens.find(t => t.id === value);
-                  if (token) handleSelectToken(token);
-                }}
-              >
-                <SelectTrigger className="w-[180px] bg-dex-dark border-dex-primary/30 text-white">
-                  <SelectValue placeholder="Select token" />
-                </SelectTrigger>
-                <SelectContent className="bg-dex-dark border-dex-primary/30 text-white max-h-[300px]">
-                  {tokens.map(token => (
-                    <SelectItem key={token.id} value={token.id} className="text-white hover:bg-dex-primary/20 focus:text-white focus:bg-dex-primary/40">
-                      <div className="flex items-center gap-2">
-                        <img src={token.logo} alt={token.symbol} className="w-5 h-5 bg-white rounded-full p-0.5" />
-                        <span>{token.symbol}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex items-center gap-4">
+              {/* Enhanced Token Display */}
+              <div className="flex items-center gap-3">
+                <TokenIcon token={selectedToken} size="lg" />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl font-bold text-white">{selectedToken?.symbol}</span>
+                    <span className="text-sm text-gray-400">{selectedToken?.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-gray-400">
+                    <BarChart3 size={12} />
+                    <span>Market Cap: ${formatCurrency((selectedToken?.price || 0) * 1000000)}</span>
+                  </div>
+                </div>
+              </div>
 
-              <div>
-                <div className="text-2xl font-bold text-white">
-                  ${formatCurrency(selectedToken?.price || 0)}
+              {/* Price Information */}
+              <div className="flex items-center gap-6">
+                <div>
+                  <div className="text-2xl font-bold text-white">
+                    ${formatCurrency(selectedToken?.price || 0)}
+                  </div>
+                  <div className={`text-sm flex items-center gap-1 ${selectedToken?.priceChange24h && selectedToken.priceChange24h > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    {selectedToken?.priceChange24h && selectedToken.priceChange24h > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                    {selectedToken?.priceChange24h && selectedToken.priceChange24h > 0 ? '+' : ''}{(selectedToken?.priceChange24h || 0).toFixed(2)}%
+                    <span className="text-gray-400 ml-1">24h</span>
+                  </div>
                 </div>
-                <div className={`text-sm flex items-center ${selectedToken?.priceChange24h && selectedToken.priceChange24h > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {selectedToken?.priceChange24h && selectedToken.priceChange24h > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                  {Math.abs(selectedToken?.priceChange24h || 0).toFixed(2)}%
-                </div>
+
+                {/* Token Selector Dropdown */}
+                <Select
+                  value={selectedToken?.id || ''}
+                  onValueChange={(value) => {
+                    const token = tokens.find(t => t.id === value);
+                    if (token) handleSelectToken(token);
+                  }}
+                >
+                  <SelectTrigger className="w-[200px] bg-dex-dark border-dex-primary/30 text-white">
+                    <div className="flex items-center gap-2">
+                      <DollarSign size={16} />
+                      <span>Change Token</span>
+                    </div>
+                    <ChevronDown size={16} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-dex-dark border-dex-primary/30 text-white max-h-[300px]">
+                    {tokens.map(token => (
+                      <SelectItem key={token.id} value={token.id} className="text-white hover:bg-dex-primary/20 focus:text-white focus:bg-dex-primary/40">
+                        <div className="flex items-center gap-3 w-full">
+                          <TokenIcon token={token} size="xs" />
+                          <div className="flex flex-col flex-1">
+                            <span className="font-medium">{token.symbol}</span>
+                            <span className="text-xs text-gray-400">{token.name}</span>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-medium">${formatCurrency(token.price || 0)}</div>
+                            <div className={`text-xs ${(token.priceChange24h || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                              {(token.priceChange24h || 0) >= 0 ? '+' : ''}{(token.priceChange24h || 0).toFixed(2)}%
+                            </div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -448,12 +482,25 @@ const TradePage = () => {
                   </div>
                 </div>
 
-                {/* Submit button */}
+                {/* Enhanced Submit button with loading states */}
                 <Button
-                  className={`w-full ${tradeType === 'buy' ? 'bg-green-800 hover:bg-green-900' : 'bg-red-800 hover:bg-red-900'} text-white`}
+                  className={`w-full ${tradeType === 'buy' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white font-medium transition-colors`}
                   onClick={handleSubmitTrade}
+                  disabled={!amount || parseFloat(amount) <= 0 || (orderType === 'limit' && (!price || parseFloat(price) <= 0))}
                 >
-                  {tradeType === 'buy' ? 'Buy' : 'Sell'} {selectedToken?.symbol || 'TOKEN'}
+                  <div className="flex items-center justify-center gap-2">
+                    {tradeType === 'buy' ? (
+                      <>
+                        <DollarSign size={16} />
+                        <span>Buy {selectedToken?.symbol || 'TOKEN'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <BarChart3 size={16} />
+                        <span>Sell {selectedToken?.symbol || 'TOKEN'}</span>
+                      </>
+                    )}
+                  </div>
                 </Button>
               </div>
             </CardContent>
@@ -678,27 +725,30 @@ const TradePage = () => {
                 </div>
               ) : (
                 sortedByMarketCap.map(token => (
-                  <div key={token.id} className="grid grid-cols-12 p-3 border-b border-gray-800 hover:bg-dex-dark/50">
-                    <div className="col-span-4 flex items-center gap-2">
-                      <img src={token.logo} alt={token.name} className="w-6 h-6 bg-white rounded-full p-0.5" />
+                  <div key={token.id} className="grid grid-cols-12 p-3 border-b border-gray-800 hover:bg-dex-dark/50 cursor-pointer transition-colors" onClick={() => handleSelectToken(token)}>
+                    <div className="col-span-4 flex items-center gap-3">
+                      <TokenIcon token={token} size="sm" />
                       <div>
                         <div className="font-medium text-white">{token.symbol}</div>
                         <div className="text-xs text-gray-400">{token.name}</div>
                       </div>
                     </div>
-                    <div className="col-span-3 text-right text-white">
+                    <div className="col-span-3 text-right text-white font-medium">
                       ${formatCurrency(token.price || 0)}
                     </div>
-                    <div className={`col-span-3 text-right flex items-center justify-end gap-1 ${token.priceChange24h && token.priceChange24h > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    <div className={`col-span-3 text-right flex items-center justify-end gap-1 font-medium ${token.priceChange24h && token.priceChange24h > 0 ? 'text-green-500' : 'text-red-500'}`}>
                       {token.priceChange24h && token.priceChange24h > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                      {Math.abs(token.priceChange24h || 0).toFixed(2)}%
+                      {token.priceChange24h && token.priceChange24h > 0 ? '+' : ''}{(token.priceChange24h || 0).toFixed(2)}%
                     </div>
                     <div className="col-span-2 text-right">
                       <Button
                         size="sm"
                         variant="outline"
-                        className="text-xs bg-dex-dark hover:bg-dex-dark/80 border-dex-primary/30 text-white"
-                        onClick={() => handleSelectToken(token)}
+                        className="text-xs bg-dex-primary/10 hover:bg-dex-primary/20 border-dex-primary/30 text-white"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectToken(token);
+                        }}
                       >
                         Trade
                       </Button>
@@ -739,28 +789,32 @@ const TradePage = () => {
               ) : (
                 sortedByPriceChange
                   .filter(token => (token.priceChange24h || 0) > 0)
+                  .slice(0, 20) // Show top 20 gainers
                   .map(token => (
-                  <div key={token.id} className="grid grid-cols-12 p-3 border-b border-gray-800 hover:bg-dex-dark/50">
-                    <div className="col-span-4 flex items-center gap-2">
-                      <img src={token.logo} alt={token.name} className="w-6 h-6 bg-white rounded-full p-0.5" />
+                  <div key={token.id} className="grid grid-cols-12 p-3 border-b border-gray-800 hover:bg-dex-dark/50 cursor-pointer transition-colors" onClick={() => handleSelectToken(token)}>
+                    <div className="col-span-4 flex items-center gap-3">
+                      <TokenIcon token={token} size="sm" />
                       <div>
                         <div className="font-medium text-white">{token.symbol}</div>
                         <div className="text-xs text-gray-400">{token.name}</div>
                       </div>
                     </div>
-                    <div className="col-span-3 text-right text-white">
+                    <div className="col-span-3 text-right text-white font-medium">
                       ${formatCurrency(token.price || 0)}
                     </div>
-                    <div className="col-span-3 text-right flex items-center justify-end gap-1 text-green-500">
+                    <div className="col-span-3 text-right flex items-center justify-end gap-1 text-green-500 font-medium">
                       <TrendingUp size={14} />
-                      {Math.abs(token.priceChange24h || 0).toFixed(2)}%
+                      +{(token.priceChange24h || 0).toFixed(2)}%
                     </div>
                     <div className="col-span-2 text-right">
                       <Button
                         size="sm"
                         variant="outline"
-                        className="text-xs bg-dex-dark hover:bg-dex-dark/80 border-dex-primary/30 text-white"
-                        onClick={() => handleSelectToken(token)}
+                        className="text-xs bg-green-500/10 hover:bg-green-500/20 border-green-500/30 text-green-400"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectToken(token);
+                        }}
                       >
                         Trade
                       </Button>
@@ -801,28 +855,32 @@ const TradePage = () => {
               ) : (
                 sortedByPriceChange
                   .filter(token => (token.priceChange24h || 0) < 0)
+                  .slice(0, 20) // Show top 20 losers
                   .map(token => (
-                  <div key={token.id} className="grid grid-cols-12 p-3 border-b border-gray-800 hover:bg-dex-dark/50">
-                    <div className="col-span-4 flex items-center gap-2">
-                      <img src={token.logo} alt={token.name} className="w-6 h-6 bg-white rounded-full p-0.5" />
+                  <div key={token.id} className="grid grid-cols-12 p-3 border-b border-gray-800 hover:bg-dex-dark/50 cursor-pointer transition-colors" onClick={() => handleSelectToken(token)}>
+                    <div className="col-span-4 flex items-center gap-3">
+                      <TokenIcon token={token} size="sm" />
                       <div>
                         <div className="font-medium text-white">{token.symbol}</div>
                         <div className="text-xs text-gray-400">{token.name}</div>
                       </div>
                     </div>
-                    <div className="col-span-3 text-right text-white">
+                    <div className="col-span-3 text-right text-white font-medium">
                       ${formatCurrency(token.price || 0)}
                     </div>
-                    <div className="col-span-3 text-right flex items-center justify-end gap-1 text-red-500">
+                    <div className="col-span-3 text-right flex items-center justify-end gap-1 text-red-500 font-medium">
                       <TrendingDown size={14} />
-                      {Math.abs(token.priceChange24h || 0).toFixed(2)}%
+                      {(token.priceChange24h || 0).toFixed(2)}%
                     </div>
                     <div className="col-span-2 text-right">
                       <Button
                         size="sm"
                         variant="outline"
-                        className="text-xs bg-dex-dark hover:bg-dex-dark/80 border-dex-primary/30 text-white"
-                        onClick={() => handleSelectToken(token)}
+                        className="text-xs bg-red-500/10 hover:bg-red-500/20 border-red-500/30 text-red-400"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectToken(token);
+                        }}
                       >
                         Trade
                       </Button>
@@ -844,29 +902,32 @@ const TradePage = () => {
                 <div className="col-span-2 text-right">Trade</div>
               </div>
 
-              {/* Filter tokens that can be traded with INR (for demo, we'll show top 5 by market cap) */}
-              {sortedByMarketCap.slice(0, 5).map(token => (
-                <div key={token.id} className="grid grid-cols-12 p-3 border-b border-gray-800 hover:bg-dex-dark/50">
-                  <div className="col-span-4 flex items-center gap-2">
-                    <img src={token.logo} alt={token.name} className="w-6 h-6 bg-white rounded-full p-0.5" />
+              {/* Filter tokens that can be traded with INR (show top 10 by market cap) */}
+              {sortedByMarketCap.slice(0, 10).map(token => (
+                <div key={token.id} className="grid grid-cols-12 p-3 border-b border-gray-800 hover:bg-dex-dark/50 cursor-pointer transition-colors" onClick={() => handleSelectToken(token)}>
+                  <div className="col-span-4 flex items-center gap-3">
+                    <TokenIcon token={token} size="sm" />
                     <div>
-                      <div className="font-medium text-white">{token.symbol}</div>
+                      <div className="font-medium text-white">{token.symbol}/INR</div>
                       <div className="text-xs text-gray-400">{token.name}</div>
                     </div>
                   </div>
-                  <div className="col-span-3 text-right text-white">
+                  <div className="col-span-3 text-right text-white font-medium">
                     ₹{formatCurrency(token.price ? token.price * 83.5 : 0)} {/* Approximate INR conversion */}
                   </div>
-                  <div className={`col-span-3 text-right flex items-center justify-end gap-1 ${token.priceChange24h && token.priceChange24h > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  <div className={`col-span-3 text-right flex items-center justify-end gap-1 font-medium ${token.priceChange24h && token.priceChange24h > 0 ? 'text-green-500' : 'text-red-500'}`}>
                     {token.priceChange24h && token.priceChange24h > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                    {Math.abs(token.priceChange24h || 0).toFixed(2)}%
+                    {token.priceChange24h && token.priceChange24h > 0 ? '+' : ''}{(token.priceChange24h || 0).toFixed(2)}%
                   </div>
                   <div className="col-span-2 text-right">
                     <Button
                       size="sm"
                       variant="outline"
-                      className="text-xs bg-dex-dark hover:bg-dex-dark/80 border-dex-primary/30 text-white"
-                      onClick={() => handleSelectToken(token)}
+                      className="text-xs bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/30 text-orange-400"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectToken(token);
+                      }}
                     >
                       Trade
                     </Button>
@@ -890,28 +951,32 @@ const TradePage = () => {
               {/* Filter tokens that can be paired with USDT (excluding USDT itself) */}
               {sortedByMarketCap
                 .filter(token => token.symbol !== 'USDT')
+                .slice(0, 50) // Show top 50 USDT pairs
                 .map(token => (
-                <div key={token.id} className="grid grid-cols-12 p-3 border-b border-gray-800 hover:bg-dex-dark/50">
-                  <div className="col-span-4 flex items-center gap-2">
-                    <img src={token.logo} alt={token.name} className="w-6 h-6 bg-white rounded-full p-0.5" />
+                <div key={token.id} className="grid grid-cols-12 p-3 border-b border-gray-800 hover:bg-dex-dark/50 cursor-pointer transition-colors" onClick={() => handleSelectToken(token)}>
+                  <div className="col-span-4 flex items-center gap-3">
+                    <TokenIcon token={token} size="sm" />
                     <div>
                       <div className="font-medium text-white">{token.symbol}/USDT</div>
                       <div className="text-xs text-gray-400">{token.name}</div>
                     </div>
                   </div>
-                  <div className="col-span-3 text-right text-white">
+                  <div className="col-span-3 text-right text-white font-medium">
                     ${formatCurrency(token.price || 0)}
                   </div>
-                  <div className={`col-span-3 text-right flex items-center justify-end gap-1 ${token.priceChange24h && token.priceChange24h > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  <div className={`col-span-3 text-right flex items-center justify-end gap-1 font-medium ${token.priceChange24h && token.priceChange24h > 0 ? 'text-green-500' : 'text-red-500'}`}>
                     {token.priceChange24h && token.priceChange24h > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                    {Math.abs(token.priceChange24h || 0).toFixed(2)}%
+                    {token.priceChange24h && token.priceChange24h > 0 ? '+' : ''}{(token.priceChange24h || 0).toFixed(2)}%
                   </div>
                   <div className="col-span-2 text-right">
                     <Button
                       size="sm"
                       variant="outline"
-                      className="text-xs bg-dex-dark hover:bg-dex-dark/80 border-dex-primary/30 text-white"
-                      onClick={() => handleSelectToken(token)}
+                      className="text-xs bg-green-500/10 hover:bg-green-500/20 border-green-500/30 text-green-400"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectToken(token);
+                      }}
                     >
                       Trade
                     </Button>
@@ -935,34 +1000,44 @@ const TradePage = () => {
               {/* Filter tokens that can be paired with BTC (excluding BTC itself) */}
               {sortedByMarketCap
                 .filter(token => token.symbol !== 'BTC')
-                .map(token => (
-                <div key={token.id} className="grid grid-cols-12 p-3 border-b border-gray-800 hover:bg-dex-dark/50">
-                  <div className="col-span-4 flex items-center gap-2">
-                    <img src={token.logo} alt={token.name} className="w-6 h-6 bg-white rounded-full p-0.5" />
-                    <div>
-                      <div className="font-medium text-white">{token.symbol}/BTC</div>
-                      <div className="text-xs text-gray-400">{token.name}</div>
+                .slice(0, 30) // Show top 30 BTC pairs
+                .map(token => {
+                  // Get BTC price from the tokens list for accurate conversion
+                  const btcToken = sortedByMarketCap.find(t => t.symbol === 'BTC');
+                  const btcPrice = btcToken?.price || 56231.42; // Fallback to approximate price
+
+                  return (
+                    <div key={token.id} className="grid grid-cols-12 p-3 border-b border-gray-800 hover:bg-dex-dark/50 cursor-pointer transition-colors" onClick={() => handleSelectToken(token)}>
+                      <div className="col-span-4 flex items-center gap-3">
+                        <TokenIcon token={token} size="sm" />
+                        <div>
+                          <div className="font-medium text-white">{token.symbol}/BTC</div>
+                          <div className="text-xs text-gray-400">{token.name}</div>
+                        </div>
+                      </div>
+                      <div className="col-span-3 text-right text-white font-medium">
+                        {formatCurrency((token.price || 0) / btcPrice, 8)} BTC
+                      </div>
+                      <div className={`col-span-3 text-right flex items-center justify-end gap-1 font-medium ${token.priceChange24h && token.priceChange24h > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {token.priceChange24h && token.priceChange24h > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                        {token.priceChange24h && token.priceChange24h > 0 ? '+' : ''}{(token.priceChange24h || 0).toFixed(2)}%
+                      </div>
+                      <div className="col-span-2 text-right">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs bg-yellow-500/10 hover:bg-yellow-500/20 border-yellow-500/30 text-yellow-400"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectToken(token);
+                          }}
+                        >
+                          Trade
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="col-span-3 text-right text-white">
-                    {formatCurrency((token.price || 0) / 56231.42)} BTC {/* Using BTC price from mock data */}
-                  </div>
-                  <div className={`col-span-3 text-right flex items-center justify-end gap-1 ${token.priceChange24h && token.priceChange24h > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    {token.priceChange24h && token.priceChange24h > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                    {Math.abs(token.priceChange24h || 0).toFixed(2)}%
-                  </div>
-                  <div className="col-span-2 text-right">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-xs bg-dex-dark hover:bg-dex-dark/80 border-dex-primary/30 text-white"
-                      onClick={() => handleSelectToken(token)}
-                    >
-                      Trade
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
             </CardContent>
           </Card>
         </TabsContent>
@@ -977,11 +1052,18 @@ const TradePage = () => {
                 <div className="col-span-2 text-right">Trade</div>
               </div>
 
-              {/* Filter for altcoins based on selected filter */}
+              {/* Enhanced altcoin filtering with comprehensive exclusions */}
               {sortedByMarketCap
                 .filter(token => {
-                  // Base filter: exclude major coins
-                  const isAltcoin = !['BTC', 'ETH', 'USDT', 'USDC'].includes(token.symbol);
+                  // Enhanced altcoin filter: exclude major coins and stablecoins
+                  const majorCoins = ['BTC', 'ETH', 'BNB', 'ADA', 'SOL', 'XRP', 'DOT', 'AVAX', 'MATIC', 'LINK'];
+                  const stablecoins = ['USDT', 'USDC', 'BUSD', 'DAI', 'TUSD', 'USDD', 'FRAX', 'LUSD'];
+                  const wrappedTokens = ['WBTC', 'WETH', 'WBNB'];
+                  const excludedTokens = [...majorCoins, ...stablecoins, ...wrappedTokens];
+
+                  const isAltcoin = !excludedTokens.includes(token.symbol) &&
+                                   !token.symbol.includes('USD') && // Exclude other USD-pegged tokens
+                                   !token.symbol.startsWith('W'); // Exclude other wrapped tokens
 
                   // Apply additional filters based on selected option
                   if (altFilter === 'all') {
@@ -1004,15 +1086,16 @@ const TradePage = () => {
 
                   return isAltcoin;
                 })
+                .slice(0, 50) // Show top 50 altcoins
                 .map(token => {
                   // Determine if we need to show trading pair format
                   const showAsPair = altFilter !== 'all';
                   const pairSymbol = showAsPair ? altFilter.toUpperCase() : '';
 
                   return (
-                    <div key={token.id} className="grid grid-cols-12 p-3 border-b border-gray-800 hover:bg-dex-dark/50">
-                      <div className="col-span-4 flex items-center gap-2">
-                        <img src={token.logo} alt={token.name} className="w-6 h-6 bg-white rounded-full p-0.5" />
+                    <div key={token.id} className="grid grid-cols-12 p-3 border-b border-gray-800 hover:bg-dex-dark/50 cursor-pointer transition-colors" onClick={() => handleSelectToken(token)}>
+                      <div className="col-span-4 flex items-center gap-3">
+                        <TokenIcon token={token} size="sm" />
                         <div>
                           <div className="font-medium text-white">
                             {showAsPair ? `${token.symbol}/${pairSymbol}` : token.symbol}
@@ -1020,24 +1103,30 @@ const TradePage = () => {
                           <div className="text-xs text-gray-400">{token.name}</div>
                         </div>
                       </div>
-                      <div className="col-span-3 text-right text-white">
-                        {showAsPair && pairSymbol === 'BNB' ?
-                          `${formatCurrency((token.price || 0) / 304.12)} BNB` :
-                          showAsPair && pairSymbol === 'ETH' ?
-                          `${formatCurrency((token.price || 0) / 2845.23)} ETH` :
+                      <div className="col-span-3 text-right text-white font-medium">
+                        {showAsPair && pairSymbol === 'BNB' ? (
+                          `${formatCurrency((token.price || 0) / 304.12, 6)} BNB`
+                        ) : showAsPair && pairSymbol === 'ETH' ? (
+                          `${formatCurrency((token.price || 0) / 2845.23, 6)} ETH`
+                        ) : showAsPair && pairSymbol === 'USDC' ? (
+                          `${formatCurrency(token.price || 0)} USDC`
+                        ) : (
                           `$${formatCurrency(token.price || 0)}`
-                        }
+                        )}
                       </div>
-                      <div className={`col-span-3 text-right flex items-center justify-end gap-1 ${token.priceChange24h && token.priceChange24h > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      <div className={`col-span-3 text-right flex items-center justify-end gap-1 font-medium ${token.priceChange24h && token.priceChange24h > 0 ? 'text-green-500' : 'text-red-500'}`}>
                         {token.priceChange24h && token.priceChange24h > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                        {Math.abs(token.priceChange24h || 0).toFixed(2)}%
+                        {token.priceChange24h && token.priceChange24h > 0 ? '+' : ''}{(token.priceChange24h || 0).toFixed(2)}%
                       </div>
                       <div className="col-span-2 text-right">
                         <Button
                           size="sm"
                           variant="outline"
-                          className="text-xs bg-dex-dark hover:bg-dex-dark/80 border-dex-primary/30 text-white"
-                          onClick={() => handleSelectToken(token)}
+                          className="text-xs bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/30 text-purple-400"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectToken(token);
+                          }}
                         >
                           Trade
                         </Button>
