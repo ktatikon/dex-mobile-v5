@@ -643,7 +643,13 @@ const TradePage = () => {
                 Filter ALTs
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-dex-secondary/20" />
-              <DropdownMenuRadioGroup value={altFilter} onValueChange={(value) => setAltFilter(value as AltFilterType)}>
+              <DropdownMenuRadioGroup value={altFilter} onValueChange={(value) => {
+                setAltFilter(value as AltFilterType);
+                // Ensure we're on the ALTs tab when changing filter
+                if (filter !== 'alts') {
+                  setFilter('alts');
+                }
+              }}>
                 <DropdownMenuRadioItem
                   value="all"
                   className="text-white h-11 min-h-[44px] py-2 px-4 hover:bg-dex-primary/10 focus:bg-dex-primary/10 cursor-pointer"
@@ -1098,7 +1104,7 @@ const TradePage = () => {
                          !token.symbol.includes('USD') &&
                          !token.symbol.startsWith('W');
                 })
-                .slice(0, 50) // Show top 50 altcoins
+                .slice(0, 50) // Show top 50 tokens
                 .map(token => {
                   // Determine if we need to show trading pair format
                   const showAsPair = altFilter !== 'all';

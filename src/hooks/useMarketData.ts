@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { fetchTokenList, adaptCoinGeckoData } from '@/services/realTimeData';
-import { Token } from '@/types';
 import { MarketFilterType, AltFilterType, CoinGeckoToken } from '@/types/api';
 
 /**
@@ -139,13 +138,8 @@ export function useMarketData(vsCurrency = 'usd') {
           return adaptedTokens.filter(token => token.symbol !== 'BTC');
 
         case 'alts':
-          // Apply ALT filter
-          if (altFilter === 'all') {
-            return adaptedTokens.filter(token =>
-              !['BTC', 'ETH', 'USDT'].includes(token.symbol));
-          }
-          return adaptedTokens.filter(token =>
-            token.symbol.toLowerCase() === altFilter.toLowerCase());
+          // Return all tokens for ALTs tab - let TradePage handle the filtering
+          return adaptedTokens;
 
         default:
           return adaptedTokens;
