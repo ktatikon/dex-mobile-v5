@@ -8,6 +8,7 @@ import { useMarketData } from '@/hooks/useMarketData';
 import { MarketFilterType, AltFilterType } from '@/types/api';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import TokenIcon from '@/components/TokenIcon';
+import { TradingChart } from '@/components/TradingChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -375,6 +376,15 @@ const TradePage = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Trading Chart - Full width above trading interface */}
+      <div className="mb-6">
+        <TradingChart
+          selectedToken={selectedToken || { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', price: 0 }}
+          timeInterval="7D"
+          isLoading={loading}
+        />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* Trading interface - Left column */}
