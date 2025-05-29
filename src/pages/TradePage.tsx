@@ -1052,39 +1052,51 @@ const TradePage = () => {
                 <div className="col-span-2 text-right">Trade</div>
               </div>
 
-              {/* Enhanced altcoin filtering with comprehensive exclusions */}
+              {/* Fixed altcoin filtering with proper trading pair logic */}
               {sortedByMarketCap
                 .filter(token => {
-                  // Enhanced altcoin filter: exclude major coins and stablecoins
+                  // Enhanced altcoin filter: exclude major coins and stablecoins for 'all' filter
                   const majorCoins = ['BTC', 'ETH', 'BNB', 'ADA', 'SOL', 'XRP', 'DOT', 'AVAX', 'MATIC', 'LINK'];
                   const stablecoins = ['USDT', 'USDC', 'BUSD', 'DAI', 'TUSD', 'USDD', 'FRAX', 'LUSD'];
                   const wrappedTokens = ['WBTC', 'WETH', 'WBNB'];
                   const excludedTokens = [...majorCoins, ...stablecoins, ...wrappedTokens];
 
-                  const isAltcoin = !excludedTokens.includes(token.symbol) &&
-                                   !token.symbol.includes('USD') && // Exclude other USD-pegged tokens
-                                   !token.symbol.startsWith('W'); // Exclude other wrapped tokens
-
-                  // Apply additional filters based on selected option
+                  // For 'all' filter, show only altcoins (exclude major coins, stablecoins, wrapped tokens)
                   if (altFilter === 'all') {
-                    return isAltcoin;
-                  } else if (altFilter === 'usdc') {
-                    return token.symbol !== 'USDC'; // Show trading pairs with USDC
-                  } else if (altFilter === 'bnb') {
-                    return token.symbol !== 'BNB'; // Show trading pairs with BNB
-                  } else if (altFilter === 'eth') {
-                    return token.symbol !== 'ETH'; // Show trading pairs with ETH
-                  } else if (altFilter === 'xrp') {
-                    return token.symbol !== 'XRP'; // Show trading pairs with XRP
-                  } else if (altFilter === 'dai') {
-                    return token.symbol !== 'DAI'; // Show trading pairs with DAI
-                  } else if (altFilter === 'tusd') {
-                    return token.symbol !== 'TUSD'; // Show trading pairs with TUSD
-                  } else if (altFilter === 'trx') {
-                    return token.symbol !== 'TRX'; // Show trading pairs with TRX
+                    return !excludedTokens.includes(token.symbol) &&
+                           !token.symbol.includes('USD') && // Exclude other USD-pegged tokens
+                           !token.symbol.startsWith('W'); // Exclude other wrapped tokens
                   }
 
-                  return isAltcoin;
+                  // For specific filters, show tokens that can be paired with the selected base currency
+                  // Exclude the base currency itself and apply reasonable pairing logic
+                  if (altFilter === 'usdc') {
+                    // Show all tokens except USDC itself (including major coins for USDC pairs)
+                    return token.symbol !== 'USDC';
+                  } else if (altFilter === 'bnb') {
+                    // Show all tokens except BNB itself
+                    return token.symbol !== 'BNB';
+                  } else if (altFilter === 'eth') {
+                    // Show all tokens except ETH itself
+                    return token.symbol !== 'ETH';
+                  } else if (altFilter === 'xrp') {
+                    // Show all tokens except XRP itself
+                    return token.symbol !== 'XRP';
+                  } else if (altFilter === 'dai') {
+                    // Show all tokens except DAI itself
+                    return token.symbol !== 'DAI';
+                  } else if (altFilter === 'tusd') {
+                    // Show all tokens except TUSD itself
+                    return token.symbol !== 'TUSD';
+                  } else if (altFilter === 'trx') {
+                    // Show all tokens except TRX itself
+                    return token.symbol !== 'TRX';
+                  }
+
+                  // Default fallback to altcoin filter
+                  return !excludedTokens.includes(token.symbol) &&
+                         !token.symbol.includes('USD') &&
+                         !token.symbol.startsWith('W');
                 })
                 .slice(0, 50) // Show top 50 altcoins
                 .map(token => {
@@ -1104,13 +1116,38 @@ const TradePage = () => {
                         </div>
                       </div>
                       <div className="col-span-3 text-right text-white font-medium">
-                        {showAsPair && pairSymbol === 'BNB' ? (
-                          `${formatCurrency((token.price || 0) / 304.12, 6)} BNB`
-                        ) : showAsPair && pairSymbol === 'ETH' ? (
-                          `${formatCurrency((token.price || 0) / 2845.23, 6)} ETH`
-                        ) : showAsPair && pairSymbol === 'USDC' ? (
-                          `${formatCurrency(token.price || 0)} USDC`
-                        ) : (
+                        {showAsPair ? (() => {
+                          // Get the base currency price for accurate conversion
+                          const getBaseCurrencyPrice = (symbol: string): number => {
+                            const baseCurrency = sortedByMarketCap.find(t => t.symbol === symbol);
+                            return baseCurrency?.price || 0;
+                          };
+
+                          const tokenPrice = token.price || 0;
+
+                          switch (pairSymbol) {
+                            case 'BNB':
+                              const bnbPrice = getBaseCurrencyPrice('BNB') || 304.12;
+                              return `${formatCurrency(tokenPrice / bnbPrice, 6)} BNB`;
+                            case 'ETH':
+                              const ethPrice = getBaseCurrencyPrice('ETH') || 2845.23;
+                              return `${formatCurrency(tokenPrice / ethPrice, 6)} ETH`;
+                            case 'USDC':
+                              return `${formatCurrency(tokenPrice)} USDC`;
+                            case 'XRP':
+                              const xrpPrice = getBaseCurrencyPrice('XRP') || 0.5;
+                              return `${formatCurrency(tokenPrice / xrpPrice, 4)} XRP`;
+                            case 'DAI':
+                              return `${formatCurrency(tokenPrice)} DAI`;
+                            case 'TUSD':
+                              return `${formatCurrency(tokenPrice)} TUSD`;
+                            case 'TRX':
+                              const trxPrice = getBaseCurrencyPrice('TRX') || 0.1;
+                              return `${formatCurrency(tokenPrice / trxPrice, 2)} TRX`;
+                            default:
+                              return `$${formatCurrency(tokenPrice)}`;
+                          }
+                        })() : (
                           `$${formatCurrency(token.price || 0)}`
                         )}
                       </div>
