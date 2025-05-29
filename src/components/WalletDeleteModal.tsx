@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { deleteGeneratedWallet } from '@/services/walletGenerationService';
+import { deleteWalletComprehensively } from '@/services/unifiedWalletService';
 import { useAuth } from '@/contexts/AuthContext';
 import { Trash2, AlertTriangle, Shield } from 'lucide-react';
 
@@ -42,9 +42,11 @@ const WalletDeleteModal: React.FC<WalletDeleteModalProps> = ({
   const isConfirmationValid = confirmationText === expectedText;
   const canDelete = isConfirmationValid && hasBackup && understands;
 
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!user || !canDelete) {
       return;
     }
@@ -52,8 +54,8 @@ const WalletDeleteModal: React.FC<WalletDeleteModalProps> = ({
     setIsLoading(true);
 
     try {
-      const success = await deleteGeneratedWallet(walletId, user.id);
-      
+      const success = await deleteWalletComprehensively(walletId, user.id);
+
       if (success) {
         toast({
           title: "Wallet Deleted",

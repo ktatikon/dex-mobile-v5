@@ -30,13 +30,17 @@ import {
   Wallet,
   AlertTriangle,
   Check,
+  Brain,
+  TrendingUp,
 } from 'lucide-react';
 import {
   generateMnemonic,
   validateMnemonic,
   generateAddressesFromMnemonic,
   encryptSeedPhrase,
-  saveGeneratedWallet
+  saveGeneratedWallet,
+  testWalletCreationFlow,
+  checkGeneratedWalletsTable
 } from '@/services/walletGenerationService';
 
 // Define the steps in the wallet generation process
@@ -343,12 +347,9 @@ const WalletGenerationPage: React.FC = () => {
 
   // Handle creating a new wallet
   const handleCreateNewWallet = () => {
-    console.log('handleCreateNewWallet called');
-
     try {
       // Generate the seed phrase directly
       const strength = seedPhraseLength === '24' ? 256 : 128;
-      console.log('Generating seed phrase with strength:', strength);
 
       // Explicitly cast strength to the expected type
       const typedStrength = strength as 128 | 256;
@@ -358,14 +359,11 @@ const WalletGenerationPage: React.FC = () => {
         throw new Error('Generated seed phrase is empty or invalid');
       }
 
-      console.log('Seed phrase generated successfully, length:', newSeedPhrase.split(' ').length);
-
       // Set the seed phrase first
       setSeedPhrase(newSeedPhrase);
 
       // Use a timeout to ensure the state update has time to process
       setTimeout(() => {
-        console.log('Setting current step to GENERATE_SEED');
         setCurrentStep(GenerationStep.GENERATE_SEED);
       }, 100);
     } catch (error) {
@@ -435,6 +433,55 @@ const WalletGenerationPage: React.FC = () => {
     document.body.removeChild(element);
   };
 
+  // Test database integration
+  const handleTestDatabaseIntegration = async () => {
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please sign in to test database integration.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      // First check if table exists
+      const tableExists = await checkGeneratedWalletsTable();
+
+      if (!tableExists) {
+        toast({
+          title: 'Database Issue',
+          description: 'Generated wallets table does not exist or could not be created.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Run comprehensive test
+      const testResult = await testWalletCreationFlow(user.id);
+
+      if (testResult.success) {
+        toast({
+          title: 'Database Test Successful',
+          description: `Test wallet created successfully! ID: ${testResult.walletId}`,
+        });
+      } else {
+        toast({
+          title: 'Database Test Failed',
+          description: `Test failed: ${testResult.error}`,
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('❌ Database test error:', error);
+      toast({
+        title: 'Test Error',
+        description: `Database test failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: 'destructive',
+      });
+    }
+  };
+
   // Render the current step
   const renderStep = () => {
     switch (currentStep) {
@@ -459,7 +506,7 @@ const WalletGenerationPage: React.FC = () => {
 
   // Render the intro step
   const renderIntroStep = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex justify-center mb-6">
         <div className="w-16 h-16 rounded-full bg-dex-primary/20 flex items-center justify-center">
           <Wallet className="h-8 w-8 text-dex-primary" />
@@ -471,7 +518,7 @@ const WalletGenerationPage: React.FC = () => {
         Generate a new cryptocurrency wallet or import an existing one using a seed phrase.
       </p>
 
-      <div className="bg-dex-secondary/10 rounded-lg p-4 border border-dex-secondary/20 mt-4">
+      <div className="bg-dex-secondary/10 rounded-lg p-4 border border-dex-secondary/20">
         <div className="flex items-start gap-3">
           <Shield className="text-dex-primary min-w-[20px] mt-1" size={20} />
           <div>
@@ -482,6 +529,101 @@ const WalletGenerationPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* AI Features Section */}
+      <div className="bg-gradient-to-r from-dex-primary/10 to-dex-primary/5 rounded-lg p-6 border border-dex-primary/20">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 rounded-full bg-dex-primary/20 flex items-center justify-center">
+            <Brain className="h-6 w-6 text-dex-primary" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-white">AI feature loading soon</h3>
+            <p className="text-sm text-gray-400">Next-generation AI-powered wallet capabilities</p>
+          </div>
+        </div>
+
+        {/* AI Features List */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-dex-primary"></div>
+            <span className="text-sm text-white">AI-powered portfolio optimization</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-dex-primary"></div>
+            <span className="text-sm text-white">Smart trading suggestions</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-dex-primary"></div>
+            <span className="text-sm text-white">Intelligent risk assessment</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-dex-primary"></div>
+            <span className="text-sm text-white">Automated rebalancing</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-dex-primary"></div>
+            <span className="text-sm text-white">Market sentiment analysis</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-dex-primary"></div>
+            <span className="text-sm text-white">Predictive analytics</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-dex-primary"></div>
+            <span className="text-sm text-white">DeFi yield optimization</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-dex-primary"></div>
+            <span className="text-sm text-white">Cross-chain arbitrage detection</span>
+          </div>
+        </div>
+
+        {/* AI Integration Illustration */}
+        <div className="bg-dex-dark/50 rounded-lg p-4 border border-dex-secondary/20">
+          <div className="flex items-center justify-center space-x-4">
+            <div className="flex flex-col items-center">
+              <div className="w-8 h-8 rounded-full bg-dex-primary/20 flex items-center justify-center mb-2">
+                <Wallet className="h-4 w-4 text-dex-primary" />
+              </div>
+              <span className="text-xs text-gray-400">Your Wallet</span>
+            </div>
+            <div className="flex-1 h-px bg-gradient-to-r from-dex-primary/50 to-transparent"></div>
+            <div className="flex flex-col items-center">
+              <div className="w-8 h-8 rounded-full bg-dex-primary/20 flex items-center justify-center mb-2">
+                <Brain className="h-4 w-4 text-dex-primary" />
+              </div>
+              <span className="text-xs text-gray-400">AI Engine</span>
+            </div>
+            <div className="flex-1 h-px bg-gradient-to-r from-dex-primary/50 to-transparent"></div>
+            <div className="flex flex-col items-center">
+              <div className="w-8 h-8 rounded-full bg-dex-primary/20 flex items-center justify-center mb-2">
+                <TrendingUp className="h-4 w-4 text-dex-primary" />
+              </div>
+              <span className="text-xs text-gray-400">DEX Features</span>
+            </div>
+          </div>
+          <p className="text-center text-xs text-gray-400 mt-3">
+            Seamless integration between your wallet, AI analytics, and DEX trading features
+          </p>
+        </div>
+      </div>
+
+      {/* Database Test Button (Development Only) */}
+      {user && (
+        <div className="mt-6">
+          <Button
+            variant="outline"
+            className="w-full border-dex-secondary/30 hover:bg-dex-secondary/20"
+            onClick={handleTestDatabaseIntegration}
+          >
+            <AlertTriangle className="mr-2 h-4 w-4 text-yellow-500" />
+            Test Database Integration
+          </Button>
+          <p className="text-xs text-gray-500 text-center mt-2">
+            Development tool to verify database connectivity and wallet creation flow
+          </p>
+        </div>
+      )}
     </div>
   );
 

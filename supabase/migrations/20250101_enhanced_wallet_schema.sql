@@ -1,21 +1,29 @@
--- Enhanced Wallet Schema Migration
+-- Enhanced Wallet Schema Migration - Phase 4.5 Comprehensive Wallet Management
 -- This migration enhances the existing wallet tables and creates a unified wallets table
+-- with comprehensive metadata, real-time sync capabilities, and enterprise-grade features
 
 -- 1. ENHANCE generated_wallets TABLE
--- Add new columns to existing generated_wallets table
-ALTER TABLE generated_wallets 
+-- Add new columns to existing generated_wallets table for Phase 4.5 features
+ALTER TABLE generated_wallets
 ADD COLUMN IF NOT EXISTS private_keys JSONB DEFAULT '{}',
 ADD COLUMN IF NOT EXISTS public_keys JSONB DEFAULT '{}',
 ADD COLUMN IF NOT EXISTS wallet_address TEXT,
 ADD COLUMN IF NOT EXISTS network TEXT DEFAULT 'ethereum',
 ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true,
-ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+ADD COLUMN IF NOT EXISTS import_method TEXT DEFAULT 'seed_phrase' CHECK (import_method IN ('seed_phrase', 'private_key', 'hardware', 'watch_only')),
+ADD COLUMN IF NOT EXISTS creation_timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+ADD COLUMN IF NOT EXISTS last_balance_update TIMESTAMP WITH TIME ZONE,
+ADD COLUMN IF NOT EXISTS balance_cache JSONB DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS transaction_count INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS risk_level TEXT DEFAULT 'low' CHECK (risk_level IN ('low', 'medium', 'high')),
+ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}';
 
 -- Update existing generated_wallets to populate wallet_address from addresses
-UPDATE generated_wallets 
+UPDATE generated_wallets
 SET wallet_address = COALESCE(
   addresses->>'ETH',
-  addresses->>'BTC', 
+  addresses->>'BTC',
   (SELECT value FROM jsonb_each_text(addresses) LIMIT 1)
 )
 WHERE wallet_address IS NULL AND addresses IS NOT NULL;
@@ -36,7 +44,7 @@ CREATE TRIGGER generated_wallets_updated_at_trigger
   EXECUTE FUNCTION update_generated_wallets_updated_at();
 
 -- 2. ENHANCE wallet_connections TABLE
--- Add new columns to existing wallet_connections table
+-- Add new columns to existing wallet_connections table for Phase 4.5 features
 ALTER TABLE wallet_connections
 ADD COLUMN IF NOT EXISTS addresses JSONB DEFAULT '{}',
 ADD COLUMN IF NOT EXISTS encrypted_seed_phrase TEXT,
@@ -44,10 +52,19 @@ ADD COLUMN IF NOT EXISTS private_keys JSONB DEFAULT '{}',
 ADD COLUMN IF NOT EXISTS public_keys JSONB DEFAULT '{}',
 ADD COLUMN IF NOT EXISTS connection_method TEXT DEFAULT 'browser_extension',
 ADD COLUMN IF NOT EXISTS device_info JSONB DEFAULT '{}',
-ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+ADD COLUMN IF NOT EXISTS balance_cache JSONB DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS last_balance_update TIMESTAMP WITH TIME ZONE,
+ADD COLUMN IF NOT EXISTS transaction_count INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS risk_assessment JSONB DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS connection_status TEXT DEFAULT 'active' CHECK (connection_status IN ('active', 'disconnected', 'error', 'pending')),
+ADD COLUMN IF NOT EXISTS supported_networks TEXT[] DEFAULT ARRAY['ethereum'],
+ADD COLUMN IF NOT EXISTS wallet_version TEXT,
+ADD COLUMN IF NOT EXISTS security_features JSONB DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS permissions JSONB DEFAULT '{}';
 
 -- Update existing wallet_connections to populate addresses from address
-UPDATE wallet_connections 
+UPDATE wallet_connections
 SET addresses = jsonb_build_object('ETH', address)
 WHERE addresses = '{}' AND address IS NOT NULL;
 
@@ -121,11 +138,11 @@ INSERT INTO wallets (
   source_table, source_id, addresses, encrypted_seed_phrase, private_keys,
   public_keys, connection_method, device_info, is_active, created_at, updated_at
 )
-SELECT 
+SELECT
   user_id,
   name as wallet_name,
   'generated' as wallet_type,
-  COALESCE(wallet_address, addresses->>'ETH', addresses->>'BTC', 
+  COALESCE(wallet_address, addresses->>'ETH', addresses->>'BTC',
     (SELECT value FROM jsonb_each_text(addresses) LIMIT 1)) as wallet_address,
   COALESCE(network, 'ethereum') as network,
   'custom_ai' as provider,
@@ -141,7 +158,7 @@ SELECT
   created_at,
   COALESCE(updated_at, created_at) as updated_at
 FROM generated_wallets
-WHERE COALESCE(wallet_address, addresses->>'ETH', addresses->>'BTC', 
+WHERE COALESCE(wallet_address, addresses->>'ETH', addresses->>'BTC',
   (SELECT value FROM jsonb_each_text(addresses) LIMIT 1)) IS NOT NULL;
 
 -- Insert from wallet_connections
@@ -150,19 +167,19 @@ INSERT INTO wallets (
   source_table, source_id, addresses, encrypted_seed_phrase, private_keys,
   public_keys, connection_method, device_info, is_active, created_at, updated_at
 )
-SELECT 
+SELECT
   user_id,
   wallet_name,
   wallet_type,
   COALESCE(address, addresses->>'ETH', addresses->>'BTC',
     (SELECT value FROM jsonb_each_text(addresses) LIMIT 1)) as wallet_address,
-  CASE 
+  CASE
     WHEN chain_id = '1' THEN 'ethereum'
     WHEN chain_id = '56' THEN 'binance'
     WHEN chain_id = '137' THEN 'polygon'
     ELSE 'ethereum'
   END as network,
-  CASE 
+  CASE
     WHEN wallet_type = 'hot' THEN 'external_hot'
     WHEN wallet_type = 'hardware' THEN 'external_hardware'
     ELSE 'external'
@@ -228,7 +245,7 @@ BEGIN
   ELSIF TG_OP = 'DELETE' THEN
     UPDATE wallets SET is_active = false WHERE source_table = 'generated_wallets' AND source_id = OLD.id;
   END IF;
-  
+
   RETURN COALESCE(NEW, OLD);
 END;
 $$ LANGUAGE plpgsql;
@@ -248,13 +265,13 @@ BEGIN
       NEW.wallet_type,
       COALESCE(NEW.address, NEW.addresses->>'ETH', NEW.addresses->>'BTC',
         (SELECT value FROM jsonb_each_text(NEW.addresses) LIMIT 1)),
-      CASE 
+      CASE
         WHEN NEW.chain_id = '1' THEN 'ethereum'
         WHEN NEW.chain_id = '56' THEN 'binance'
         WHEN NEW.chain_id = '137' THEN 'polygon'
         ELSE 'ethereum'
       END,
-      CASE 
+      CASE
         WHEN NEW.wallet_type = 'hot' THEN 'external_hot'
         WHEN NEW.wallet_type = 'hardware' THEN 'external_hardware'
         ELSE 'external'
@@ -276,7 +293,7 @@ BEGIN
       wallet_name = NEW.wallet_name,
       wallet_address = COALESCE(NEW.address, NEW.addresses->>'ETH', NEW.addresses->>'BTC',
         (SELECT value FROM jsonb_each_text(NEW.addresses) LIMIT 1)),
-      network = CASE 
+      network = CASE
         WHEN NEW.chain_id = '1' THEN 'ethereum'
         WHEN NEW.chain_id = '56' THEN 'binance'
         WHEN NEW.chain_id = '137' THEN 'polygon'
@@ -294,7 +311,7 @@ BEGIN
   ELSIF TG_OP = 'DELETE' THEN
     UPDATE wallets SET is_active = false WHERE source_table = 'wallet_connections' AND source_id = OLD.id;
   END IF;
-  
+
   RETURN COALESCE(NEW, OLD);
 END;
 $$ LANGUAGE plpgsql;
@@ -346,7 +363,7 @@ SELECT * FROM wallets WHERE is_active = true;
 
 -- View for generated wallets with source data
 CREATE OR REPLACE VIEW generated_wallets_view AS
-SELECT 
+SELECT
   w.*,
   gw.encrypted_seed_phrase as source_encrypted_seed_phrase,
   gw.addresses as source_addresses
@@ -356,7 +373,7 @@ WHERE w.source_table = 'generated_wallets' AND w.is_active = true;
 
 -- View for connected wallets with source data
 CREATE OR REPLACE VIEW connected_wallets_view AS
-SELECT 
+SELECT
   w.*,
   wc.chain_id,
   wc.last_connected

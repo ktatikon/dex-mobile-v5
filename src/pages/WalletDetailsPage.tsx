@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -10,7 +10,6 @@ import {
   Copy,
   Eye,
   EyeOff,
-  Shield,
   Wallet,
   Download,
   Trash2,
@@ -18,19 +17,31 @@ import {
   Edit3,
   RefreshCw,
   Send,
-  QrCode
+  QrCode,
+  Flame,
+  HardDrive
 } from 'lucide-react';
 import { getGeneratedWallets, getGeneratedWalletBalances } from '@/services/walletGenerationService';
+import { getAllUserWalletsWithPreferences } from '@/services/walletPreferencesService';
+import { supabase } from '@/integrations/supabase/client';
 import WalletRenameModal from '@/components/WalletRenameModal';
 import WalletDeleteModal from '@/components/WalletDeleteModal';
 import SeedPhraseBackupModal from '@/components/SeedPhraseBackupModal';
 
-interface GeneratedWallet {
+// Universal wallet interface for all wallet types
+interface UniversalWallet {
   id: string;
   name: string;
+  wallet_name?: string; // For database wallets
   type: string;
-  addresses: { [key: string]: string };
-  createdAt: string;
+  wallet_type?: string; // For database wallets
+  addresses?: { [key: string]: string }; // For generated wallets
+  wallet_address?: string; // For database wallets
+  createdAt?: string;
+  created_at?: string; // For database wallets
+  portfolioValue?: number;
+  isDefault?: boolean;
+  category?: string;
 }
 
 const WalletDetailsPage: React.FC = () => {
@@ -39,7 +50,7 @@ const WalletDetailsPage: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const [wallet, setWallet] = useState<GeneratedWallet | null>(null);
+  const [wallet, setWallet] = useState<UniversalWallet | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAddresses, setShowAddresses] = useState(false);
   const [balances, setBalances] = useState<any[]>([]);
@@ -57,18 +68,127 @@ const WalletDetailsPage: React.FC = () => {
       }
 
       try {
-        // Fetch wallet details
-        const wallets = await getGeneratedWallets(user.id);
-        const foundWallet = wallets.find(w => w.id === walletId);
+        console.log('🔍 WalletDetailsPage: Searching for wallet ID:', walletId);
+        console.log('👤 User ID:', user.id);
+
+        // Try to fetch from all wallet sources
+        let foundWallet: UniversalWallet | null = null;
+
+        // 1. Try generated wallets first
+        try {
+          console.log('🔍 Checking generated wallets...');
+          const generatedWallets = await getGeneratedWallets(user.id);
+          console.log('📋 Generated wallets found:', generatedWallets.length);
+          foundWallet = generatedWallets.find(w => w.id === walletId);
+          if (foundWallet) {
+            console.log('✅ Found wallet in generated wallets');
+          }
+        } catch (error) {
+          console.warn('Generated wallets fetch failed:', error);
+        }
+
+        // 2. If not found, try unified wallets table (used by "All Wallets" tab)
+        if (!foundWallet) {
+          try {
+            console.log('🔍 Checking unified wallets table...');
+            const { data: unifiedWallets, error } = await supabase
+              .from('wallets')
+              .select(`
+                id,
+                wallet_name,
+                wallet_type,
+                wallet_address,
+                network,
+                provider,
+                is_active,
+                created_at
+              `)
+              .eq('user_id', user.id)
+              .eq('id', walletId)
+              .eq('is_active', true);
+
+            if (!error && unifiedWallets && unifiedWallets.length > 0) {
+              const wallet = unifiedWallets[0];
+              console.log('📋 Unified wallet data:', wallet);
+              foundWallet = {
+                id: wallet.id,
+                name: wallet.wallet_name,
+                type: wallet.wallet_type,
+                createdAt: wallet.created_at,
+                // Add compatibility fields
+                wallet_name: wallet.wallet_name,
+                wallet_type: wallet.wallet_type,
+                wallet_address: wallet.wallet_address
+              };
+              console.log('✅ Found wallet in unified wallets table');
+            } else {
+              console.log('❌ No wallet found in unified wallets table');
+              if (error) console.log('❌ Unified wallets error:', error);
+            }
+          } catch (error) {
+            console.warn('Unified wallets table fetch failed:', error);
+          }
+        }
+
+        // 3. If still not found, try comprehensive wallet service
+        if (!foundWallet) {
+          try {
+            const allWallets = await getAllUserWalletsWithPreferences(user.id);
+            foundWallet = allWallets.find(w => w.id === walletId);
+          } catch (error) {
+            console.warn('Preferences service fetch failed:', error);
+          }
+        }
 
         if (foundWallet) {
-          setWallet(foundWallet);
+          // Normalize wallet data for consistent display
+          const normalizedWallet: UniversalWallet = {
+            ...foundWallet,
+            name: foundWallet.wallet_name || foundWallet.name,
+            type: foundWallet.wallet_type || foundWallet.type,
+            createdAt: foundWallet.created_at || foundWallet.createdAt
+          };
 
-          // Fetch wallet balances
+          setWallet(normalizedWallet);
+
+          // Fetch wallet balances based on wallet type
           setBalancesLoading(true);
-          const walletBalances = await getGeneratedWalletBalances(user.id, walletId);
-          setBalances(walletBalances);
+          try {
+            if (foundWallet.type === 'generated' || foundWallet.wallet_type === 'generated') {
+              // Use generated wallet balance service
+              const walletBalances = await getGeneratedWalletBalances(user.id, walletId);
+              setBalances(walletBalances);
+            } else {
+              // Use database balance service for hot/hardware wallets
+              const { data: balances, error } = await supabase
+                .from('wallet_balances')
+                .select(`
+                  id,
+                  balance,
+                  tokens:token_id (
+                    id,
+                    symbol,
+                    name,
+                    logo,
+                    price,
+                    decimals
+                  )
+                `)
+                .eq('wallet_id', walletId);
+
+              if (!error && balances) {
+                setBalances(balances);
+              } else {
+                console.warn('Database balance fetch failed:', error);
+                setBalances([]);
+              }
+            }
+          } catch (balanceError) {
+            console.error('❌ Error fetching balances:', balanceError);
+            setBalances([]);
+          }
         } else {
+          console.error('❌ Wallet not found in any service');
           toast({
             title: "Wallet Not Found",
             description: "The requested wallet could not be found.",
@@ -77,7 +197,7 @@ const WalletDetailsPage: React.FC = () => {
           navigate('/wallet-dashboard');
         }
       } catch (error) {
-        console.error('Error fetching wallet details:', error);
+        console.error('❌ Error fetching wallet details:', error);
         toast({
           title: "Error",
           description: "Failed to load wallet details.",
@@ -124,7 +244,12 @@ const WalletDetailsPage: React.FC = () => {
   };
 
   const handleWalletDeleted = () => {
-    navigate('/wallet');
+    // Navigate back to wallet dashboard and refresh the page to ensure deleted wallet is removed
+    navigate('/wallet-dashboard');
+    // Force a page refresh to ensure the wallet list is updated
+    setTimeout(() => {
+      window.location.reload();
+    }, 100);
   };
 
   const handleCopyAddress = (currency: string, address: string) => {
@@ -154,9 +279,29 @@ const WalletDetailsPage: React.FC = () => {
     return balanceNum.toFixed(6).replace(/\.?0+$/, '');
   };
 
-  const formatPrice = (price: number): string => {
-    if (price < 0.01) return `$${price.toFixed(6)}`;
-    return `$${price.toFixed(2)}`;
+  // Get wallet icon based on type
+  const getWalletIcon = (walletType: string) => {
+    switch (walletType) {
+      case 'hot':
+        return <Flame className="h-6 w-6 text-orange-500" />;
+      case 'hardware':
+        return <HardDrive className="h-6 w-6 text-blue-500" />;
+      case 'generated':
+      default:
+        return <Wallet className="h-6 w-6 text-dex-primary" />;
+    }
+  };
+
+  // Get wallet addresses for display
+  const getWalletAddresses = () => {
+    if (wallet?.addresses) {
+      // Generated wallet with multiple addresses
+      return Object.entries(wallet.addresses);
+    } else if (wallet?.wallet_address) {
+      // Single address wallet (hot/hardware)
+      return [['Primary', wallet.wallet_address]];
+    }
+    return [];
   };
 
   const getTotalValue = (): number => {
@@ -231,13 +376,16 @@ const WalletDetailsPage: React.FC = () => {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-dex-primary/20 flex items-center justify-center">
-              <Wallet className="h-8 w-8 text-dex-primary" />
+              {getWalletIcon(wallet.type)}
             </div>
             <div>
               <h2 className="text-xl font-bold text-white">{wallet.name}</h2>
-              <p className="text-gray-400">
-                Created on {new Date(wallet.createdAt).toLocaleDateString()}
-              </p>
+              <p className="text-gray-400 capitalize">{wallet.type} Wallet</p>
+              {wallet.createdAt && (
+                <p className="text-sm text-gray-500">
+                  Created on {new Date(wallet.createdAt).toLocaleDateString()}
+                </p>
+              )}
             </div>
           </div>
           <Button
@@ -361,7 +509,7 @@ const WalletDetailsPage: React.FC = () => {
           </div>
 
           <div className="space-y-3">
-            {Object.entries(wallet.addresses).map(([currency, address]) => (
+            {getWalletAddresses().map(([currency, address]) => (
               <div
                 key={currency}
                 className={`p-4 bg-dex-secondary/10 border border-dex-secondary/20 rounded-lg ${
@@ -380,7 +528,7 @@ const WalletDetailsPage: React.FC = () => {
                       variant="ghost"
                       size="sm"
                       className="h-8 w-8 p-0 text-gray-400 hover:text-white"
-                      onClick={() => handleCopyAddress(currency, address)}
+                      onClick={() => handleCopyAddress(currency, address as string)}
                     >
                       <Copy size={16} />
                     </Button>

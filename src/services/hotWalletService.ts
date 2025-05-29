@@ -183,94 +183,183 @@ export const connectHotWallet = async (
 };
 
 /**
- * Connect MetaMask wallet
+ * Connect MetaMask wallet with proper detection and redirect flow
  * @returns Wallet address
  */
 const connectMetaMask = async (): Promise<string> => {
-  if (typeof window !== 'undefined' && window.ethereum) {
+  // Check if MetaMask is installed
+  if (typeof window !== 'undefined' && window.ethereum && window.ethereum.isMetaMask) {
     try {
+      console.log('🦊 MetaMask detected, requesting account access...');
+
       // Request account access
       const accounts = await window.ethereum.request({
         method: 'eth_requestAccounts'
       });
 
       if (accounts && accounts.length > 0) {
+        console.log('✅ MetaMask connected successfully');
         return accounts[0];
+      } else {
+        throw new Error('No accounts found. Please unlock MetaMask and try again.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('MetaMask connection error:', error);
-      throw new Error('Failed to connect to MetaMask');
+
+      // Handle specific MetaMask errors
+      if (error.code === 4001) {
+        throw new Error('Connection rejected by user. Please approve the connection request in MetaMask.');
+      } else if (error.code === -32002) {
+        throw new Error('Connection request already pending. Please check MetaMask.');
+      } else {
+        throw new Error(`MetaMask connection failed: ${error.message}`);
+      }
     }
   }
 
-  // Fallback for demo purposes
-  throw new Error('MetaMask not detected. Please install MetaMask extension.');
+  // MetaMask not detected - redirect to download page
+  console.log('🦊 MetaMask not detected, redirecting to download page...');
+  const downloadUrl = 'https://metamask.io/download/';
+
+  // Open download page in new tab
+  if (typeof window !== 'undefined') {
+    window.open(downloadUrl, '_blank', 'noopener,noreferrer');
+  }
+
+  throw new Error('MetaMask extension not found. Please install MetaMask from the opened page and refresh this application.');
 };
 
 /**
- * Connect Trust Wallet via WalletConnect
+ * Connect Trust Wallet with proper detection and redirect flow
  * @returns Wallet address
  */
 const connectTrustWallet = async (): Promise<string> => {
-  try {
-    // Check if Trust Wallet is available via WalletConnect
-    if (typeof window !== 'undefined' && window.ethereum && window.ethereum.isTrust) {
+  // Check if Trust Wallet is available
+  if (typeof window !== 'undefined' && window.ethereum && (window.ethereum as any).isTrust) {
+    try {
+      console.log('🛡️ Trust Wallet detected, requesting account access...');
+
+      // Request account access
       const accounts = await window.ethereum.request({
         method: 'eth_requestAccounts'
       });
 
       if (accounts && accounts.length > 0) {
+        console.log('✅ Trust Wallet connected successfully');
         return accounts[0];
+      } else {
+        throw new Error('No accounts found. Please unlock Trust Wallet and try again.');
+      }
+    } catch (error: any) {
+      console.error('Trust Wallet connection error:', error);
+
+      // Handle specific Trust Wallet errors
+      if (error.code === 4001) {
+        throw new Error('Connection rejected by user. Please approve the connection request in Trust Wallet.');
+      } else {
+        throw new Error(`Trust Wallet connection failed: ${error.message}`);
       }
     }
-
-    throw new Error('Trust Wallet not detected. Please install Trust Wallet or use WalletConnect.');
-  } catch (error) {
-    console.error('Trust Wallet connection error:', error);
-    throw new Error('Failed to connect to Trust Wallet');
   }
+
+  // Trust Wallet not detected - redirect to download page
+  console.log('🛡️ Trust Wallet not detected, redirecting to download page...');
+  const downloadUrl = 'https://trustwallet.com/download';
+
+  // Open download page in new tab
+  if (typeof window !== 'undefined') {
+    window.open(downloadUrl, '_blank', 'noopener,noreferrer');
+  }
+
+  throw new Error('Trust Wallet not found. Please install Trust Wallet from the opened page and refresh this application.');
 };
 
 /**
- * Connect Coinbase Wallet
+ * Connect Coinbase Wallet with proper detection and redirect flow
  * @returns Wallet address
  */
 const connectCoinbaseWallet = async (): Promise<string> => {
-  try {
-    // Check if Coinbase Wallet is available
-    if (typeof window !== 'undefined' && window.ethereum && window.ethereum.isCoinbaseWallet) {
+  // Check if Coinbase Wallet is available
+  if (typeof window !== 'undefined' && window.ethereum && (window.ethereum as any).isCoinbaseWallet) {
+    try {
+      console.log('🔵 Coinbase Wallet detected, requesting account access...');
+
       const accounts = await window.ethereum.request({
         method: 'eth_requestAccounts'
       });
 
       if (accounts && accounts.length > 0) {
+        console.log('✅ Coinbase Wallet connected successfully');
         return accounts[0];
+      } else {
+        throw new Error('No accounts found. Please unlock Coinbase Wallet and try again.');
+      }
+    } catch (error: any) {
+      console.error('Coinbase Wallet connection error:', error);
+
+      // Handle specific Coinbase Wallet errors
+      if (error.code === 4001) {
+        throw new Error('Connection rejected by user. Please approve the connection request in Coinbase Wallet.');
+      } else {
+        throw new Error(`Coinbase Wallet connection failed: ${error.message}`);
       }
     }
-
-    throw new Error('Coinbase Wallet not detected. Please install Coinbase Wallet extension.');
-  } catch (error) {
-    console.error('Coinbase Wallet connection error:', error);
-    throw new Error('Failed to connect to Coinbase Wallet');
   }
+
+  // Coinbase Wallet not detected - redirect to download page
+  console.log('🔵 Coinbase Wallet not detected, redirecting to download page...');
+  const downloadUrl = 'https://www.coinbase.com/wallet/downloads';
+
+  // Open download page in new tab
+  if (typeof window !== 'undefined') {
+    window.open(downloadUrl, '_blank', 'noopener,noreferrer');
+  }
+
+  throw new Error('Coinbase Wallet not found. Please install Coinbase Wallet from the opened page and refresh this application.');
 };
 
 /**
- * Connect Phantom wallet (Solana)
+ * Connect Phantom wallet (Solana) with proper detection and redirect flow
  * @returns Wallet address
  */
 const connectPhantom = async (): Promise<string> => {
+  // Check if Phantom is installed
   if (typeof window !== 'undefined' && window.solana && window.solana.isPhantom) {
     try {
+      console.log('👻 Phantom detected, requesting connection...');
+
       const response = await window.solana.connect();
-      return response.publicKey.toString();
-    } catch (error) {
+
+      if (response && response.publicKey) {
+        console.log('✅ Phantom connected successfully');
+        return response.publicKey.toString();
+      } else {
+        throw new Error('No public key received from Phantom wallet.');
+      }
+    } catch (error: any) {
       console.error('Phantom connection error:', error);
-      throw new Error('Failed to connect to Phantom');
+
+      // Handle specific Phantom errors
+      if (error.code === 4001) {
+        throw new Error('Connection rejected by user. Please approve the connection request in Phantom.');
+      } else if (error.message?.includes('User rejected')) {
+        throw new Error('Connection rejected by user. Please approve the connection request in Phantom.');
+      } else {
+        throw new Error(`Phantom connection failed: ${error.message}`);
+      }
     }
   }
 
-  throw new Error('Phantom wallet not detected. Please install Phantom extension.');
+  // Phantom not detected - redirect to download page
+  console.log('👻 Phantom not detected, redirecting to download page...');
+  const downloadUrl = 'https://phantom.app/download';
+
+  // Open download page in new tab
+  if (typeof window !== 'undefined') {
+    window.open(downloadUrl, '_blank', 'noopener,noreferrer');
+  }
+
+  throw new Error('Phantom wallet not found. Please install Phantom from the opened page and refresh this application.');
 };
 
 /**

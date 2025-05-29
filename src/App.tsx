@@ -25,7 +25,7 @@ import ProfileSettingsPage from "./pages/ProfileSettingsPage";
 import WalletGenerationPage from "./pages/WalletGenerationPage";
 import WalletDiagnosticPage from "./pages/WalletDiagnosticPage";
 import WalletDetailsPage from "./pages/WalletDetailsPage";
-import WalletDashboardPage from "./pages/WalletDashboardPage";
+import WalletDashboardPageWithErrorBoundary from "./pages/WalletDashboardPageWithErrorBoundary";
 import WalletSettingsPage from "./pages/WalletSettingsPage";
 import WalletImportPage from "./pages/WalletImportPage";
 import TestnetWalletPageWithErrorBoundary from "./pages/TestnetWalletPageWithErrorBoundary";
@@ -226,7 +226,7 @@ const App = () => {
                     />
                     <div className="pt-16 pb-20">
                       <div className="container mx-auto px-4 mb-4">
-                        <WalletDashboardPage />
+                        <WalletDashboardPageWithErrorBoundary />
                       </div>
                       <DexNavigation />
                     </div>

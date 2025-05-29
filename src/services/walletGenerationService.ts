@@ -448,21 +448,89 @@ export const decryptSeedPhrase = (encryptedSeedPhrase: string, password: string)
 };
 
 /**
+ * Create the generated_wallets table if it doesn't exist
+ * @returns Whether the table was created or already exists
+ */
+export const createGeneratedWalletsTable = async (): Promise<boolean> => {
+  try {
+    console.log('🔧 Attempting to create generated_wallets table...');
+
+    const createTableSQL = `
+      CREATE TABLE IF NOT EXISTS generated_wallets (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        encrypted_seed_phrase TEXT NOT NULL,
+        addresses JSONB NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+
+      -- Create indexes for better performance
+      CREATE INDEX IF NOT EXISTS idx_generated_wallets_user_id ON generated_wallets(user_id);
+      CREATE INDEX IF NOT EXISTS idx_generated_wallets_created_at ON generated_wallets(created_at);
+
+      -- Enable RLS (Row Level Security)
+      ALTER TABLE generated_wallets ENABLE ROW LEVEL SECURITY;
+
+      -- Create RLS policy to allow users to access only their own wallets
+      DROP POLICY IF EXISTS "Users can access their own generated wallets" ON generated_wallets;
+      CREATE POLICY "Users can access their own generated wallets" ON generated_wallets
+        FOR ALL USING (auth.uid() = user_id);
+    `;
+
+    const { error } = await supabase.rpc('exec_sql', { sql: createTableSQL });
+
+    if (error) {
+      console.error('❌ Error creating generated_wallets table:', error);
+      return false;
+    }
+
+    console.log('✅ Generated wallets table created/verified successfully');
+    return true;
+  } catch (error) {
+    console.error('❌ Exception creating generated_wallets table:', error);
+    return false;
+  }
+};
+
+/**
  * Check if the generated_wallets table exists in Supabase
  * @returns Whether the table exists
  */
 export const checkGeneratedWalletsTable = async (): Promise<boolean> => {
   try {
+    console.log('🔍 Checking if generated_wallets table exists...');
+
     // Try to query the table with a limit of 0 to check if it exists
     const { error } = await supabase
       .from('generated_wallets')
       .select('id')
       .limit(0);
 
-    // If there's no error, the table exists
-    return !error;
+    if (!error) {
+      console.log('✅ Generated wallets table exists');
+      return true;
+    }
+
+    console.log('⚠️ Generated wallets table does not exist, attempting to create...');
+
+    // If table doesn't exist, try to create it
+    const created = await createGeneratedWalletsTable();
+
+    if (created) {
+      // Verify the table was created by trying the query again
+      const { error: verifyError } = await supabase
+        .from('generated_wallets')
+        .select('id')
+        .limit(0);
+
+      return !verifyError;
+    }
+
+    return false;
   } catch (error) {
-    console.error('Error checking generated_wallets table:', error);
+    console.error('❌ Error checking generated_wallets table:', error);
     return false;
   }
 };
@@ -480,7 +548,15 @@ export const testGeneratedWalletsTableAccess = async (): Promise<{
   schema?: any;
   error?: any;
 }> => {
-  const result = {
+  const result: {
+    tableExists: boolean;
+    canSelect: boolean;
+    canInsert: boolean;
+    canUpdate: boolean;
+    canDelete: boolean;
+    schema?: any;
+    error?: any;
+  } = {
     tableExists: false,
     canSelect: false,
     canInsert: false,
@@ -591,25 +667,17 @@ export const saveGeneratedWallet = async (
   addresses: { [key: string]: string }
 ): Promise<GeneratedWallet | null> => {
   try {
+    console.log('🔄 Starting wallet save process...');
+
     // Check if the generated_wallets table exists
     const tableExists = await checkGeneratedWalletsTable();
 
     if (!tableExists) {
-      console.error('The generated_wallets table does not exist in the database');
-
-      // Create a mock wallet object for development purposes
-      const mockWallet: GeneratedWallet = {
-        id: crypto.randomUUID(),
-        name: walletName,
-        type: 'generated',
-        seedPhrase: encryptedSeedPhrase, // Only for development
-        addresses: addresses,
-        createdAt: new Date().toISOString()
-      };
-
-      console.log('Created mock wallet:', mockWallet);
-      return mockWallet;
+      console.error('❌ The generated_wallets table does not exist in the database');
+      throw new Error('Database table "generated_wallets" does not exist. Please check your database schema.');
     }
+
+    console.log('✅ Database table exists, proceeding with wallet creation...');
 
     // Validate addresses object
     if (!addresses || typeof addresses !== 'object' || Object.keys(addresses).length === 0) {
@@ -637,36 +705,33 @@ export const saveGeneratedWallet = async (
       .select('*')
       .single();
 
-    console.log('Insert result:', { wallet, walletError });
+    console.log('📊 Insert result:', { wallet, walletError });
 
     if (walletError) {
-      console.error('Error creating wallet:', walletError);
-      console.error('Error details:', {
+      console.error('❌ Database insertion failed:', walletError);
+      console.error('🔍 Error details:', {
         code: walletError.code,
         message: walletError.message,
         details: walletError.details,
         hint: walletError.hint
       });
-      console.error('Data being inserted:', {
+      console.error('📝 Data being inserted:', {
         user_id: userId,
         name: walletName,
         encrypted_seed_phrase: `${encryptedSeedPhrase.substring(0, 20)}...`, // Truncated for security
         addresses: addresses
       });
 
-      // If there's an error, create a mock wallet for development
-      const mockWallet: GeneratedWallet = {
-        id: crypto.randomUUID(),
-        name: walletName,
-        type: 'generated',
-        seedPhrase: encryptedSeedPhrase, // Only for development
-        addresses: addresses,
-        createdAt: new Date().toISOString()
-      };
-
-      console.log('Created mock wallet due to error:', walletError);
-      return mockWallet;
+      // Throw a detailed error instead of returning mock data
+      throw new Error(`Failed to save wallet to database: ${walletError.message} (Code: ${walletError.code})`);
     }
+
+    if (!wallet) {
+      console.error('❌ No wallet data returned from database insertion');
+      throw new Error('Database insertion succeeded but no wallet data was returned');
+    }
+
+    console.log('✅ Wallet successfully saved to database:', wallet.id);
 
     // Create initial balance records for the wallet
     await createInitialBalanceRecords(userId, wallet.id, addresses);
@@ -680,20 +745,20 @@ export const saveGeneratedWallet = async (
       createdAt: wallet.created_at
     };
   } catch (error) {
-    console.error('Error saving generated wallet:', error);
+    console.error('❌ Critical error in saveGeneratedWallet:', error);
 
-    // Create a mock wallet object for development purposes
-    const mockWallet: GeneratedWallet = {
-      id: crypto.randomUUID(),
-      name: walletName,
-      type: 'generated',
-      seedPhrase: encryptedSeedPhrase, // Only for development
-      addresses: addresses,
-      createdAt: new Date().toISOString()
-    };
+    // Log detailed error information for debugging
+    console.error('🔍 Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      userId,
+      walletName,
+      addressesCount: Object.keys(addresses).length
+    });
 
-    console.log('Created mock wallet due to exception:', error);
-    return mockWallet;
+    // Re-throw the error to ensure proper error handling in the UI
+    throw new Error(`Failed to save wallet: ${error instanceof Error ? error.message : 'Unknown error occurred'}`);
   }
 };
 
@@ -1334,6 +1399,100 @@ const generateAddressesFromSeedPhrase = async (seedPhrase: string): Promise<{ [k
   } catch (error) {
     console.error('Error generating addresses from seed phrase:', error);
     return null;
+  }
+};
+
+/**
+ * Test the complete wallet creation flow
+ * @param userId The user ID to test with
+ * @returns Test results
+ */
+export const testWalletCreationFlow = async (userId: string): Promise<{
+  success: boolean;
+  walletId?: string;
+  error?: string;
+  steps: { [key: string]: boolean };
+}> => {
+  const steps = {
+    tableCheck: false,
+    seedGeneration: false,
+    addressGeneration: false,
+    encryption: false,
+    databaseSave: false,
+    balanceRecords: false
+  };
+
+  try {
+    console.log('🧪 Starting wallet creation flow test...');
+
+    // Step 1: Check table exists
+    console.log('📋 Step 1: Checking database table...');
+    const tableExists = await checkGeneratedWalletsTable();
+    steps.tableCheck = tableExists;
+
+    if (!tableExists) {
+      throw new Error('Database table check failed');
+    }
+
+    // Step 2: Generate seed phrase
+    console.log('🌱 Step 2: Generating seed phrase...');
+    const seedPhrase = generateMnemonic(128);
+    steps.seedGeneration = !!seedPhrase && validateMnemonic(seedPhrase);
+
+    if (!steps.seedGeneration) {
+      throw new Error('Seed phrase generation failed');
+    }
+
+    // Step 3: Generate addresses
+    console.log('🏠 Step 3: Generating addresses...');
+    const addresses = await generateAddressesFromMnemonic(seedPhrase);
+    steps.addressGeneration = !!addresses && Object.keys(addresses).length > 0;
+
+    if (!steps.addressGeneration) {
+      throw new Error('Address generation failed');
+    }
+
+    // Step 4: Encrypt seed phrase
+    console.log('🔐 Step 4: Encrypting seed phrase...');
+    const testPassword = 'test123';
+    const encryptedSeedPhrase = encryptSeedPhrase(seedPhrase, testPassword);
+    steps.encryption = !!encryptedSeedPhrase;
+
+    if (!steps.encryption) {
+      throw new Error('Seed phrase encryption failed');
+    }
+
+    // Step 5: Save to database
+    console.log('💾 Step 5: Saving to database...');
+    const testWalletName = `Test_Wallet_${Date.now()}`;
+    const wallet = await saveGeneratedWallet(userId, testWalletName, encryptedSeedPhrase, addresses);
+    steps.databaseSave = !!wallet && !!wallet.id;
+
+    if (!steps.databaseSave) {
+      throw new Error('Database save failed');
+    }
+
+    // Step 6: Verify balance records
+    console.log('⚖️ Step 6: Checking balance records...');
+    const balances = await getGeneratedWalletBalances(userId, wallet.id);
+    steps.balanceRecords = Array.isArray(balances);
+
+    console.log('✅ Wallet creation flow test completed successfully');
+
+    return {
+      success: true,
+      walletId: wallet.id,
+      steps
+    };
+
+  } catch (error) {
+    console.error('❌ Wallet creation flow test failed:', error);
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      steps
+    };
   }
 };
 
