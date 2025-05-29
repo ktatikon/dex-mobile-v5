@@ -381,7 +381,6 @@ const TradePage = () => {
       <div className="mb-6">
         <TradingChart
           selectedToken={selectedToken || { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', price: 0 }}
-          timeInterval="7D"
           isLoading={loading}
         />
       </div>

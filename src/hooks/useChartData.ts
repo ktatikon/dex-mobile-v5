@@ -34,7 +34,7 @@ export const useChartData = ({
   enableAutoRefresh = true,
   refreshInterval = 5 * 60 * 1000 // 5 minutes
 }: UseChartDataOptions): UseChartDataReturn => {
-  
+
   // State management
   const [chartData, setChartData] = useState<ChartData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -49,7 +49,7 @@ export const useChartData = ({
 
   // Fetch chart data function
   const fetchChartData = useCallback(async (
-    targetTokenId: string, 
+    targetTokenId: string,
     targetInterval: TimeInterval,
     showLoading = true
   ): Promise<void> => {
@@ -57,25 +57,28 @@ export const useChartData = ({
     fetchCount.current += 1;
     const currentFetchId = fetchCount.current;
 
+    console.log(`📊 Starting fetch for token: ${targetTokenId}, interval: ${targetInterval}, symbol: ${tokenSymbol}`);
+
     if (showLoading && isMounted.current) {
       setIsLoading(true);
       setError(null);
     }
 
     try {
-      console.log(`📊 Fetching chart data for ${targetTokenId} (${targetInterval})`);
-      
       let data: ChartData;
-      
+
       try {
         // Try to fetch real data from CoinGecko
+        console.log(`📊 Attempting CoinGecko API call for ${targetTokenId}`);
         data = await fetchOHLCData(targetTokenId, targetInterval);
+        console.log(`📊 Successfully fetched real data for ${targetTokenId}: ${data.data.length} points`);
       } catch (apiError) {
-        console.warn(`📊 API fetch failed, using mock data:`, apiError);
-        
+        console.warn(`📊 API fetch failed for ${targetTokenId}, using mock data:`, apiError);
+
         // Fallback to mock data
         data = generateMockChartData(tokenSymbol, targetInterval, currentPrice);
-        
+        console.log(`📊 Generated mock data for ${tokenSymbol}: ${data.data.length} points`);
+
         // Set error but don't block rendering
         if (isMounted.current) {
           setError({
@@ -88,20 +91,23 @@ export const useChartData = ({
 
       // Only update state if this is the most recent fetch and component is mounted
       if (currentFetchId === fetchCount.current && isMounted.current) {
+        console.log(`📊 Updating chart state with ${data.data.length} data points`);
         setChartData(data);
         setLastUpdated(new Date());
-        
+
         // Clear error if we successfully got data (even mock data)
         if (data && data.data.length > 0) {
           setError(null);
         }
-        
+
         console.log(`📊 Chart data updated for ${targetTokenId}: ${data.data.length} points`);
+      } else {
+        console.log(`📊 Skipping state update - fetch outdated or component unmounted`);
       }
 
     } catch (error) {
       console.error(`📊 Failed to fetch chart data for ${targetTokenId}:`, error);
-      
+
       if (currentFetchId === fetchCount.current && isMounted.current) {
         setError({
           message: error instanceof Error ? error.message : 'Failed to load chart data',
@@ -119,7 +125,7 @@ export const useChartData = ({
   // Manual refresh function
   const refreshData = useCallback(async (): Promise<void> => {
     if (!tokenId) return;
-    
+
     console.log('📊 Manual chart data refresh triggered');
     await fetchChartData(tokenId, timeInterval, true);
   }, [tokenId, timeInterval, fetchChartData]);
@@ -127,10 +133,10 @@ export const useChartData = ({
   // Handle time interval changes
   const handleSetTimeInterval = useCallback((newInterval: TimeInterval) => {
     if (newInterval === timeInterval) return;
-    
+
     console.log(`📊 Time interval changed: ${timeInterval} → ${newInterval}`);
     setTimeInterval(newInterval);
-    
+
     // Fetch data for new interval
     if (tokenId) {
       fetchChartData(tokenId, newInterval, true);
