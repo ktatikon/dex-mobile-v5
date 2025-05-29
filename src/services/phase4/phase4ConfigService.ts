@@ -31,11 +31,21 @@ export const PHASE4_CONFIG = {
   enableRiskAssessment: true,
   enablePerformanceMetrics: true,
 
-  // Social Trading Features
-  enableCopyTrading: false,
-  enableSocialSignals: false,
-  enableCommunityFeatures: false,
-  enableTraderLeaderboards: false,
+  // Social Trading Features (Phase 4.5)
+  enableCopyTrading: true,
+  enableSocialSignals: true,
+  enableCommunityFeatures: true,
+  enableTraderLeaderboards: true,
+
+  // Social Trading Configuration
+  maxCopyTraders: 10,
+  maxCopyAmount: 10000, // USD
+  copyTradingFee: 0.1, // 0.1%
+  signalConfidenceThreshold: 0.75,
+  leaderboardUpdateInterval: 300, // 5 minutes
+  socialFeedUpdateInterval: 60, // 1 minute
+  maxFollowedTraders: 50,
+  minTraderReputation: 100,
 
   // Technical Configuration
   maxConcurrentOrders: 10,
@@ -122,15 +132,20 @@ export interface AIAnalyticsConfig {
   optimizationObjective: 'return' | 'risk' | 'sharpe';
 }
 
-// Social Trading Configuration
+// Social Trading Configuration (Phase 4.5)
 export interface SocialTradingConfig {
   enableCopyTrading: boolean;
   enableSocialSignals: boolean;
+  enableCommunityFeatures: boolean;
+  enableTraderLeaderboards: boolean;
   maxCopyTraders: number;
   maxCopyAmount: number;
   copyTradingFee: number;
   signalConfidenceThreshold: number;
   leaderboardUpdateInterval: number;
+  socialFeedUpdateInterval: number;
+  maxFollowedTraders: number;
+  minTraderReputation: number;
 }
 
 /**
@@ -239,7 +254,10 @@ class Phase4ConfigManager {
            this.config.enableCrossChainBridge ||
            this.config.enableAIAnalytics ||
            this.config.enableAIOptimization ||
-           this.config.enableCopyTrading;
+           this.config.enableCopyTrading ||
+           this.config.enableSocialSignals ||
+           this.config.enableCommunityFeatures ||
+           this.config.enableTraderLeaderboards;
   }
 
   /**
@@ -254,7 +272,10 @@ class Phase4ConfigManager {
       aiOptimization: this.config.enableAIOptimization,
       predictiveAnalytics: this.config.enablePredictiveAnalytics,
       performanceMetrics: this.config.enablePerformanceMetrics,
-      socialTrading: this.config.enableCopyTrading,
+      copyTrading: this.config.enableCopyTrading,
+      socialSignals: this.config.enableSocialSignals,
+      communityFeatures: this.config.enableCommunityFeatures,
+      traderLeaderboards: this.config.enableTraderLeaderboards,
       betaFeatures: this.config.betaFeatures,
       experimentalFeatures: this.config.experimentalFeatures
     };
@@ -353,4 +374,14 @@ export const isAIAnalyticsEnabled = () => phase4ConfigManager.getConfig().enable
 export const isAIOptimizationEnabled = () => phase4ConfigManager.getConfig().enableAIOptimization;
 export const isPredictiveAnalyticsEnabled = () => phase4ConfigManager.getConfig().enablePredictiveAnalytics;
 export const isPerformanceMetricsEnabled = () => phase4ConfigManager.getConfig().enablePerformanceMetrics;
-export const isSocialTradingEnabled = () => phase4ConfigManager.getConfig().enableCopyTrading;
+
+// Phase 4.5 Social Trading utility functions
+export const isCopyTradingEnabled = () => phase4ConfigManager.getConfig().enableCopyTrading;
+export const isSocialSignalsEnabled = () => phase4ConfigManager.getConfig().enableSocialSignals;
+export const isCommunityFeaturesEnabled = () => phase4ConfigManager.getConfig().enableCommunityFeatures;
+export const isTraderLeaderboardsEnabled = () => phase4ConfigManager.getConfig().enableTraderLeaderboards;
+export const isSocialTradingEnabled = () => {
+  const config = phase4ConfigManager.getConfig();
+  return config.enableCopyTrading || config.enableSocialSignals ||
+         config.enableCommunityFeatures || config.enableTraderLeaderboards;
+};

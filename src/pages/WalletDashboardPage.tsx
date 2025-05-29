@@ -73,7 +73,8 @@ import {
   Search,
   ChevronDown,
   Target,
-  Brain
+  Brain,
+  Users
 } from 'lucide-react';
 
 // Phase 4 Advanced Trading Components
@@ -84,6 +85,8 @@ import CrossChainBridgePanel from '@/components/phase4/CrossChainBridgePanel';
 import MultiNetworkPortfolio from '@/components/phase4/MultiNetworkPortfolio';
 // Phase 4.4 AI Analytics Components
 import { AIAnalyticsPanel } from '@/components/phase4/AIAnalyticsPanel';
+// Phase 4.5 Social Trading Components
+import SocialTradingPanel from '@/components/phase4/SocialTradingPanel';
 import { phase4ConfigManager } from '@/services/phase4/phase4ConfigService';
 import { getRealTimeTokens } from '@/services/fallbackDataService';
 
@@ -338,14 +341,6 @@ const getRealUserTransactions = async (userId: string, limit: number = 5) => {
   }
 };
 
-interface TransactionFilters {
-  category?: string;
-  type?: string;
-  status?: string;
-  dateFrom?: Date;
-  dateTo?: Date;
-}
-
 interface Pagination {
   page: number;
   limit: number;
@@ -470,6 +465,9 @@ const WalletDashboardPage: React.FC = () => {
   // Phase 4.4 AI Analytics states
   const [aiAnalyticsEnabled, setAiAnalyticsEnabled] = useState(false);
 
+  // Phase 4.5 Social Trading states
+  const [socialTradingEnabled, setSocialTradingEnabled] = useState(false);
+
   // Transaction filtering states
   const [transactionFilters, setTransactionFilters] = useState<TransactionFilters>({});
   const [showTransactionFilters, setShowTransactionFilters] = useState(false);
@@ -574,6 +572,14 @@ const WalletDashboardPage: React.FC = () => {
         config.enableAIAnalytics ||
         config.enablePredictiveAnalytics ||
         config.enablePerformanceMetrics
+      );
+
+      // Check Phase 4.5 Social Trading availability
+      setSocialTradingEnabled(
+        config.enableCopyTrading ||
+        config.enableSocialSignals ||
+        config.enableCommunityFeatures ||
+        config.enableTraderLeaderboards
       );
 
       // Load available tokens for trading, DeFi, and cross-chain
@@ -1039,7 +1045,7 @@ const WalletDashboardPage: React.FC = () => {
 
       {/* Tabs for different views */}
       <Tabs defaultValue="wallets" className="w-full">
-        <TabsList className={`grid w-full ${aiAnalyticsEnabled ? 'grid-cols-7' : crossChainEnabled ? 'grid-cols-6' : phase4Enabled ? 'grid-cols-5' : 'grid-cols-4'} mb-6 bg-dex-dark/50 p-1.5 rounded-lg border border-dex-secondary/20`}>
+        <TabsList className={`grid w-full ${socialTradingEnabled ? 'grid-cols-8' : aiAnalyticsEnabled ? 'grid-cols-7' : crossChainEnabled ? 'grid-cols-6' : phase4Enabled ? 'grid-cols-5' : 'grid-cols-4'} mb-6 bg-dex-dark/50 p-1.5 rounded-lg border border-dex-secondary/20`}>
           <TabsTrigger value="wallets" className="text-white data-[state=active]:bg-dex-primary">
             Wallets
           </TabsTrigger>
@@ -1068,6 +1074,12 @@ const WalletDashboardPage: React.FC = () => {
             <TabsTrigger value="ai-analytics" className="text-white data-[state=active]:bg-dex-primary">
               <Brain size={16} className="mr-1" />
               AI Analytics
+            </TabsTrigger>
+          )}
+          {socialTradingEnabled && (
+            <TabsTrigger value="social" className="text-white data-[state=active]:bg-dex-primary">
+              <Users size={16} className="mr-1" />
+              Social
             </TabsTrigger>
           )}
         </TabsList>
@@ -1682,6 +1694,26 @@ const WalletDashboardPage: React.FC = () => {
               <AIAnalyticsPanel
                 userId={user?.id || 'current-user'}
                 className="w-full"
+              />
+            </div>
+          </TabsContent>
+        )}
+
+        {/* Phase 4.5 Social Trading Tab */}
+        {socialTradingEnabled && (
+          <TabsContent value="social">
+            <div className="space-y-6">
+              {/* Social Trading Panel */}
+              <SocialTradingPanel
+                userId={user?.id || 'current-user'}
+                onError={(error) => {
+                  console.error('Social Trading Error:', error);
+                  toast({
+                    title: "Social Trading Error",
+                    description: error,
+                    variant: "destructive",
+                  });
+                }}
               />
             </div>
           </TabsContent>

@@ -1,8 +1,8 @@
--- Phase 4.3: Cross-Chain Bridge & Multi-Network Portfolio Database Schema
+-- -- Phase 4.3: Cross-Chain Bridge & Multi-Network Portfolio Database Schema
 -- Created: January 1, 2025
 -- Purpose: Support cross-chain bridges, multi-network portfolios, and Layer 2 integration
 
--- Create supported_networks table for network configuration
+-- Create tables with IF NOT EXISTS to avoid errors if they already exist
 CREATE TABLE IF NOT EXISTS public.supported_networks (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   network_id TEXT NOT NULL UNIQUE,
@@ -25,7 +25,6 @@ CREATE TABLE IF NOT EXISTS public.supported_networks (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create bridge_protocols table for supported bridge configurations
 CREATE TABLE IF NOT EXISTS public.bridge_protocols (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   protocol_name TEXT NOT NULL UNIQUE,
@@ -47,7 +46,6 @@ CREATE TABLE IF NOT EXISTS public.bridge_protocols (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create cross_chain_transactions table for bridge transaction tracking
 CREATE TABLE IF NOT EXISTS public.cross_chain_transactions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -74,7 +72,6 @@ CREATE TABLE IF NOT EXISTS public.cross_chain_transactions (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create multi_network_balances table for cross-network balance tracking
 CREATE TABLE IF NOT EXISTS public.multi_network_balances (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -90,7 +87,6 @@ CREATE TABLE IF NOT EXISTS public.multi_network_balances (
   UNIQUE(user_id, network_id, token_id)
 );
 
--- Create network_gas_tracker table for gas price monitoring
 CREATE TABLE IF NOT EXISTS public.network_gas_tracker (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   network_id TEXT NOT NULL REFERENCES public.supported_networks(network_id),
@@ -104,7 +100,6 @@ CREATE TABLE IF NOT EXISTS public.network_gas_tracker (
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
--- Create cross_chain_strategies table for automated cross-chain strategies
 CREATE TABLE IF NOT EXISTS public.cross_chain_strategies (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -126,7 +121,6 @@ CREATE TABLE IF NOT EXISTS public.cross_chain_strategies (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create network_defi_opportunities table for cross-network DeFi discovery
 CREATE TABLE IF NOT EXISTS public.network_defi_opportunities (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   network_id TEXT NOT NULL REFERENCES public.supported_networks(network_id),
@@ -144,7 +138,6 @@ CREATE TABLE IF NOT EXISTS public.network_defi_opportunities (
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
--- Create multi_network_analytics table for portfolio analytics across networks
 CREATE TABLE IF NOT EXISTS public.multi_network_analytics (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -193,7 +186,7 @@ CREATE INDEX IF NOT EXISTS network_defi_opportunities_is_active_idx ON public.ne
 
 CREATE INDEX IF NOT EXISTS multi_network_analytics_user_id_date_idx ON public.multi_network_analytics(user_id, date);
 
--- Enable Row Level Security (RLS) on all tables
+-- Enable Row Level Security (RLS) on all tables (safe to re-run)
 ALTER TABLE public.supported_networks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bridge_protocols ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.cross_chain_transactions ENABLE ROW LEVEL SECURITY;
@@ -203,60 +196,243 @@ ALTER TABLE public.cross_chain_strategies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.network_defi_opportunities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.multi_network_analytics ENABLE ROW LEVEL SECURITY;
 
--- Create RLS policies for supported_networks (read-only for users)
-CREATE POLICY "Users can view supported networks"
-  ON public.supported_networks
-  FOR SELECT
-  USING (true);
+-- Create RLS policies only if they don’t already exist
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policy
+    WHERE polname = 'Users can view supported networks'
+      AND polrelid = 'public.supported_networks'::regclass
+  ) THEN
+    CREATE POLICY "Users can view supported networks"
+      ON public.supported_networks
+      FOR SELECT
+      USING (true);
+  END IF;
+END $$;
 
--- Create RLS policies for bridge_protocols (read-only for users)
-CREATE POLICY "Users can view bridge protocols"
-  ON public.bridge_protocols
-  FOR SELECT
-  USING (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policy
+    WHERE polname = 'Users can view bridge protocols'
+      AND polrelid = 'public.bridge_protocols'::regclass
+  ) THEN
+    CREATE POLICY "Users can view bridge protocols"
+      ON public.bridge_protocols
+      FOR SELECT
+      USING (true);
+  END IF;
+END $$;
 
--- Create RLS policies for cross_chain_transactions
-CREATE POLICY "Users can manage their own cross-chain transactions"
-  ON public.cross_chain_transactions
-  FOR ALL
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policy
+    WHERE polname = 'Users can manage their own cross-chain transactions'
+      AND polrelid = 'public.cross_chain_transactions'::regclass
+  ) THEN
+    CREATE POLICY "Users can manage their own cross-chain transactions"
+      ON public.cross_chain_transactions
+      FOR ALL
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
--- Create RLS policies for multi_network_balances
-CREATE POLICY "Users can manage their own multi-network balances"
-  ON public.multi_network_balances
-  FOR ALL
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policy
+    WHERE polname = 'Users can manage their own multi-network balances'
+      AND polrelid = 'public.multi_network_balances'::regclass
+  ) THEN
+    CREATE POLICY "Users can manage their own multi-network balances"
+      ON public.multi_network_balances
+      FOR ALL
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
--- Create RLS policies for network_gas_tracker (read-only for users)
-CREATE POLICY "Users can view network gas data"
-  ON public.network_gas_tracker
-  FOR SELECT
-  USING (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policy
+    WHERE polname = 'Users can view network gas data'
+      AND polrelid = 'public.network_gas_tracker'::regclass
+  ) THEN
+    CREATE POLICY "Users can view network gas data"
+      ON public.network_gas_tracker
+      FOR SELECT
+      USING (true);
+  END IF;
+END $$;
 
--- Create RLS policies for cross_chain_strategies
-CREATE POLICY "Users can manage their own cross-chain strategies"
-  ON public.cross_chain_strategies
-  FOR ALL
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policy
+    WHERE polname = 'Users can manage their own cross-chain strategies'
+      AND polrelid = 'public.cross_chain_strategies'::regclass
+  ) THEN
+    CREATE POLICY "Users can manage their own cross-chain strategies"
+      ON public.cross_chain_strategies
+      FOR ALL
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
--- Create RLS policies for network_defi_opportunities (read-only for users)
-CREATE POLICY "Users can view network DeFi opportunities"
-  ON public.network_defi_opportunities
-  FOR SELECT
-  USING (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policy
+    WHERE polname = 'Users can view network DeFi opportunities'
+      AND polrelid = 'public.network_defi_opportunities'::regclass
+  ) THEN
+    CREATE POLICY "Users can view network DeFi opportunities"
+      ON public.network_defi_opportunities
+      FOR SELECT
+      USING (true);
+  END IF;
+END $$;
 
--- Create RLS policies for multi_network_analytics
-CREATE POLICY "Users can view their own multi-network analytics"
-  ON public.multi_network_analytics
-  FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policy
+    WHERE polname = 'Users can view their own multi-network analytics'
+      AND polrelid = 'public.multi_network_analytics'::regclass
+  ) THEN
+    CREATE POLICY "Users can view their own multi-network analytics"
+      ON public.multi_network_analytics
+      FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "System can create multi-network analytics entries"
-  ON public.multi_network_analytics
-  FOR INSERT
-  WITH CHECK (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policy
+    WHERE polname = 'System can create multi-network analytics entries'
+      AND polrelid = 'public.multi_network_analytics'::regclass
+  ) THEN
+    CREATE POLICY "System can create multi-network analytics entries"
+      ON public.multi_network_analytics
+      FOR INSERT
+      WITH CHECK (true);
+  END IF;
+END $$;
 
--- Create functions for cross-chain operations
+-- Drop triggers if they exist before recreating them
+DROP TRIGGER IF EXISTS update_supported_networks_updated_at ON public.supported_networks;
+CREATE TRIGGER update_supported_networks_updated_at
+  BEFORE UPDATE ON public.supported_networks
+  FOR EACH ROW
+  EXECUTE FUNCTION public.update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_bridge_protocols_updated_at ON public.bridge_protocols;
+CREATE TRIGGER update_bridge_protocols_updated_at
+  BEFORE UPDATE ON public.bridge_protocols
+  FOR EACH ROW
+  EXECUTE FUNCTION public.update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_cross_chain_transactions_updated_at ON public.cross_chain_transactions;
+CREATE TRIGGER update_cross_chain_transactions_updated_at
+  BEFORE UPDATE ON public.cross_chain_transactions
+  FOR EACH ROW
+  EXECUTE FUNCTION public.update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_cross_chain_strategies_updated_at ON public.cross_chain_strategies;
+CREATE TRIGGER update_cross_chain_strategies_updated_at
+  BEFORE UPDATE ON public.cross_chain_strategies
+  FOR EACH ROW
+  EXECUTE FUNCTION public.update_updated_at_column();
+
+-- Insert default data (unchanged, as ON CONFLICT DO NOTHING handles duplicates)
+INSERT INTO public.supported_networks (
+  network_id, network_name, network_type, chain_id, rpc_url, explorer_url,
+  native_token_symbol, native_token_decimals, gas_price_gwei, block_time_seconds,
+  is_active, supports_eip1559, bridge_enabled, defi_enabled, icon_url, metadata
+) VALUES
+  ('ethereum', 'Ethereum Mainnet', 'mainnet', 1, 'https://mainnet.infura.io/v3/', 'https://etherscan.io', 'ETH', 18, 30.0, 15, true, true, true, true, '/icons/ethereum.svg', '{"description": "Ethereum mainnet with full DeFi ecosystem", "color": "#627EEA"}'),
+  ('polygon', 'Polygon', 'sidechain', 137, 'https://polygon-rpc.com', 'https://polygonscan.com', 'MATIC', 18, 30.0, 2, true, true, true, true, '/icons/polygon.svg', '{"description": "Polygon sidechain with low fees", "color": "#8247E5"}'),
+  ('bsc', 'Binance Smart Chain', 'sidechain', 56, 'https://bsc-dataseed.binance.org', 'https://bscscan.com', 'BNB', 18, 5.0, 3, true, false, true, true, '/icons/bsc.svg', '{"description": "Binance Smart Chain with high throughput", "color": "#F3BA2F"}'),
+  ('arbitrum', 'Arbitrum One', 'layer2', 42161, 'https://arb1.arbitrum.io/rpc', 'https://arbiscan.io', 'ETH', 18, 0.1, 1, true, true, true, true, '/icons/arbitrum.svg', '{"description": "Arbitrum Layer 2 with low fees", "color": "#28A0F0"}'),
+  ('optimism', 'Optimism', 'layer2', 10, 'https://mainnet.optimism.io', 'https://optimistic.etherscan.io', 'ETH', 18, 0.001, 2, true, true, true, true, '/icons/optimism.svg', '{"description": "Optimism Layer 2 scaling solution", "color": "#FF0420"}'),
+  ('avalanche', 'Avalanche C-Chain', 'mainnet', 43114, 'https://api.avax.network/ext/bc/C/rpc', 'https://snowtrace.io', 'AVAX', 18, 25.0, 2, true, true, true, true, '/icons/avalanche.svg', '{"description": "Avalanche high-performance blockchain", "color": "#E84142"}'),
+  ('fantom', 'Fantom Opera', 'mainnet', 250, 'https://rpc.ftm.tools', 'https://ftmscan.com', 'FTM', 18, 20.0, 1, true, false, true, true, '/icons/fantom.svg', '{"description": "Fantom fast and secure blockchain", "color": "#1969FF"}')
+ON CONFLICT (network_id) DO NOTHING;
+
+INSERT INTO public.bridge_protocols (
+  protocol_name, protocol_type, source_network_id, destination_network_id,
+  contract_address_source, contract_address_destination, supported_tokens,
+  min_transfer_amount, max_transfer_amount, bridge_fee_percentage, estimated_time_minutes,
+  security_score, is_active, daily_volume_limit, metadata
+) VALUES
+  ('Polygon Bridge', 'lock_mint', 'ethereum', 'polygon', '0xA0c68C638235ee32657e8f720a23ceC1bFc77C77', '0x8484Ef722627bf18ca5Ae6BcF031c23E6e922B30', ARRAY['ETH', 'USDC', 'USDT', 'DAI', 'WBTC'], 0.01, 1000.0, 0.0000, 45, 9, true, 10000.0, '{"type": "official", "audit_status": "audited", "tvl_usd": 2500000000}'),
+  ('Arbitrum Bridge', 'native', 'ethereum', 'arbitrum', '0x8315177aB297bA92A06054cE80a67Ed4DBd7ed3a', '0x0000000000000000000000000000000000000001', ARRAY['ETH', 'USDC', 'USDT', 'DAI', 'WBTC'], 0.01, 1000.0, 0.0000, 15, 9, true, 10000.0, '{"type": "official", "audit_status": "audited", "tvl_usd": 3200000000}'),
+  ('Optimism Bridge', 'native', 'ethereum', 'optimism', '0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1', '0x4200000000000000000000000000000000000010', ARRAY['ETH', 'USDC', 'USDT', 'DAI', 'WBTC'], 0.01, 1000.0, 0.0000, 20, 9, true, 10000.0, '{"type": "official", "audit_status": "audited", "tvl_usd": 1800000000}'),
+  ('Multichain Bridge ETH-BSC', 'liquidity_pool', 'ethereum', 'bsc', '0xC564EE9f21Ed8A2d8E7e76c085740d5e4c5FaFbE', '0xd1C5966f9F5Ee6881Ff6b261BBeDa45972B1B5f3', ARRAY['ETH', 'USDC', 'USDT'], 0.1, 500.0, 0.0010, 30, 7, true, 5000.0, '{"type": "third_party", "audit_status": "audited", "tvl_usd": 800000000}'),
+  ('Avalanche Bridge', 'lock_mint', 'ethereum', 'avalanche', '0x8EB8a3b98659Cce290402893d0123abb75E3ab28', '0x50Ff3B278fCC70ec7A9465063d68029AB460eA04', ARRAY['ETH', 'USDC', 'USDT', 'DAI'], 0.01, 1000.0, 0.0005, 25, 8, true, 8000.0, '{"type": "official", "audit_status": "audited", "tvl_usd": 1200000000}'),
+  ('Fantom Multichain', 'liquidity_pool', 'ethereum', 'fantom', '0xC564EE9f21Ed8A2d8E7e76c085740d5e4c5FaFbE', '0x1B6382DBDEa11d97f24495C9A90b7c88469134a4', ARRAY['ETH', 'USDC', 'USDT'], 0.1, 500.0, 0.0015, 35, 6, true, 3000.0, '{"type": "third_party", "audit_status": "audited", "tvl_usd": 400000000}'),
+  ('Hop Protocol ARB-OP', 'liquidity_pool', 'arbitrum', 'optimism', '0xb8901acB165ed027E32754E0FFe830802919727f', '0x83f6244Bd87662118d96D9a6D44f09dffF14b30E', ARRAY['ETH', 'USDC'], 0.01, 100.0, 0.0025, 10, 7, true, 2000.0, '{"type": "third_party", "audit_status": "audited", "tvl_usd": 150000000}'),
+  ('Polygon-BSC Bridge', 'liquidity_pool', 'polygon', 'bsc', '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d', ARRAY['USDC', 'USDT'], 0.1, 1000.0, 0.0015, 20, 6, true, 3000.0, '{"type": "third_party", "audit_status": "audited", "tvl_usd": 200000000}'),
+  ('Synapse Bridge AVAX-FTM', 'liquidity_pool', 'avalanche', 'fantom', '0x2D5e230F9471438573EC67A2C4b938C5C8c75Ac1', '0xAf41a65F786339e7911F4acDAD6BD49426F2Dc6b', ARRAY['USDC', 'USDT'], 0.1, 500.0, 0.0020, 25, 6, true, 1500.0, '{"type": "third_party", "audit_status": "audited", "tvl_usd": 100000000}')
+ON CONFLICT (protocol_name) DO NOTHING;
+
+INSERT INTO public.network_defi_opportunities (
+  network_id, protocol_name, opportunity_type, token_pair, apy, tvl_usd, risk_score,
+  min_deposit, lock_period_days, protocol_address, is_active
+) VALUES
+  ('ethereum', 'Compound V3', 'lending', 'USDC', 4.2, 1500000000, 2, 1.0, 0, '0xc3d688B66703497DAA19211EEdff47f25384cdc3', true),
+  ('ethereum', 'Aave V3', 'lending', 'ETH', 3.8, 2200000000, 2, 0.01, 0, '0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2', true),
+  ('ethereum', 'Uniswap V3', 'liquidity_mining', 'ETH-USDC', 12.5, 800000000, 6, 0.1, 0, '0xE592427A0AEce92De3Edee1F18E0157C05861564', true),
+  ('ethereum', 'Curve Finance', 'yield_farming', 'stETH-ETH', 5.8, 650000000, 3, 0.1, 0, '0xDC24316b9AE028F1497c275EB9192a3Ea0f67022', true),
+  ('ethereum', 'Lido', 'staking', 'ETH', 4.5, 18000000000, 2, 0.01, 0, '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84', true),
+  ('polygon', 'Aave V3', 'lending', 'MATIC', 8.7, 450000000, 3, 10.0, 0, '0x794a61358D6845594F94dc1DB02A252b5b4814aD', true),
+  ('polygon', 'QuickSwap', 'yield_farming', 'MATIC-USDC', 15.3, 120000000, 5, 1.0, 0, '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff', true),
+  ('polygon', 'Balancer', 'liquidity_mining', 'WMATIC-USDC-DAI', 11.2, 85000000, 4, 1.0, 0, '0xBA12222222228d8Ba445958a75a0704d566BF2C8', true),
+  ('polygon', 'Curve Finance', 'yield_farming', 'USDC-USDT-DAI', 7.5, 95000000, 3, 10.0, 0, '0x445FE580eF8d70FF569aB36e80c647af338db351', true),
+  ('bsc', 'PancakeSwap', 'yield_farming', 'BNB-BUSD', 18.2, 300000000, 4, 0.1, 0, '0x10ED43C718714eb63d5aA57B78B54704E256024E', true),
+  ('bsc', 'Venus Protocol', 'lending', 'BNB', 12.5, 180000000, 5, 0.1, 0, '0xfD36E2c2a6789Db23113685031d7F16329158384', true),
+  ('bsc', 'Alpaca Finance', 'yield_farming', 'BNB-ALPACA', 25.8, 45000000, 7, 0.1, 0, '0xA625AB01B08ce023B2a342Dbb12a16f2C8489A8F', true),
+  ('arbitrum', 'GMX', 'staking', 'GMX', 22.1, 180000000, 7, 1.0, 0, '0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a', true),
+  ('arbitrum', 'Camelot', 'liquidity_mining', 'ARB-ETH', 19.5, 65000000, 6, 0.1, 0, '0xc873fEcbd354f5A56E00E710B90EF4201db2448d', true),
+  ('arbitrum', 'Radiant Capital', 'lending', 'ETH', 8.2, 120000000, 4, 0.01, 0, '0x2032b9A8e9F7e76768CA9271003d3e43E1616B1F', true),
+  ('optimism', 'Velodrome', 'liquidity_mining', 'OP-USDC', 14.8, 95000000, 5, 1.0, 0, '0x9c12939390052919aF3155f41Bf4160Fd3666A6f', true),
+  ('optimism', 'Beethoven X', 'liquidity_mining', 'OP-ETH-USDC', 16.2, 42000000, 6, 0.1, 0, '0xBA12222222228d8Ba445958a75a0704d566BF2C8', true),
+  ('optimism', 'Aave V3', 'lending', 'ETH', 4.1, 85000000, 2, 0.01, 0, '0x794a61358D6845594F94dc1DB02A252b5b4814aD', true),
+  ('avalanche', 'Trader Joe', 'yield_farming', 'AVAX-USDC', 16.5, 75000000, 6, 0.5, 0, '0x60aE616a2155Ee3d9A68541Ba4544862310933d4', true),
+  ('avalanche', 'Benqi', 'lending', 'AVAX', 9.8, 125000000, 4, 1.0, 0, '0x5C0401e81Bc07Ca70fAD469b451682c0d747Ef1c', true),
+  ('avalanche', 'Platypus Finance', 'yield_farming', 'USDC-USDT', 12.3, 38000000, 5, 10.0, 0, '0x66357dCaCe80431aee0A7507e2E361B7e2402370', true),
+  ('fantom', 'SpookySwap', 'yield_farming', 'FTM-USDC', 21.5, 35000000, 6, 1.0, 0, '0xF491e7B69E4244ad4002BC14e878a34207E38c29', true),
+  ('fantom', 'Geist Finance', 'lending', 'FTM', 15.2, 28000000, 5, 1.0, 0, '0x9FAD24f572045c7869117160A571B2e50b10d068', true),
+  ('fantom', 'Beethoven X', 'liquidity_mining', 'FTM-USDC-DAI', 18.7, 22000000, 6, 1.0, 0, '0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce', true)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.network_gas_tracker (
+  network_id, gas_price_gwei, gas_price_fast_gwei, gas_price_slow_gwei,
+  base_fee_gwei, priority_fee_gwei, network_congestion_level
+) VALUES
+  ('ethereum', 25.0, 35.0, 15.0, 20.0, 5.0, 'normal'),
+  ('polygon', 30.0, 50.0, 20.0, NULL, NULL, 'normal'),
+  ('bsc', 5.0, 8.0, 3.0, NULL, NULL, 'low'),
+  ('arbitrum', 0.1, 0.2, 0.05, 0.08, 0.02, 'low'),
+  ('optimism', 0.001, 0.002, 0.0005, 0.0008, 0.0002, 'low'),
+  ('avalanche', 25.0, 40.0, 15.0, NULL, NULL, 'normal'),
+  ('fantom', 20.0, 35.0, 10.0, NULL, NULL, 'normal')
+ON CONFLICT DO NOTHING;
+
+-- Create functions (unchanged, as CREATE OR REPLACE handles updates)
 CREATE OR REPLACE FUNCTION public.estimate_bridge_fee(
   p_bridge_protocol_id UUID,
   p_amount DECIMAL(20, 8)
@@ -269,7 +445,6 @@ DECLARE
   v_protocol RECORD;
   v_bridge_fee DECIMAL(20, 8);
 BEGIN
-  -- Get bridge protocol details
   SELECT * INTO v_protocol
   FROM public.bridge_protocols
   WHERE id = p_bridge_protocol_id AND is_active = true;
@@ -278,14 +453,11 @@ BEGIN
     RETURN 0;
   END IF;
 
-  -- Calculate bridge fee
   v_bridge_fee := p_amount * (v_protocol.bridge_fee_percentage / 100.0);
-
   RETURN v_bridge_fee;
 END;
 $$;
 
--- Create function to get user's multi-network portfolio summary
 CREATE OR REPLACE FUNCTION public.get_user_multi_network_summary(p_user_id UUID)
 RETURNS TABLE (
   total_portfolio_value DECIMAL(20, 8),
@@ -327,7 +499,6 @@ BEGIN
 END;
 $$;
 
--- Create function to update cross-chain transaction status
 CREATE OR REPLACE FUNCTION public.update_cross_chain_transaction_status(
   p_transaction_id UUID,
   p_new_status TEXT,
@@ -342,7 +513,6 @@ AS $$
 DECLARE
   v_transaction RECORD;
 BEGIN
-  -- Get transaction details
   SELECT * INTO v_transaction
   FROM public.cross_chain_transactions
   WHERE id = p_transaction_id;
@@ -351,7 +521,6 @@ BEGIN
     RETURN false;
   END IF;
 
-  -- Update transaction based on status
   IF p_new_status = 'confirmed_source' THEN
     UPDATE public.cross_chain_transactions
     SET status = p_new_status,
@@ -359,7 +528,6 @@ BEGIN
         source_block_number = COALESCE(p_block_number, source_block_number),
         updated_at = NOW()
     WHERE id = p_transaction_id;
-
   ELSIF p_new_status = 'confirmed_destination' OR p_new_status = 'completed' THEN
     UPDATE public.cross_chain_transactions
     SET status = p_new_status,
@@ -368,14 +536,12 @@ BEGIN
         actual_completion_time = CASE WHEN p_new_status = 'completed' THEN NOW() ELSE actual_completion_time END,
         updated_at = NOW()
     WHERE id = p_transaction_id;
-
   ELSIF p_new_status = 'failed' THEN
     UPDATE public.cross_chain_transactions
     SET status = p_new_status,
         failure_reason = p_failure_reason,
         updated_at = NOW()
     WHERE id = p_transaction_id;
-
   ELSE
     UPDATE public.cross_chain_transactions
     SET status = p_new_status,
@@ -387,124 +553,6 @@ BEGIN
 END;
 $$;
 
--- Create trigger to automatically update updated_at timestamps
-CREATE TRIGGER update_supported_networks_updated_at
-  BEFORE UPDATE ON public.supported_networks
-  FOR EACH ROW
-  EXECUTE FUNCTION public.update_updated_at_column();
-
-CREATE TRIGGER update_bridge_protocols_updated_at
-  BEFORE UPDATE ON public.bridge_protocols
-  FOR EACH ROW
-  EXECUTE FUNCTION public.update_updated_at_column();
-
-CREATE TRIGGER update_cross_chain_transactions_updated_at
-  BEFORE UPDATE ON public.cross_chain_transactions
-  FOR EACH ROW
-  EXECUTE FUNCTION public.update_updated_at_column();
-
-CREATE TRIGGER update_cross_chain_strategies_updated_at
-  BEFORE UPDATE ON public.cross_chain_strategies
-  FOR EACH ROW
-  EXECUTE FUNCTION public.update_updated_at_column();
-
--- Insert default supported networks with comprehensive configurations
-INSERT INTO public.supported_networks (
-  network_id, network_name, network_type, chain_id, rpc_url, explorer_url,
-  native_token_symbol, native_token_decimals, gas_price_gwei, block_time_seconds,
-  is_active, supports_eip1559, bridge_enabled, defi_enabled, icon_url, metadata
-) VALUES
-  ('ethereum', 'Ethereum Mainnet', 'mainnet', 1, 'https://mainnet.infura.io/v3/', 'https://etherscan.io', 'ETH', 18, 30.0, 15, true, true, true, true, '/icons/ethereum.svg', '{"description": "Ethereum mainnet with full DeFi ecosystem", "color": "#627EEA"}'),
-  ('polygon', 'Polygon', 'sidechain', 137, 'https://polygon-rpc.com', 'https://polygonscan.com', 'MATIC', 18, 30.0, 2, true, true, true, true, '/icons/polygon.svg', '{"description": "Polygon sidechain with low fees", "color": "#8247E5"}'),
-  ('bsc', 'Binance Smart Chain', 'sidechain', 56, 'https://bsc-dataseed.binance.org', 'https://bscscan.com', 'BNB', 18, 5.0, 3, true, false, true, true, '/icons/bsc.svg', '{"description": "Binance Smart Chain with high throughput", "color": "#F3BA2F"}'),
-  ('arbitrum', 'Arbitrum One', 'layer2', 42161, 'https://arb1.arbitrum.io/rpc', 'https://arbiscan.io', 'ETH', 18, 0.1, 1, true, true, true, true, '/icons/arbitrum.svg', '{"description": "Arbitrum Layer 2 with low fees", "color": "#28A0F0"}'),
-  ('optimism', 'Optimism', 'layer2', 10, 'https://mainnet.optimism.io', 'https://optimistic.etherscan.io', 'ETH', 18, 0.001, 2, true, true, true, true, '/icons/optimism.svg', '{"description": "Optimism Layer 2 scaling solution", "color": "#FF0420"}'),
-  ('avalanche', 'Avalanche C-Chain', 'mainnet', 43114, 'https://api.avax.network/ext/bc/C/rpc', 'https://snowtrace.io', 'AVAX', 18, 25.0, 2, true, true, true, true, '/icons/avalanche.svg', '{"description": "Avalanche high-performance blockchain", "color": "#E84142"}'),
-  ('fantom', 'Fantom Opera', 'mainnet', 250, 'https://rpc.ftm.tools', 'https://ftmscan.com', 'FTM', 18, 20.0, 1, true, false, true, true, '/icons/fantom.svg', '{"description": "Fantom fast and secure blockchain", "color": "#1969FF"}')
-ON CONFLICT (network_id) DO NOTHING;
-
--- Insert default bridge protocols with comprehensive configurations
-INSERT INTO public.bridge_protocols (
-  protocol_name, protocol_type, source_network_id, destination_network_id,
-  contract_address_source, contract_address_destination, supported_tokens,
-  min_transfer_amount, max_transfer_amount, bridge_fee_percentage, estimated_time_minutes,
-  security_score, is_active, daily_volume_limit, metadata
-) VALUES
-  -- Ethereum to Layer 2 bridges
-  ('Polygon Bridge', 'lock_mint', 'ethereum', 'polygon', '0xA0c68C638235ee32657e8f720a23ceC1bFc77C77', '0x8484Ef722627bf18ca5Ae6BcF031c23E6e922B30', ARRAY['ETH', 'USDC', 'USDT', 'DAI', 'WBTC'], 0.01, 1000.0, 0.0000, 45, 9, true, 10000.0, '{"type": "official", "audit_status": "audited", "tvl_usd": 2500000000}'),
-  ('Arbitrum Bridge', 'native', 'ethereum', 'arbitrum', '0x8315177aB297bA92A06054cE80a67Ed4DBd7ed3a', '0x0000000000000000000000000000000000000001', ARRAY['ETH', 'USDC', 'USDT', 'DAI', 'WBTC'], 0.01, 1000.0, 0.0000, 15, 9, true, 10000.0, '{"type": "official", "audit_status": "audited", "tvl_usd": 3200000000}'),
-  ('Optimism Bridge', 'native', 'ethereum', 'optimism', '0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1', '0x4200000000000000000000000000000000000010', ARRAY['ETH', 'USDC', 'USDT', 'DAI', 'WBTC'], 0.01, 1000.0, 0.0000, 20, 9, true, 10000.0, '{"type": "official", "audit_status": "audited", "tvl_usd": 1800000000}'),
-
-  -- Cross-chain bridges between different networks
-  ('Multichain Bridge ETH-BSC', 'liquidity_pool', 'ethereum', 'bsc', '0xC564EE9f21Ed8A2d8E7e76c085740d5e4c5FaFbE', '0xd1C5966f9F5Ee6881Ff6b261BBeDa45972B1B5f3', ARRAY['ETH', 'USDC', 'USDT'], 0.1, 500.0, 0.0010, 30, 7, true, 5000.0, '{"type": "third_party", "audit_status": "audited", "tvl_usd": 800000000}'),
-  ('Avalanche Bridge', 'lock_mint', 'ethereum', 'avalanche', '0x8EB8a3b98659Cce290402893d0123abb75E3ab28', '0x50Ff3B278fCC70ec7A9465063d68029AB460eA04', ARRAY['ETH', 'USDC', 'USDT', 'DAI'], 0.01, 1000.0, 0.0005, 25, 8, true, 8000.0, '{"type": "official", "audit_status": "audited", "tvl_usd": 1200000000}'),
-  ('Fantom Multichain', 'liquidity_pool', 'ethereum', 'fantom', '0xC564EE9f21Ed8A2d8E7e76c085740d5e4c5FaFbE', '0x1B6382DBDEa11d97f24495C9A90b7c88469134a4', ARRAY['ETH', 'USDC', 'USDT'], 0.1, 500.0, 0.0015, 35, 6, true, 3000.0, '{"type": "third_party", "audit_status": "audited", "tvl_usd": 400000000}'),
-
-  -- Layer 2 to Layer 2 bridges
-  ('Hop Protocol ARB-OP', 'liquidity_pool', 'arbitrum', 'optimism', '0xb8901acB165ed027E32754E0FFe830802919727f', '0x83f6244Bd87662118d96D9a6D44f09dffF14b30E', ARRAY['ETH', 'USDC'], 0.01, 100.0, 0.0025, 10, 7, true, 2000.0, '{"type": "third_party", "audit_status": "audited", "tvl_usd": 150000000}'),
-  ('Polygon-BSC Bridge', 'liquidity_pool', 'polygon', 'bsc', '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d', ARRAY['USDC', 'USDT'], 0.1, 1000.0, 0.0015, 20, 6, true, 3000.0, '{"type": "third_party", "audit_status": "audited", "tvl_usd": 200000000}'),
-  ('Synapse Bridge AVAX-FTM', 'liquidity_pool', 'avalanche', 'fantom', '0x2D5e230F9471438573EC67A2C4b938C5C8c75Ac1', '0xAf41a65F786339e7911F4acDAD6BD49426F2Dc6b', ARRAY['USDC', 'USDT'], 0.1, 500.0, 0.0020, 25, 6, true, 1500.0, '{"type": "third_party", "audit_status": "audited", "tvl_usd": 100000000}')
-ON CONFLICT (protocol_name) DO NOTHING;
-
--- Insert sample DeFi opportunities across networks
-INSERT INTO public.network_defi_opportunities (
-  network_id, protocol_name, opportunity_type, token_pair, apy, tvl_usd, risk_score,
-  min_deposit, lock_period_days, protocol_address, is_active
-) VALUES
-  -- Ethereum DeFi opportunities
-  ('ethereum', 'Compound V3', 'lending', 'USDC', 4.2, 1500000000, 2, 1.0, 0, '0xc3d688B66703497DAA19211EEdff47f25384cdc3', true),
-  ('ethereum', 'Aave V3', 'lending', 'ETH', 3.8, 2200000000, 2, 0.01, 0, '0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2', true),
-  ('ethereum', 'Uniswap V3', 'liquidity_mining', 'ETH-USDC', 12.5, 800000000, 6, 0.1, 0, '0xE592427A0AEce92De3Edee1F18E0157C05861564', true),
-  ('ethereum', 'Curve Finance', 'yield_farming', 'stETH-ETH', 5.8, 650000000, 3, 0.1, 0, '0xDC24316b9AE028F1497c275EB9192a3Ea0f67022', true),
-  ('ethereum', 'Lido', 'staking', 'ETH', 4.5, 18000000000, 2, 0.01, 0, '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84', true),
-
-  -- Polygon DeFi opportunities
-  ('polygon', 'Aave V3', 'lending', 'MATIC', 8.7, 450000000, 3, 10.0, 0, '0x794a61358D6845594F94dc1DB02A252b5b4814aD', true),
-  ('polygon', 'QuickSwap', 'yield_farming', 'MATIC-USDC', 15.3, 120000000, 5, 1.0, 0, '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff', true),
-  ('polygon', 'Balancer', 'liquidity_mining', 'WMATIC-USDC-DAI', 11.2, 85000000, 4, 1.0, 0, '0xBA12222222228d8Ba445958a75a0704d566BF2C8', true),
-  ('polygon', 'Curve Finance', 'yield_farming', 'USDC-USDT-DAI', 7.5, 95000000, 3, 10.0, 0, '0x445FE580eF8d70FF569aB36e80c647af338db351', true),
-
-  -- BSC DeFi opportunities
-  ('bsc', 'PancakeSwap', 'yield_farming', 'BNB-BUSD', 18.2, 300000000, 4, 0.1, 0, '0x10ED43C718714eb63d5aA57B78B54704E256024E', true),
-  ('bsc', 'Venus Protocol', 'lending', 'BNB', 12.5, 180000000, 5, 0.1, 0, '0xfD36E2c2a6789Db23113685031d7F16329158384', true),
-  ('bsc', 'Alpaca Finance', 'yield_farming', 'BNB-ALPACA', 25.8, 45000000, 7, 0.1, 0, '0xA625AB01B08ce023B2a342Dbb12a16f2C8489A8F', true),
-
-  -- Arbitrum DeFi opportunities
-  ('arbitrum', 'GMX', 'staking', 'GMX', 22.1, 180000000, 7, 1.0, 0, '0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a', true),
-  ('arbitrum', 'Camelot', 'liquidity_mining', 'ARB-ETH', 19.5, 65000000, 6, 0.1, 0, '0xc873fEcbd354f5A56E00E710B90EF4201db2448d', true),
-  ('arbitrum', 'Radiant Capital', 'lending', 'ETH', 8.2, 120000000, 4, 0.01, 0, '0x2032b9A8e9F7e76768CA9271003d3e43E1616B1F', true),
-
-  -- Optimism DeFi opportunities
-  ('optimism', 'Velodrome', 'liquidity_mining', 'OP-USDC', 14.8, 95000000, 5, 1.0, 0, '0x9c12939390052919aF3155f41Bf4160Fd3666A6f', true),
-  ('optimism', 'Beethoven X', 'liquidity_mining', 'OP-ETH-USDC', 16.2, 42000000, 6, 0.1, 0, '0xBA12222222228d8Ba445958a75a0704d566BF2C8', true),
-  ('optimism', 'Aave V3', 'lending', 'ETH', 4.1, 85000000, 2, 0.01, 0, '0x794a61358D6845594F94dc1DB02A252b5b4814aD', true),
-
-  -- Avalanche DeFi opportunities
-  ('avalanche', 'Trader Joe', 'yield_farming', 'AVAX-USDC', 16.5, 75000000, 6, 0.5, 0, '0x60aE616a2155Ee3d9A68541Ba4544862310933d4', true),
-  ('avalanche', 'Benqi', 'lending', 'AVAX', 9.8, 125000000, 4, 1.0, 0, '0x5C0401e81Bc07Ca70fAD469b451682c0d747Ef1c', true),
-  ('avalanche', 'Platypus Finance', 'yield_farming', 'USDC-USDT', 12.3, 38000000, 5, 10.0, 0, '0x66357dCaCe80431aee0A7507e2E361B7e2402370', true),
-
-  -- Fantom DeFi opportunities
-  ('fantom', 'SpookySwap', 'yield_farming', 'FTM-USDC', 21.5, 35000000, 6, 1.0, 0, '0xF491e7B69E4244ad4002BC14e878a34207E38c29', true),
-  ('fantom', 'Geist Finance', 'lending', 'FTM', 15.2, 28000000, 5, 1.0, 0, '0x9FAD24f572045c7869117160A571B2e50b10d068', true),
-  ('fantom', 'Beethoven X', 'liquidity_mining', 'FTM-USDC-DAI', 18.7, 22000000, 6, 1.0, 0, '0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce', true)
-ON CONFLICT DO NOTHING;
-
--- Insert initial gas tracker data for all networks
-INSERT INTO public.network_gas_tracker (
-  network_id, gas_price_gwei, gas_price_fast_gwei, gas_price_slow_gwei,
-  base_fee_gwei, priority_fee_gwei, network_congestion_level
-) VALUES
-  ('ethereum', 25.0, 35.0, 15.0, 20.0, 5.0, 'normal'),
-  ('polygon', 30.0, 50.0, 20.0, NULL, NULL, 'normal'),
-  ('bsc', 5.0, 8.0, 3.0, NULL, NULL, 'low'),
-  ('arbitrum', 0.1, 0.2, 0.05, 0.08, 0.02, 'low'),
-  ('optimism', 0.001, 0.002, 0.0005, 0.0008, 0.0002, 'low'),
-  ('avalanche', 25.0, 40.0, 15.0, NULL, NULL, 'normal'),
-  ('fantom', 20.0, 35.0, 10.0, NULL, NULL, 'normal')
-ON CONFLICT DO NOTHING;
-
--- Create additional functions for cross-chain analytics
 CREATE OR REPLACE FUNCTION public.get_optimal_bridge_route(
   p_source_network TEXT,
   p_destination_network TEXT,
@@ -528,7 +576,7 @@ BEGIN
     public.estimate_bridge_fee(bp.id, p_amount) as estimated_fee,
     bp.estimated_time_minutes,
     bp.security_score,
-    (public.estimate_bridge_fee(bp.id, p_amount) * 1.0) as total_cost_usd -- Simplified USD conversion
+    (public.estimate_bridge_fee(bp.id, p_amount) * 1.0) as total_cost_usd
   FROM public.bridge_protocols bp
   WHERE bp.source_network_id = p_source_network
     AND bp.destination_network_id = p_destination_network
@@ -540,7 +588,6 @@ BEGIN
 END;
 $$;
 
--- Create function to get network gas recommendations
 CREATE OR REPLACE FUNCTION public.get_network_gas_recommendations(p_network_id TEXT)
 RETURNS TABLE (
   current_gas_price DECIMAL(10, 2),
@@ -554,7 +601,6 @@ AS $$
 DECLARE
   v_gas_data RECORD;
 BEGIN
-  -- Get latest gas data for the network
   SELECT * INTO v_gas_data
   FROM public.network_gas_tracker
   WHERE network_id = p_network_id
@@ -562,7 +608,6 @@ BEGIN
   LIMIT 1;
 
   IF NOT FOUND THEN
-    -- Return default values if no data found
     RETURN QUERY
     SELECT
       20.0::DECIMAL(10, 2) as current_gas_price,
@@ -591,7 +636,6 @@ BEGIN
 END;
 $$;
 
--- Create function to calculate cross-chain arbitrage opportunities
 CREATE OR REPLACE FUNCTION public.find_arbitrage_opportunities(
   p_user_id UUID,
   p_min_profit_percentage DECIMAL(5, 2) DEFAULT 2.0
@@ -611,8 +655,6 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
-  -- This is a simplified arbitrage finder
-  -- In production, this would integrate with real-time price feeds
   RETURN QUERY
   SELECT
     'ethereum'::TEXT as source_network,
@@ -624,11 +666,10 @@ BEGIN
     20.0::DECIMAL(20, 8) as estimated_profit_usd,
     'Polygon Bridge'::TEXT as bridge_protocol,
     5.0::DECIMAL(20, 8) as total_fees
-  WHERE 0.20 >= p_min_profit_percentage; -- Example condition
+  WHERE 0.20 >= p_min_profit_percentage;
 END;
 $$;
 
--- Create function to update network gas prices (for automated updates)
 CREATE OR REPLACE FUNCTION public.update_network_gas_prices(
   p_network_id TEXT,
   p_gas_price_gwei DECIMAL(10, 2),
@@ -644,7 +685,6 @@ AS $$
 DECLARE
   v_congestion_level TEXT;
 BEGIN
-  -- Determine congestion level based on gas prices
   IF p_gas_price_gwei < 10 THEN
     v_congestion_level := 'low';
   ELSIF p_gas_price_gwei < 30 THEN
@@ -655,7 +695,6 @@ BEGIN
     v_congestion_level := 'extreme';
   END IF;
 
-  -- Insert new gas price record
   INSERT INTO public.network_gas_tracker (
     network_id, gas_price_gwei, gas_price_fast_gwei, gas_price_slow_gwei,
     base_fee_gwei, priority_fee_gwei, network_congestion_level
@@ -664,7 +703,6 @@ BEGIN
     p_base_fee_gwei, p_priority_fee_gwei, v_congestion_level
   );
 
-  -- Update the supported_networks table with latest gas price
   UPDATE public.supported_networks
   SET gas_price_gwei = p_gas_price_gwei,
       updated_at = NOW()
@@ -674,72 +712,6 @@ BEGIN
 END;
 $$;
 
--- Create function to get user's multi-network portfolio summary
-CREATE OR REPLACE FUNCTION public.get_user_multi_network_summary(p_user_id UUID)
-RETURNS TABLE (
-  total_portfolio_value DECIMAL(20, 8),
-  network_count INTEGER,
-  active_networks TEXT[],
-  largest_network_allocation TEXT,
-  cross_chain_transactions_count INTEGER,
-  total_bridge_fees_paid DECIMAL(20, 8)
-)
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-  v_total_value DECIMAL(20, 8) := 0;
-  v_network_count INTEGER := 0;
-  v_active_networks TEXT[] := ARRAY[]::TEXT[];
-  v_largest_network TEXT := '';
-  v_bridge_count INTEGER := 0;
-  v_total_fees DECIMAL(20, 8) := 0;
-BEGIN
-  -- Get total portfolio value across all networks (simplified calculation)
-  SELECT COALESCE(SUM(balance_usd), 0) INTO v_total_value
-  FROM public.multi_network_balances
-  WHERE user_id = p_user_id;
-
-  -- Get count of active networks
-  SELECT COUNT(DISTINCT network_id) INTO v_network_count
-  FROM public.multi_network_balances
-  WHERE user_id = p_user_id AND balance > 0;
-
-  -- Get list of active networks
-  SELECT ARRAY_AGG(DISTINCT network_id) INTO v_active_networks
-  FROM public.multi_network_balances
-  WHERE user_id = p_user_id AND balance > 0;
-
-  -- Get largest network allocation
-  SELECT network_id INTO v_largest_network
-  FROM public.multi_network_balances
-  WHERE user_id = p_user_id
-  GROUP BY network_id
-  ORDER BY SUM(balance_usd) DESC
-  LIMIT 1;
-
-  -- Get cross-chain transaction count
-  SELECT COUNT(*) INTO v_bridge_count
-  FROM public.cross_chain_transactions
-  WHERE user_id = p_user_id;
-
-  -- Get total bridge fees paid
-  SELECT COALESCE(SUM(bridge_fee + gas_fee_source + gas_fee_destination), 0) INTO v_total_fees
-  FROM public.cross_chain_transactions
-  WHERE user_id = p_user_id AND status = 'completed';
-
-  RETURN QUERY
-  SELECT
-    v_total_value as total_portfolio_value,
-    v_network_count as network_count,
-    COALESCE(v_active_networks, ARRAY[]::TEXT[]) as active_networks,
-    COALESCE(v_largest_network, '') as largest_network_allocation,
-    v_bridge_count as cross_chain_transactions_count,
-    v_total_fees as total_bridge_fees_paid;
-END;
-$$;
-
--- Create function to update multi-network balances
 CREATE OR REPLACE FUNCTION public.update_multi_network_balance(
   p_user_id UUID,
   p_network_id TEXT,
@@ -775,7 +747,6 @@ BEGIN
 END;
 $$;
 
--- Create function to get bridge transaction history for a user
 CREATE OR REPLACE FUNCTION public.get_user_bridge_transactions(
   p_user_id UUID,
   p_limit INTEGER DEFAULT 50,
@@ -829,7 +800,7 @@ BEGIN
 END;
 $$;
 
--- Grant necessary permissions
+-- Grant permissions (unchanged)
 GRANT USAGE ON SCHEMA public TO authenticated;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated;
