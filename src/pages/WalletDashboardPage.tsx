@@ -2,13 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -16,8 +15,6 @@ import { Label } from '@/components/ui/label';
 import WalletSwitcher from '@/components/WalletSwitcher';
 import {
   getAllUserWalletsWithPreferences,
-  updateWalletCategory,
-  updateWalletDisplayOrder,
   DEFAULT_CATEGORIES
 } from '@/services/walletPreferencesService';
 // Safe Phase 3 service imports with fallback handling
@@ -31,7 +28,9 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   connectHotWallet,
   getConnectedHotWallets,
-  HOT_WALLET_OPTIONS
+  HOT_WALLET_OPTIONS,
+  getWalletRiskAssessment,
+  importWalletAddresses
 } from '@/services/hotWalletService';
 import {
   connectHardwareWallet,
@@ -45,8 +44,6 @@ import {
 } from '@/services/portfolioService';
 import {
   getStakingOpportunities,
-  getYieldFarmingPools,
-  getUserStakingPositions,
   getDeFiPortfolioSummary
 } from '@/services/defiService';
 import {
@@ -55,9 +52,7 @@ import {
   TrendingUp,
   BarChart3,
   ArrowUpDown,
-  Settings,
   Star,
-  DragHandleDots2Icon,
   Eye,
   EyeOff,
   RefreshCw,
@@ -69,9 +64,6 @@ import {
   Shield,
   Calendar,
   FileDown,
-  X,
-  Search,
-  ChevronDown,
   Target,
   Brain,
   Users
@@ -601,7 +593,7 @@ const WalletDashboardPage: React.FC = () => {
       setLoading(true);
 
       // Fetch real user wallets first
-      let walletsData;
+      let walletsData: any[];
       try {
         walletsData = await getRealUserWallets(user.id);
         console.log('✅ Using real wallet data from database');
@@ -645,7 +637,7 @@ const WalletDashboardPage: React.FC = () => {
 
       // Update wallet portfolio values with real balance data
       const walletsWithValues = await Promise.all(
-        walletsData.map(async (wallet) => {
+        walletsData.map(async (wallet: any) => {
           try {
             // Get real wallet balances from database
             const { data: balances, error } = await supabase
@@ -724,25 +716,7 @@ const WalletDashboardPage: React.FC = () => {
     });
   };
 
-  const handleWalletCategoryChange = async (walletId: string, category: string) => {
-    if (!user) return;
 
-    try {
-      await updateWalletCategory(user.id, walletId, category);
-      await fetchDashboardData(); // Refresh data
-      toast({
-        title: "Category Updated",
-        description: "Wallet category has been updated",
-      });
-    } catch (error) {
-      console.error('Error updating wallet category:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update wallet category",
-        variant: "destructive",
-      });
-    }
-  };
 
   const getFilteredWallets = () => {
     if (walletFilter === 'all') {
@@ -766,7 +740,63 @@ const WalletDashboardPage: React.FC = () => {
     return categorized;
   };
 
-  // Hot wallet connection handler
+  // Handle direct wallet connection (no dialog)
+  const handleDirectWalletConnection = async (walletOption: any) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to connect a wallet",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setConnectingWallet(true);
+
+      // Show risk assessment and permissions request
+      const riskAssessment = getWalletRiskAssessment(walletOption.id);
+
+      // Request proper permissions from the wallet
+      console.log(`🔗 Requesting permissions from ${walletOption.name}:`);
+      console.log('- View your accounts and suggest transactions');
+      console.log('- Use your enabled networks');
+      console.log(`- Risk Level: ${riskAssessment?.riskLevel.toUpperCase()}`);
+
+      const result = await connectHotWallet(user.id, walletOption);
+
+      if (result.success) {
+        // Import all wallet addresses and balances automatically
+        if (result.address) {
+          await importWalletAddresses(user.id, walletOption.id, [result.address]);
+        }
+
+        toast({
+          title: "Wallet Connected Successfully",
+          description: `${walletOption.name} has been connected with real-time balance updates`,
+        });
+
+        await fetchDashboardData(); // Refresh data
+      } else {
+        toast({
+          title: "Connection Failed",
+          description: result.error || "Failed to connect wallet",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error connecting hot wallet:', error);
+      toast({
+        title: "Connection Error",
+        description: "An error occurred while connecting the wallet",
+        variant: "destructive",
+      });
+    } finally {
+      setConnectingWallet(false);
+    }
+  };
+
+  // Hot wallet connection handler (legacy for dialog)
   const handleConnectHotWallet = async (walletOption: any) => {
     if (!user) return;
 
@@ -800,7 +830,59 @@ const WalletDashboardPage: React.FC = () => {
     }
   };
 
-  // Hardware wallet connection handler
+  // Handle direct hardware wallet connection with connection method selection
+  const handleDirectHardwareWalletConnection = async (walletOption: any) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to connect a hardware wallet",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setConnectingWallet(true);
+
+      // Show hardware wallet info and connection methods
+      console.log(`🔗 Connecting ${walletOption.name} hardware wallet:`);
+      console.log(`- Security Level: ${walletOption.securityLevel.toUpperCase()}`);
+      console.log(`- Available Methods: ${walletOption.connectionMethods.join(', ')}`);
+      console.log(`- Price: $${walletOption.price}`);
+
+      // For now, use the first available connection method
+      // In a full implementation, this would show a connection method selection dialog
+      const connectionMethod = walletOption.connectionMethods[0] as 'usb' | 'bluetooth' | 'qr';
+
+      const result = await connectHardwareWallet(user.id, walletOption, connectionMethod);
+
+      if (result.success) {
+        toast({
+          title: "Hardware Wallet Connected Successfully",
+          description: `${walletOption.name} has been connected via ${connectionMethod.toUpperCase()}`,
+        });
+
+        await fetchDashboardData(); // Refresh data
+      } else {
+        toast({
+          title: "Connection Failed",
+          description: result.error || "Failed to connect hardware wallet",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error connecting hardware wallet:', error);
+      toast({
+        title: "Connection Error",
+        description: "An error occurred while connecting the hardware wallet",
+        variant: "destructive",
+      });
+    } finally {
+      setConnectingWallet(false);
+    }
+  };
+
+  // Hardware wallet connection handler (legacy for dialog)
   const handleConnectHardwareWallet = async (walletOption: any, connectionMethod: 'usb' | 'bluetooth' | 'qr') => {
     if (!user) return;
 
@@ -855,7 +937,7 @@ const WalletDashboardPage: React.FC = () => {
         // Phase 1 fallback - create basic CSV
         const transactions = await safeGetFilteredTransactions(user.id);
         const headers = ['Date', 'Type', 'Amount', 'Token', 'Status', 'Category'];
-        const rows = transactions.transactions.map(tx => [
+        const rows = transactions.transactions.map((tx: any) => [
           new Date(tx.timestamp).toISOString().split('T')[0],
           tx.transaction_type || tx.type || 'Unknown',
           (tx.from_amount || tx.amount || '0').toString(),
@@ -1131,56 +1213,298 @@ const WalletDashboardPage: React.FC = () => {
               </div>
             </Card>
 
-            {/* Quick Actions */}
-            <Card className="p-4 bg-dex-dark border-dex-secondary/30">
-              <h3 className="text-lg font-medium text-white mb-4">Quick Actions</h3>
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  onClick={() => navigate('/wallet-generation')}
-                  className="bg-dex-primary hover:bg-dex-primary/80 text-white justify-start"
-                >
-                  <Plus size={16} className="mr-2" />
-                  Create Wallet
-                </Button>
-                <Button
-                  onClick={() => navigate('/wallet-import')}
-                  variant="outline"
-                  className="border-dex-secondary/30 text-white justify-start"
-                >
-                  <ArrowUpDown size={16} className="mr-2" />
-                  Import Wallet
-                </Button>
-              </div>
-            </Card>
+            {/* Quick Actions - Only for Custom AI Tab */}
+            {walletFilter === 'generated' && (
+              <Card className="p-4 bg-dex-dark border-dex-secondary/30">
+                <h3 className="text-lg font-medium text-white mb-4">Quick Actions</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    onClick={() => navigate('/wallet-generation')}
+                    className="bg-dex-primary hover:bg-dex-primary/80 text-white justify-start"
+                  >
+                    <Plus size={16} className="mr-2" />
+                    Create Wallet
+                  </Button>
+                  <Button
+                    onClick={() => navigate('/wallet-import')}
+                    variant="outline"
+                    className="border-dex-secondary/30 text-white justify-start"
+                  >
+                    <ArrowUpDown size={16} className="mr-2" />
+                    Import Wallet
+                  </Button>
+                </div>
+              </Card>
+            )}
 
-            {/* Wallets by Category or Empty States */}
-            {walletFilter === 'hot' && connectedHotWallets.length === 0 ? (
-              <Card className="p-6 bg-dex-dark border-dex-secondary/30 text-center">
-                <Flame size={48} className="mx-auto mb-4 text-dex-primary opacity-50" />
-                <h3 className="text-lg font-medium text-white mb-2">No Hot Wallets Connected</h3>
-                <p className="text-gray-400 mb-4">Connect your favorite hot wallets to get started</p>
-                <Button
-                  onClick={() => setShowHotWalletDialog(true)}
-                  className="bg-dex-primary hover:bg-dex-primary/80 text-white h-12 px-6"
-                >
-                  <Plus size={16} className="mr-2" />
-                  Connect Hot Wallet
-                </Button>
-              </Card>
-            ) : walletFilter === 'hardware' && connectedHardwareWallets.length === 0 ? (
-              <Card className="p-6 bg-dex-dark border-dex-secondary/30 text-center">
-                <Shield size={48} className="mx-auto mb-4 text-dex-primary opacity-50" />
-                <h3 className="text-lg font-medium text-white mb-2">No Hardware Wallets Connected</h3>
-                <p className="text-gray-400 mb-4">Connect your hardware wallets for maximum security</p>
-                <Button
-                  onClick={() => setShowHardwareWalletDialog(true)}
-                  variant="outline"
-                  className="border-dex-secondary/30 text-white h-12 px-6"
-                >
-                  <Shield size={16} className="mr-2" />
-                  Connect Hardware Wallet
-                </Button>
-              </Card>
+            {/* Enhanced Hot Wallets Tab */}
+            {walletFilter === 'hot' ? (
+              <div className="space-y-6">
+                {/* Hot Wallet Provider Filters */}
+                <Card className="p-4 bg-dex-dark border-dex-secondary/30">
+                  <h3 className="text-lg font-medium text-white mb-4">Hot Wallet Providers</h3>
+                  <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+                    {HOT_WALLET_OPTIONS.map((provider) => (
+                      <div key={provider.id} className="relative group">
+                        <Button
+                          variant="outline"
+                          className="h-20 w-full flex flex-col items-center gap-2 border-dex-secondary/30 text-white hover:bg-dex-secondary/20 transition-all duration-200"
+                          onClick={() => handleDirectWalletConnection(provider)}
+                          disabled={connectingWallet}
+                        >
+                          <img
+                            src={provider.icon}
+                            alt={provider.name}
+                            className="w-8 h-8"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/wallet-icons/default.svg';
+                            }}
+                          />
+                          <span className="text-xs">{provider.name}</span>
+                          {provider.isPopular && (
+                            <Badge className="absolute -top-1 -right-1 bg-dex-primary text-white text-xs px-1 py-0">
+                              Popular
+                            </Badge>
+                          )}
+                        </Button>
+
+                        {/* Risk Assessment Tooltip */}
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+                          <div className="bg-dex-dark border border-dex-secondary/30 rounded-lg p-3 text-xs text-white shadow-lg min-w-48">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="font-medium">{provider.name}</span>
+                              <Badge
+                                variant="outline"
+                                className={`text-xs ${
+                                  provider.riskLevel === 'low' ? 'border-green-500 text-green-500' :
+                                  provider.riskLevel === 'medium' ? 'border-yellow-500 text-yellow-500' :
+                                  'border-red-500 text-red-500'
+                                }`}
+                              >
+                                {provider.riskLevel.toUpperCase()} RISK
+                              </Badge>
+                            </div>
+                            <p className="text-gray-400 mb-2">{provider.description}</p>
+                            <div className="text-xs">
+                              <p><strong>Market Share:</strong> {provider.marketShare}%</p>
+                              <p><strong>Networks:</strong> {provider.supportedNetworks.slice(0, 3).join(', ')}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+
+                {/* Connected Hot Wallets */}
+                {connectedHotWallets.length === 0 ? (
+                  <Card className="p-6 bg-dex-dark border-dex-secondary/30 text-center">
+                    <Flame size={48} className="mx-auto mb-4 text-dex-primary opacity-50" />
+                    <h3 className="text-lg font-medium text-white mb-2">No Hot Wallets Connected</h3>
+                    <p className="text-gray-400 mb-4">Connect your favorite hot wallets to get started</p>
+                    <Button
+                      onClick={() => setShowHotWalletDialog(true)}
+                      className="bg-dex-primary hover:bg-dex-primary/80 text-white h-12 px-6"
+                    >
+                      <Plus size={16} className="mr-2" />
+                      Connect Hot Wallet
+                    </Button>
+                  </Card>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Group by provider */}
+                    {Object.entries(
+                      connectedHotWallets.reduce((groups: Record<string, any[]>, wallet: any) => {
+                        const provider = wallet.wallet_id || 'unknown';
+                        if (!groups[provider]) groups[provider] = [];
+                        groups[provider].push(wallet);
+                        return groups;
+                      }, {} as Record<string, any[]>)
+                    ).map(([provider, wallets]: [string, any[]]) => (
+                      <Card key={provider} className="p-6 bg-dex-dark border-dex-secondary/30">
+                        <div className="flex items-center gap-3 mb-4">
+                          <img
+                            src={`/wallet-icons/${provider}.svg`}
+                            alt={provider}
+                            className="w-8 h-8"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/crypto-icons/metamask.svg';
+                            }}
+                          />
+                          <h3 className="text-lg font-medium text-white capitalize">{provider} Wallets</h3>
+                          <Badge variant="outline" className="text-xs border-dex-primary text-dex-primary">
+                            {wallets.length}
+                          </Badge>
+                        </div>
+                        <div className="space-y-3">
+                          {wallets.map((wallet) => (
+                            <div
+                              key={wallet.id}
+                              className="p-4 bg-dex-secondary/10 border border-dex-secondary/20 rounded-lg hover:bg-dex-secondary/15 transition-colors"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-full bg-dex-primary/20 flex items-center justify-center">
+                                    <Flame size={20} className="text-dex-primary" />
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-medium text-white">{wallet.wallet_name}</span>
+                                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                      <span className="text-xs text-green-500">Connected</span>
+                                    </div>
+                                    <span className="text-sm text-gray-400">{wallet.address?.slice(0, 6)}...{wallet.address?.slice(-4)}</span>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-medium text-white">
+                                    {showBalances ? '$0.00' : '••••••'}
+                                  </p>
+                                  <p className="text-sm text-gray-400">Balance</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : walletFilter === 'hardware' ? (
+              <div className="space-y-6">
+                {/* Hardware Wallet Provider Filters */}
+                <Card className="p-4 bg-dex-dark border-dex-secondary/30">
+                  <h3 className="text-lg font-medium text-white mb-4">Hardware Wallet Providers</h3>
+                  <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+                    {HARDWARE_WALLET_OPTIONS.map((provider) => (
+                      <div key={provider.id} className="relative group">
+                        <Button
+                          variant="outline"
+                          className="h-20 w-full flex flex-col items-center gap-2 border-dex-secondary/30 text-white hover:bg-dex-secondary/20 transition-all duration-200"
+                          onClick={() => handleDirectHardwareWalletConnection(provider)}
+                          disabled={connectingWallet}
+                        >
+                          <img
+                            src={provider.icon}
+                            alt={provider.name}
+                            className="w-8 h-8"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/hardware-wallets/default.svg';
+                            }}
+                          />
+                          <span className="text-xs">{provider.name}</span>
+                          {provider.isPopular && (
+                            <Badge className="absolute -top-1 -right-1 bg-dex-primary text-white text-xs px-1 py-0">
+                              Popular
+                            </Badge>
+                          )}
+                        </Button>
+
+                        {/* Hardware Wallet Info Tooltip */}
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+                          <div className="bg-dex-dark border border-dex-secondary/30 rounded-lg p-3 text-xs text-white shadow-lg min-w-48">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="font-medium">{provider.name}</span>
+                              <Badge
+                                variant="outline"
+                                className={`text-xs ${
+                                  provider.securityLevel === 'high' ? 'border-green-500 text-green-500' :
+                                  provider.securityLevel === 'medium' ? 'border-yellow-500 text-yellow-500' :
+                                  'border-red-500 text-red-500'
+                                }`}
+                              >
+                                {provider.securityLevel.toUpperCase()} SECURITY
+                              </Badge>
+                            </div>
+                            <p className="text-gray-400 mb-2">{provider.description}</p>
+                            <div className="text-xs">
+                              <p><strong>Price:</strong> ${provider.price}</p>
+                              <p><strong>Connection:</strong> {provider.connectionMethods.join(', ')}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+
+                {/* Connected Hardware Wallets */}
+                {connectedHardwareWallets.length === 0 ? (
+                  <Card className="p-6 bg-dex-dark border-dex-secondary/30 text-center">
+                    <Shield size={48} className="mx-auto mb-4 text-dex-primary opacity-50" />
+                    <h3 className="text-lg font-medium text-white mb-2">No Hardware Wallets Connected</h3>
+                    <p className="text-gray-400 mb-4">Connect your hardware wallets for maximum security</p>
+                    <Button
+                      onClick={() => setShowHardwareWalletDialog(true)}
+                      variant="outline"
+                      className="border-dex-secondary/30 text-white h-12 px-6"
+                    >
+                      <Shield size={16} className="mr-2" />
+                      Connect Hardware Wallet
+                    </Button>
+                  </Card>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Group by manufacturer */}
+                    {Object.entries(
+                      connectedHardwareWallets.reduce((groups: Record<string, any[]>, wallet: any) => {
+                        const manufacturer = wallet.wallet_id || 'unknown';
+                        if (!groups[manufacturer]) groups[manufacturer] = [];
+                        groups[manufacturer].push(wallet);
+                        return groups;
+                      }, {} as Record<string, any[]>)
+                    ).map(([manufacturer, wallets]: [string, any[]]) => (
+                      <Card key={manufacturer} className="p-6 bg-dex-dark border-dex-secondary/30">
+                        <div className="flex items-center gap-3 mb-4">
+                          <img
+                            src={`/hardware-wallets/${manufacturer}.svg`}
+                            alt={manufacturer}
+                            className="w-8 h-8"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/hardware-wallets/ledger.svg';
+                            }}
+                          />
+                          <h3 className="text-lg font-medium text-white capitalize">{manufacturer} Devices</h3>
+                          <Badge variant="outline" className="text-xs border-dex-primary text-dex-primary">
+                            {wallets.length}
+                          </Badge>
+                        </div>
+                        <div className="space-y-3">
+                          {wallets.map((wallet) => (
+                            <div
+                              key={wallet.id}
+                              className="p-4 bg-dex-secondary/10 border border-dex-secondary/20 rounded-lg hover:bg-dex-secondary/15 transition-colors"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-full bg-dex-primary/20 flex items-center justify-center">
+                                    <Shield size={20} className="text-dex-primary" />
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-medium text-white">{wallet.wallet_name}</span>
+                                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                      <span className="text-xs text-green-500">Connected</span>
+                                    </div>
+                                    <span className="text-sm text-gray-400">{wallet.address?.slice(0, 6)}...{wallet.address?.slice(-4)}</span>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-medium text-white">
+                                    {showBalances ? '$0.00' : '••••••'}
+                                  </p>
+                                  <p className="text-sm text-gray-400">Balance</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
             ) : (
               Object.entries(walletsByCategory).map(([categoryId, categoryWallets]) => {
                 const categoryInfo = DEFAULT_CATEGORIES.find(cat => cat.id === categoryId) || DEFAULT_CATEGORIES[5];
@@ -1755,33 +2079,74 @@ const WalletDashboardPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Hardware Wallet Connection Dialog */}
+      {/* Enhanced Hardware Wallet Connection Dialog */}
       <Dialog open={showHardwareWalletDialog} onOpenChange={setShowHardwareWalletDialog}>
-        <DialogContent className="bg-dex-dark border-dex-secondary/30 text-white">
+        <DialogContent className="bg-dex-dark border-dex-secondary/30 text-white max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Connect Hardware Wallet</DialogTitle>
+            <DialogTitle className="text-xl font-bold">Connect Hardware Wallet</DialogTitle>
+            <p className="text-gray-400">Choose your hardware wallet and connection method for maximum security</p>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-6">
             {HARDWARE_WALLET_OPTIONS.map((wallet) => (
               <div
                 key={wallet.id}
-                className="p-4 border border-dex-secondary/30 rounded-lg hover:bg-dex-secondary/10 cursor-pointer transition-colors"
-                onClick={() => handleConnectHardwareWallet(wallet, 'usb')}
+                className="p-4 border border-dex-secondary/30 rounded-lg hover:bg-dex-secondary/10 transition-colors"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-dex-primary/20 flex items-center justify-center">
-                    <Shield size={20} className="text-dex-primary" />
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-full bg-dex-primary/20 flex items-center justify-center flex-shrink-0">
+                    <img
+                      src={wallet.icon}
+                      alt={wallet.name}
+                      className="w-8 h-8"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/hardware-wallets/default.svg';
+                      }}
+                    />
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-white">{wallet.name}</span>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="font-medium text-white">{wallet.name}</h4>
+                      <Badge
+                        variant="outline"
+                        className={`text-xs ${
+                          wallet.securityLevel === 'high' ? 'border-green-500 text-green-500' :
+                          wallet.securityLevel === 'medium' ? 'border-yellow-500 text-yellow-500' :
+                          'border-red-500 text-red-500'
+                        }`}
+                      >
+                        {wallet.securityLevel.toUpperCase()} SECURITY
+                      </Badge>
                       {wallet.isPopular && (
-                        <Badge variant="outline" className="text-xs text-dex-primary border-dex-primary">
+                        <Badge className="bg-dex-primary text-white text-xs">
                           Popular
                         </Badge>
                       )}
                     </div>
-                    <p className="text-sm text-gray-400">{wallet.description}</p>
+                    <p className="text-sm text-gray-400 mb-3">{wallet.description}</p>
+                    <div className="text-xs text-gray-500 mb-3">
+                      <span className="font-medium">Price: ${wallet.price}</span> •
+                      <span className="ml-1">Networks: {wallet.supportedNetworks.slice(0, 3).join(', ')}</span>
+                      {wallet.supportedNetworks.length > 3 && <span> +{wallet.supportedNetworks.length - 3} more</span>}
+                    </div>
+
+                    {/* Connection Methods */}
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-white">Available Connection Methods:</p>
+                      <div className="flex gap-2">
+                        {wallet.connectionMethods.map((method) => (
+                          <Button
+                            key={method}
+                            size="sm"
+                            variant="outline"
+                            className="border-dex-secondary/30 text-white hover:bg-dex-primary hover:border-dex-primary"
+                            onClick={() => handleConnectHardwareWallet(wallet, method)}
+                            disabled={connectingWallet}
+                          >
+                            {method.toUpperCase()}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

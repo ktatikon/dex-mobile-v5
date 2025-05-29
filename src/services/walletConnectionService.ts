@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
-import { WalletOption } from '@/components/wallet/HotWalletOptions';
-import { HardwareWalletOption } from '@/components/wallet/HardwareWalletOptions';
+import { WalletOption } from '@/services/hotWalletService';
+import { HardwareWalletOption } from '@/services/hardwareWalletService';
 
 // Define the wallet connection interface
 export interface WalletConnection {
