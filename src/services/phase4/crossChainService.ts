@@ -7,11 +7,8 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
-import { Token, Transaction, TransactionType, TransactionStatus } from '@/types';
-import { phase4ConfigManager, PHASE4_CONFIG } from './phase4ConfigService';
+import { phase4ConfigManager } from './phase4ConfigService';
 import { realBlockchainService, BRIDGE_PROTOCOLS } from './realBlockchainService';
-import { realMarketDataService } from './realMarketDataService';
-import { ethers } from 'ethers';
 
 // Cross-Chain Types
 export enum BridgeProtocolType {
@@ -176,7 +173,6 @@ class CrossChainService {
   private supportedNetworks = new Map<string, SupportedNetwork>();
   private bridgeProtocols = new Map<string, BridgeProtocol>();
   private gasData = new Map<string, NetworkGasData>();
-  private userBalances = new Map<string, MultiNetworkBalance[]>();
 
   constructor() {
     this.initialize();
@@ -518,7 +514,7 @@ class CrossChainService {
   }
 
   /**
-   * Deactivate Phase 1 fallback mode
+   * Deactivate Phase 1 fallback mode (used for recovery)
    */
   private deactivatePhase1Fallback(): void {
     this.phase1FallbackActive = false;
@@ -1028,13 +1024,17 @@ class CrossChainService {
    * Get mock portfolio summary for fallback mode
    */
   private getMockPortfolioSummary(userId: string): MultiNetworkPortfolioSummary {
+    // Use userId for consistent mock data generation
+    const userSeed = userId.length % 3;
+    const baseValue = 10000 + (userSeed * 2500);
+
     return {
-      totalPortfolioValue: '12500.00',
+      totalPortfolioValue: baseValue.toString(),
       networkCount: 3,
       activeNetworks: ['ethereum', 'polygon', 'arbitrum'],
       largestNetworkAllocation: 'ethereum',
-      crossChainTransactionsCount: 5,
-      totalBridgeFeesPaid: '25.50',
+      crossChainTransactionsCount: 5 + userSeed,
+      totalBridgeFeesPaid: (20 + userSeed * 5).toString(),
       networkDistribution: {
         ethereum: 65.5,
         polygon: 22.3,
@@ -1207,16 +1207,6 @@ export const safeCrossChainService = {
   }
 };
 
-// Export types for use in components
-export type {
-  SupportedNetwork,
-  BridgeProtocol,
-  CrossChainTransaction,
-  MultiNetworkBalance,
-  NetworkGasData,
-  CrossChainStrategy,
-  MultiNetworkPortfolioSummary,
-  BridgeQuote
-};
+// Types are already exported above with their declarations
 
 export default crossChainService;

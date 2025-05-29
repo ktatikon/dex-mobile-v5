@@ -5,12 +5,10 @@
  * and DCA automation with REAL BLOCKCHAIN INTEGRATIONS and comprehensive error handling.
  */
 
-import { supabase } from '@/integrations/supabase/client';
-import { Token, Transaction, TransactionType, TransactionStatus } from '@/types';
-import { phase4ConfigManager, PHASE4_CONFIG } from './phase4ConfigService';
-import { realBlockchainService, DEX_PROTOCOLS } from './realBlockchainService';
+import { Token } from '@/types';
+import { phase4ConfigManager } from './phase4ConfigService';
 import { realMarketDataService } from './realMarketDataService';
-import { ethers } from 'ethers';
+import { realBlockchainService } from './realBlockchainService';
 
 // Advanced Order Types
 export enum AdvancedOrderType {
@@ -95,16 +93,12 @@ export interface RiskAssessment {
 class AdvancedTradingService {
   private orders: Map<string, AdvancedOrder> = new Map();
   private dcaStrategies: Map<string, DCAStrategy> = new Map();
-  private priceAlerts: Map<string, any> = new Map();
   private consecutiveFailures = 0;
   private phase1FallbackActive = false;
   private lastUpdate: Date | null = null;
 
   // Configuration
   private readonly MAX_CONSECUTIVE_FAILURES = 5;
-  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-  private readonly ORDER_CHECK_INTERVAL = 30 * 1000; // 30 seconds
-  private readonly PRICE_UPDATE_INTERVAL = 10 * 1000; // 10 seconds
 
   constructor() {
     this.initializeService();
@@ -137,8 +131,8 @@ class AdvancedTradingService {
       // Start order monitoring with REAL price feeds
       this.startOrderMonitoring();
 
-      // Start REAL price monitoring
-      this.startRealPriceMonitoring();
+      // Order monitoring includes price monitoring
+      // this.startRealPriceMonitoring(); // Included in startOrderMonitoring
 
       console.log('✅ Phase 4 Advanced Trading Service initialized with REAL blockchain integrations');
 
@@ -183,7 +177,7 @@ class AdvancedTradingService {
 
       // Create order object
       const order: AdvancedOrder = {
-        id: `limit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `limit_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
         userId: params.userId,
         orderType: AdvancedOrderType.LIMIT,
         fromToken: params.fromToken,
@@ -250,7 +244,7 @@ class AdvancedTradingService {
       console.log('🔄 Creating stop-loss order...');
 
       const order: AdvancedOrder = {
-        id: `stop_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `stop_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
         userId: params.userId,
         orderType: AdvancedOrderType.STOP_LOSS,
         fromToken: params.fromToken,
@@ -309,7 +303,7 @@ class AdvancedTradingService {
       const amountPerInterval = (parseFloat(params.totalAmount) / params.totalIntervals).toString();
 
       const strategy: DCAStrategy = {
-        id: `dca_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `dca_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
         userId: params.userId,
         fromToken: params.fromToken,
         toToken: params.toToken,
@@ -542,7 +536,7 @@ class AdvancedTradingService {
     };
   }
 
-  private getMockUserOrders(userId: string): AdvancedOrder[] {
+  private getMockUserOrders(_userId: string): AdvancedOrder[] {
     return []; // Return empty array for mock
   }
 
@@ -551,15 +545,15 @@ class AdvancedTradingService {
     // Implementation would load orders from database
   }
 
-  private async saveOrderToDatabase(order: AdvancedOrder): Promise<void> {
+  private async saveOrderToDatabase(_order: AdvancedOrder): Promise<void> {
     // Implementation would save order to database
   }
 
-  private async updateOrderInDatabase(order: AdvancedOrder): Promise<void> {
+  private async updateOrderInDatabase(_order: AdvancedOrder): Promise<void> {
     // Implementation would update order in database
   }
 
-  private async saveDCAStrategyToDatabase(strategy: DCAStrategy): Promise<void> {
+  private async saveDCAStrategyToDatabase(_strategy: DCAStrategy): Promise<void> {
     // Implementation would save DCA strategy to database
   }
 

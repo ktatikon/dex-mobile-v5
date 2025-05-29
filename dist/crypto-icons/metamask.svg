@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256px" height="240px" viewBox="0 0 256 240" version="1.1" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid">
+    <title>MetaMask</title>
+    <defs>
+        <polygon id="path-1" points="0 0 256 0 256 239.044 0 239.044"></polygon>
+    </defs>
+    <g>
+        <polygon fill="#E17726" points="250.066 -8.065e-15 142.384 81.497 158.923 37.499"></polygon>
+        <g stroke-width="1" fill="none" fill-rule="evenodd">
+            <g>
+                <mask id="mask-2" fill="white">
+                    <use xlink:href="#path-1"></use>
+                </mask>
+                <g></g>
+                <polygon fill="#E27625" mask="url(#mask-2)" points="5.361 -8.065e-15 113.696 81.497 96.598 37.499"></polygon>
+                <polygon fill="#E27625" mask="url(#mask-2)" points="214.38 170.079 187.035 208.186 243.864 222.651 260.276 170.752"></polygon>
+                <polygon fill="#E27625" mask="url(#mask-2)" points="-4.618 170.752 11.729 222.651 68.493 208.186 41.213 170.079"></polygon>
+                <polygon fill="#E27625" mask="url(#mask-2)" points="66.275 104.089 51.078 126.905 107.45 129.294 105.733 68.875"></polygon>
+                <polygon fill="#E27625" mask="url(#mask-2)" points="189.725 104.089 150.068 68.875 148.551 129.294 204.922 126.905"></polygon>
+                <polygon fill="#E27625" mask="url(#mask-2)" points="68.493 208.186 104.352 192.621 73.619 171.083"></polygon>
+                <polygon fill="#E27625" mask="url(#mask-2)" points="151.648 192.621 187.035 208.186 182.381 171.083"></polygon>
+                <polygon fill="#D5BFB2" mask="url(#mask-2)" points="187.035 208.186 151.648 192.621 154.607 213.159 154.214 222.078"></polygon>
+                <polygon fill="#D5BFB2" mask="url(#mask-2)" points="68.493 208.186 101.786 222.078 101.457 213.159 104.352 192.621"></polygon>
+                <polygon fill="#233447" mask="url(#mask-2)" points="102.572 157.229 73.162 149.443 93.759 140.794"></polygon>
+                <polygon fill="#233447" mask="url(#mask-2)" points="153.428 157.229 162.241 140.794 182.903 149.443"></polygon>
+                <polygon fill="#CC6228" mask="url(#mask-2)" points="68.493 208.186 73.884 170.079 41.213 170.752"></polygon>
+                <polygon fill="#CC6228" mask="url(#mask-2)" points="182.116 170.079 187.035 208.186 214.38 170.752"></polygon>
+                <polygon fill="#CC6228" mask="url(#mask-2)" points="204.922 126.905 148.551 129.294 153.428 157.229 162.241 140.794 182.903 149.443"></polygon>
+                <polygon fill="#CC6228" mask="url(#mask-2)" points="73.162 149.443 93.759 140.794 102.572 157.229 107.45 129.294 51.078 126.905"></polygon>
+                <polygon fill="#E27525" mask="url(#mask-2)" points="51.078 126.905 73.619 171.083 73.162 149.443"></polygon>
+                <polygon fill="#E27525" mask="url(#mask-2)" points="182.903 149.443 182.381 171.083 204.922 126.905"></polygon>
+                <polygon fill="#E27525" mask="url(#mask-2)" points="107.45 129.294 102.572 157.229 108.792 189.874 110.509 147.526"></polygon>
+                <polygon fill="#E27525" mask="url(#mask-2)" points="148.551 129.294 145.491 147.461 147.143 189.874 153.428 157.229"></polygon>
+                <polygon fill="#F5841F" mask="url(#mask-2)" points="153.428 157.229 147.143 189.874 151.648 192.621 182.381 171.083 182.903 149.443"></polygon>
+                <polygon fill="#F5841F" mask="url(#mask-2)" points="73.162 149.443 73.619 171.083 104.352 192.621 108.792 189.874 102.572 157.229"></polygon>
+                <polygon fill="#C0AC9D" mask="url(#mask-2)" points="154.214 222.078 154.607 213.159 151.846 210.816 104.154 210.816 101.457 213.159 101.786 222.078 68.493 208.186 77.708 215.709 103.957 234.21 152.043 234.21 178.357 215.709 187.035 208.186"></polygon>
+                <polygon fill="#161616" mask="url(#mask-2)" points="151.648 192.621 147.143 189.874 108.792 189.874 104.352 192.621 101.457 213.159 104.154 210.816 151.846 210.816 154.607 213.159"></polygon>
+                <polygon fill="#763E1A" mask="url(#mask-2)" points="254.585 82.777 262.998 43.047 250.066 -8.065e-15 151.648 75.286 189.725 104.089 242.688 118.288 254.056 105.318 249.073 101.674 257.058 94.285 251.046 89.583 259.031 83.252"></polygon>
+                <polygon fill="#763E1A" mask="url(#mask-2)" points="-6.998 43.047 1.415 82.777 -3.031 83.252 4.954 89.583 -1.058 94.285 6.927 101.674 1.944 105.318 13.312 118.288 66.275 104.089 104.352 75.286 5.934 -8.065e-15"></polygon>
+                <polygon fill="#F5841F" mask="url(#mask-2)" points="242.688 118.288 189.725 104.089 204.922 126.905 182.381 171.083 214.38 170.752 260.276 170.752"></polygon>
+                <polygon fill="#F5841F" mask="url(#mask-2)" points="66.275 104.089 13.312 118.288 -4.618 170.752 41.213 170.752 73.619 171.083 51.078 126.905"></polygon>
+                <polygon fill="#F5841F" mask="url(#mask-2)" points="148.551 129.294 151.648 75.286 158.923 37.499 96.598 37.499 104.352 75.286 107.45 129.294 108.727 147.526 108.792 189.874 147.143 189.874 147.273 147.526"></polygon>
+            </g>
+        </g>
+    </g>
+</svg>
