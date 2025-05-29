@@ -35,6 +35,7 @@ import {
   X
 } from 'lucide-react';
 import TokenIcon from '@/components/TokenIcon';
+import EnhancedTokenSelector from '@/components/TokenSelector';
 import { formatCurrency } from '@/services/realTimeData';
 import { Token, TransactionStatus, TransactionType } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -80,6 +81,7 @@ const SendPage = () => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [tokenError, setTokenError] = useState<string>('');
 
   // Get preselected token from location state if available
   useEffect(() => {
@@ -140,12 +142,59 @@ const SendPage = () => {
     });
   };
 
+  // Enhanced token validation
+  const validateToken = (token: Token | null): string => {
+    if (!token) {
+      return "Please select a token to send";
+    }
+
+    const balance = parseFloat(token.balance || '0');
+    if (balance === 0) {
+      return "Insufficient token balance";
+    }
+
+    const amount = parseFloat(watch('amount') || '0');
+    const fee = parseFloat(getFeeAmount());
+
+    if (amount + fee > balance) {
+      return "Amount exceeds available balance (including fees)";
+    }
+
+    return '';
+  };
+
+  // Handle token selection with validation
+  const handleTokenSelect = (token: Token) => {
+    setSelectedToken(token);
+    const error = validateToken(token);
+    setTokenError(error);
+
+    // Store token preference in session
+    sessionStorage.setItem('preferredToken', JSON.stringify(token));
+  };
+
   // Handle form submission
   const onSubmit = async (data: SendFormValues) => {
-    if (!selectedToken) {
+    const tokenValidationError = validateToken(selectedToken);
+    if (tokenValidationError) {
+      setTokenError(tokenValidationError);
       toast({
-        title: "Error",
-        description: "Please select a token to send",
+        title: "Token Selection Error",
+        description: tokenValidationError,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Additional validation for amount
+    const amount = parseFloat(data.amount);
+    const balance = parseFloat(selectedToken?.balance || '0');
+    const fee = parseFloat(getFeeAmount());
+
+    if (amount + fee > balance) {
+      toast({
+        title: "Insufficient Balance",
+        description: "Amount exceeds available balance including network fees",
         variant: "destructive",
       });
       return;
@@ -272,43 +321,20 @@ const SendPage = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {/* Token Selection */}
+            {/* Enhanced Token Selection */}
             <div className="grid gap-2">
-              <Label htmlFor="token" className="text-white">Select Token</Label>
-              <Select
-                value={selectedToken?.id}
-                onValueChange={(value) => {
-                  const token = walletTokens.find(t => t.id === value);
-                  setSelectedToken(token || null);
-                }}
-              >
-                <SelectTrigger className="bg-dex-dark border-dex-secondary/30 text-white min-h-[44px]">
-                  <SelectValue placeholder="Select token">
-                    {selectedToken && (
-                      <div className="flex items-center gap-2">
-                        <TokenIcon token={selectedToken} size="xs" />
-                        <span>{selectedToken.symbol}</span>
-                        <span className="text-gray-400 ml-1">
-                          (Balance: {parseFloat(selectedToken.balance || '0').toFixed(4)})
-                        </span>
-                      </div>
-                    )}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="bg-dex-tertiary border-dex-secondary/30 text-white max-h-[300px]">
-                  {walletTokens.map(token => (
-                    <SelectItem key={token.id} value={token.id} className="py-2">
-                      <div className="flex items-center gap-2">
-                        <TokenIcon token={token} size="xs" />
-                        <span>{token.symbol}</span>
-                        <span className="text-gray-400 ml-1">
-                          ({parseFloat(token.balance || '0').toFixed(4)})
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="token" className="text-white">Select Token *</Label>
+              <EnhancedTokenSelector
+                tokens={walletTokens}
+                selectedToken={selectedToken}
+                onSelectToken={handleTokenSelect}
+                label="Select Token to Send"
+                required={true}
+                showBalance={true}
+                allowCustomTokens={true}
+                placeholder="Search tokens by name or symbol..."
+                error={tokenError}
+              />
             </div>
 
             {/* Recipient Address */}

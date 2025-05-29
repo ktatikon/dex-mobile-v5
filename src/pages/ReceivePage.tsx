@@ -29,6 +29,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import TokenIcon from '@/components/TokenIcon';
+import EnhancedTokenSelector from '@/components/TokenSelector';
 import { Token } from '@/types';
 import QRCode from 'react-qr-code';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -165,37 +166,19 @@ const ReceivePage = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* Token Selection */}
+            {/* Enhanced Token Selection */}
             <div className="grid gap-2">
               <Label htmlFor="token" className="text-white">Select Token</Label>
-              <Select
-                value={selectedToken?.id}
-                onValueChange={(value) => {
-                  const token = walletTokens.find(t => t.id === value);
-                  setSelectedToken(token || null);
-                }}
-              >
-                <SelectTrigger className="bg-dex-dark border-dex-secondary/30 text-white min-h-[44px]">
-                  <SelectValue placeholder="Select token">
-                    {selectedToken && (
-                      <div className="flex items-center gap-2">
-                        <TokenIcon token={selectedToken} size="xs" />
-                        <span>{selectedToken.symbol}</span>
-                      </div>
-                    )}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="bg-dex-dark border-dex-secondary/30 text-white max-h-[300px]">
-                  {walletTokens.map(token => (
-                    <SelectItem key={token.id} value={token.id} className="py-2 text-white hover:bg-dex-secondary/20 focus:bg-dex-secondary/20">
-                      <div className="flex items-center gap-2">
-                        <TokenIcon token={token} size="xs" />
-                        <span>{token.symbol}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <EnhancedTokenSelector
+                tokens={walletTokens}
+                selectedToken={selectedToken}
+                onSelectToken={setSelectedToken}
+                label="Select Token to Receive"
+                required={false}
+                showBalance={true}
+                allowCustomTokens={false}
+                placeholder="Search tokens by name or symbol..."
+              />
             </div>
 
             {/* Amount (Optional) */}
