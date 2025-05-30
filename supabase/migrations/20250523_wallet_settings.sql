@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS wallet_settings (
   default_currency TEXT DEFAULT 'USD' CHECK (default_currency IN ('USD', 'EUR', 'GBP', 'BTC', 'ETH')),
   privacy_mode_enabled BOOLEAN DEFAULT false,
   auto_lock_timeout INTEGER DEFAULT 300, -- seconds (5 minutes)
+  slippage_tolerance DECIMAL(5,2) DEFAULT 0.50 CHECK (slippage_tolerance >= 0.01 AND slippage_tolerance <= 50.00), -- percentage (0.01% - 50%)
   transaction_notifications BOOLEAN DEFAULT true,
   price_alerts_enabled BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

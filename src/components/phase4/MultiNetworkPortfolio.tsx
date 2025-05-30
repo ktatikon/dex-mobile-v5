@@ -1,6 +1,6 @@
 /**
  * PHASE 4.3: MULTI-NETWORK PORTFOLIO COMPONENT
- * 
+ *
  * Displays unified portfolio view across all supported networks
  * with comprehensive error handling and fallback mechanisms.
  */
@@ -10,19 +10,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Network, 
-  DollarSign, 
-  ArrowUpRight, 
-  ArrowDownRight,
+import {
+  TrendingUp,
+  TrendingDown,
+  Network,
+  DollarSign,
+  ArrowUpRight,
   Zap,
-  Shield,
   Clock
 } from 'lucide-react';
-import { 
-  safeCrossChainService, 
+import {
+  safeCrossChainService,
   type MultiNetworkPortfolioSummary,
   type SupportedNetwork,
   type NetworkGasData
@@ -102,11 +100,83 @@ const MultiNetworkPortfolio: React.FC<MultiNetworkPortfolioProps> = ({
   };
 
   /**
-   * Get network icon
+   * Get network icon - Maps network IDs to cryptocurrency SVG icons
    */
   const getNetworkIcon = (networkId: string): string => {
-    const network = supportedNetworks.find(n => n.networkId === networkId);
-    return network?.iconUrl || '/icons/default-network.svg';
+    // Create comprehensive icon mapping for all networks
+    const iconMap: Record<string, string> = {
+      // Ethereum networks
+      'ethereum': '/crypto-icons/eth.svg',
+      'eth': '/crypto-icons/eth.svg',
+      '1': '/crypto-icons/eth.svg',
+      'ethereum mainnet': '/crypto-icons/eth.svg',
+
+      // Polygon
+      'polygon': '/crypto-icons/matic.svg',
+      'matic': '/crypto-icons/matic.svg',
+      '137': '/crypto-icons/matic.svg',
+      'polygon mainnet': '/crypto-icons/matic.svg',
+
+      // Binance Smart Chain
+      'bsc': '/crypto-icons/bnb.svg',
+      'binance': '/crypto-icons/bnb.svg',
+      'binance smart chain': '/crypto-icons/bnb.svg',
+      '56': '/crypto-icons/bnb.svg',
+
+      // Avalanche
+      'avalanche': '/crypto-icons/avax.svg',
+      'avax': '/crypto-icons/avax.svg',
+      'avalanche c-chain': '/crypto-icons/avax.svg',
+      '43114': '/crypto-icons/avax.svg',
+
+      // Arbitrum (uses ETH icon)
+      'arbitrum': '/crypto-icons/eth.svg',
+      'arbitrum one': '/crypto-icons/eth.svg',
+      '42161': '/crypto-icons/eth.svg',
+
+      // Optimism (uses ETH icon)
+      'optimism': '/crypto-icons/eth.svg',
+      '10': '/crypto-icons/eth.svg',
+
+      // Fantom (no specific icon, use generic)
+      'fantom': '/crypto-icons/eth.svg',
+      'fantom opera': '/crypto-icons/eth.svg',
+      '250': '/crypto-icons/eth.svg',
+
+      // Additional networks
+      'cosmos': '/crypto-icons/atom.svg',
+      'polkadot': '/crypto-icons/dot.svg',
+      'near': '/crypto-icons/near.svg',
+      'algorand': '/crypto-icons/algo.svg',
+      'tezos': '/crypto-icons/xtz.svg'
+    };
+
+    // First try direct networkId mapping
+    const normalizedId = networkId.toLowerCase();
+    let iconPath = iconMap[normalizedId];
+
+    // If not found, try to get from service data and map it
+    if (!iconPath) {
+      const network = supportedNetworks.find(n => n.networkId === networkId);
+
+      if (network?.iconUrl) {
+        // Map service iconUrl to our crypto-icons
+        const serviceIconMap: Record<string, string> = {
+          '/icons/ethereum.svg': '/crypto-icons/eth.svg',
+          '/icons/polygon.svg': '/crypto-icons/matic.svg',
+          '/icons/bsc.svg': '/crypto-icons/bnb.svg',
+          '/icons/arbitrum.svg': '/crypto-icons/eth.svg',
+          '/icons/optimism.svg': '/crypto-icons/eth.svg',
+          '/icons/avalanche.svg': '/crypto-icons/avax.svg',
+          '/icons/fantom.svg': '/crypto-icons/eth.svg'
+        };
+
+        iconPath = serviceIconMap[network.iconUrl] || iconMap[normalizedId];
+      }
+    }
+
+    // Final fallback
+    return iconPath || '/crypto-icons/eth.svg';
   };
 
   /**
@@ -177,17 +247,21 @@ const MultiNetworkPortfolio: React.FC<MultiNetworkPortfolioProps> = ({
             </Badge>
           </CardTitle>
         </CardHeader>
-        
+
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+
             <TabsList className="grid w-full grid-cols-3 bg-dex-dark/50">
               <TabsTrigger value="overview" className="data-[state=active]:bg-dex-primary/20">
+                <DollarSign className="w-4 h-4 mr-2" />
                 Overview
               </TabsTrigger>
               <TabsTrigger value="networks" className="data-[state=active]:bg-dex-primary/20">
+                <Network className="w-4 h-4 mr-2" />
                 Networks
               </TabsTrigger>
               <TabsTrigger value="gas" className="data-[state=active]:bg-dex-primary/20">
+                <Zap className="w-4 h-4 mr-2" />
                 Gas Tracker
               </TabsTrigger>
             </TabsList>
@@ -257,10 +331,13 @@ const MultiNetworkPortfolio: React.FC<MultiNetworkPortfolioProps> = ({
                         <div key={networkId} className="space-y-2">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <img 
-                                src={getNetworkIcon(networkId)} 
-                                alt={networkId} 
-                                className="w-4 h-4" 
+                              <img
+                                src={getNetworkIcon(networkId)}
+                                alt={getNetworkName(networkId)}
+                                className="w-4 h-4 flex-shrink-0"
+                                onError={(e) => {
+                                  e.currentTarget.src = '/crypto-icons/eth.svg';
+                                }}
                               />
                               <span className="text-sm text-dex-text-primary">
                                 {getNetworkName(networkId)}
@@ -270,8 +347,8 @@ const MultiNetworkPortfolio: React.FC<MultiNetworkPortfolioProps> = ({
                               {percentage.toFixed(1)}%
                             </span>
                           </div>
-                          <Progress 
-                            value={percentage} 
+                          <Progress
+                            value={percentage}
                             className="h-2 bg-dex-dark"
                           />
                         </div>
@@ -289,19 +366,24 @@ const MultiNetworkPortfolio: React.FC<MultiNetworkPortfolioProps> = ({
                   <Card key={network.networkId} className="bg-dex-dark/50 border-dex-primary/20">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3 mb-3">
-                        {network.iconUrl && (
-                          <img src={network.iconUrl} alt={network.networkName} className="w-6 h-6" />
-                        )}
+                        <img
+                          src={getNetworkIcon(network.networkId)}
+                          alt={network.networkName}
+                          className="w-6 h-6 flex-shrink-0"
+                          onError={(e) => {
+                            e.currentTarget.src = '/crypto-icons/eth.svg';
+                          }}
+                        />
                         <div>
                           <div className="font-medium text-dex-text-primary">{network.networkName}</div>
                           <div className="text-xs text-dex-text-secondary">{network.networkType}</div>
                         </div>
                         <div className="ml-auto">
-                          <Badge 
-                            variant="outline" 
+                          <Badge
+                            variant="outline"
                             className={`text-xs ${
-                              network.bridgeEnabled 
-                                ? 'text-dex-positive border-dex-positive' 
+                              network.bridgeEnabled
+                                ? 'text-dex-positive border-dex-positive'
                                 : 'text-dex-text-secondary border-dex-text-secondary'
                             }`}
                           >
@@ -309,7 +391,7 @@ const MultiNetworkPortfolio: React.FC<MultiNetworkPortfolioProps> = ({
                           </Badge>
                         </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-4 text-xs">
                         <div>
                           <span className="text-dex-text-secondary">Chain ID:</span>
@@ -343,7 +425,14 @@ const MultiNetworkPortfolio: React.FC<MultiNetworkPortfolioProps> = ({
                   <Card key={networkId} className="bg-dex-dark/50 border-dex-primary/20">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3 mb-3">
-                        <img src={getNetworkIcon(networkId)} alt={networkId} className="w-5 h-5" />
+                        <img
+                          src={getNetworkIcon(networkId)}
+                          alt={getNetworkName(networkId)}
+                          className="w-5 h-5 flex-shrink-0"
+                          onError={(e) => {
+                            e.currentTarget.src = '/crypto-icons/eth.svg';
+                          }}
+                        />
                         <div className="font-medium text-dex-text-primary">
                           {getNetworkName(networkId)}
                         </div>
@@ -354,7 +443,7 @@ const MultiNetworkPortfolio: React.FC<MultiNetworkPortfolioProps> = ({
                           </span>
                         </div>
                       </div>
-                      
+
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="text-dex-text-secondary">Standard:</span>

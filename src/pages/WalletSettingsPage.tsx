@@ -30,6 +30,7 @@ import {
   CURRENCY_OPTIONS,
   isBiometricAuthAvailable
 } from '@/services/walletSettingsService';
+import SlippageTolerance from '@/components/settings/SlippageTolerance';
 
 const WalletSettingsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -323,6 +324,14 @@ const WalletSettingsPage: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Slippage Tolerance Section */}
+      <SlippageTolerance
+        value={settings.slippage_tolerance}
+        onChange={(value) => handleSettingChange('slippage_tolerance', value)}
+        disabled={saving}
+        className="mb-6"
+      />
 
       {/* Backup & Recovery Section */}
       <Card className="bg-dex-dark/80 border-dex-secondary/30 mb-6 shadow-lg shadow-dex-secondary/10">

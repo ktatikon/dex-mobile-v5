@@ -53,7 +53,6 @@ import {
   PortfolioSummary
 } from '@/services/portfolioService';
 import {
-  getStakingOpportunities,
   getDeFiPortfolioSummary
 } from '@/services/defiService';
 import {
@@ -89,6 +88,8 @@ import MultiNetworkPortfolio from '@/components/phase4/MultiNetworkPortfolio';
 import { AIAnalyticsPanel } from '@/components/phase4/AIAnalyticsPanel';
 // Phase 4.5 Social Trading Components
 import SocialTradingPanel from '@/components/phase4/SocialTradingPanel';
+// Enhanced Staking Opportunities Component
+import StakingOpportunitiesPanel from '@/components/phase4/StakingOpportunitiesPanel';
 import { phase4ConfigManager } from '@/services/phase4/phase4ConfigService';
 import { getRealTimeTokens } from '@/services/fallbackDataService';
 
@@ -458,7 +459,6 @@ const WalletDashboardPage: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [portfolioSummary, setPortfolioSummary] = useState<PortfolioSummary | null>(null);
   const [walletFilter, setWalletFilter] = useState<'all' | 'generated' | 'hot' | 'hardware'>('all');
-  const [stakingOpportunities, setStakingOpportunities] = useState<any[]>([]);
   const [defiSummary, setDefiSummary] = useState<any>(null);
 
   // Phase 4 Advanced Trading states
@@ -683,7 +683,6 @@ const WalletDashboardPage: React.FC = () => {
         analyticsData,
         transactionsData,
         portfolioData,
-        stakingData,
         defiData,
         hotWalletsData,
         hardwareWalletsData
@@ -691,7 +690,6 @@ const WalletDashboardPage: React.FC = () => {
         safeGetTransactionAnalytics(user.id),
         safeGetFilteredTransactions(user.id, {}, { page: 1, limit: 5 }),
         getPortfolioSummary(user.id),
-        getStakingOpportunities(),
         getDeFiPortfolioSummary(user.id),
         getConnectedHotWallets(user.id),
         Promise.resolve([]) // Hardware wallets will be fetched separately
@@ -722,7 +720,6 @@ const WalletDashboardPage: React.FC = () => {
       }));
       setRecentTransactions(safeTransactions);
       setPortfolioSummary(portfolioData);
-      setStakingOpportunities(stakingData);
       setDefiSummary(defiData);
       setConnectedHotWallets(hotWalletsData);
       setConnectedHardwareWallets(hardwareWalletsData);
@@ -1760,56 +1757,20 @@ const WalletDashboardPage: React.FC = () => {
                     </div>
                   )}
                 </Card>
-
-                {/* Legacy Staking Opportunities */}
-                <Card className="p-6 bg-dex-dark border-dex-secondary/30">
-                  <h3 className="text-lg font-medium text-white mb-4">Staking Opportunities</h3>
-
-                  {stakingOpportunities.length > 0 ? (
-                    <div className="space-y-3">
-                      {stakingOpportunities.map((opportunity) => (
-                        <div key={opportunity.id} className="p-4 bg-dex-secondary/10 border border-dex-secondary/20 rounded-lg">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-dex-primary/20 flex items-center justify-center">
-                                <TrendingUp size={20} className="text-dex-primary" />
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium text-white">{opportunity.protocol}</span>
-                                  <Badge
-                                    variant="outline"
-                                    className={`text-xs ${
-                                      opportunity.risk === 'low' ? 'border-green-500 text-green-500' :
-                                      opportunity.risk === 'medium' ? 'border-yellow-500 text-yellow-500' :
-                                      'border-red-500 text-red-500'
-                                    }`}
-                                  >
-                                    {opportunity.risk.toUpperCase()} RISK
-                                  </Badge>
-                                </div>
-                                <span className="text-sm text-gray-400">{opportunity.token} • Min: {opportunity.minimumStake}</span>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-medium text-dex-positive">{opportunity.apy}% APY</p>
-                              <p className="text-sm text-gray-400">
-                                {opportunity.lockPeriod > 0 ? `${opportunity.lockPeriod} days lock` : 'No lock'}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-gray-400">
-                      <Coins size={32} className="mx-auto mb-2 opacity-50" />
-                      <p>No staking opportunities available</p>
-                    </div>
-                  )}
-                </Card>
               </>
             )}
+
+            {/* Enhanced Staking Opportunities Panel - Always Visible */}
+            <StakingOpportunitiesPanel
+              className="mb-6"
+              onStakeSelect={(opportunity) => {
+                console.log('Staking opportunity selected:', opportunity);
+                toast({
+                  title: "Staking Opportunity Selected",
+                  description: `Selected ${opportunity.protocol} (${opportunity.token}) with ${opportunity.apy}% APY`,
+                });
+              }}
+            />
           </div>
         </TabsContent>
 

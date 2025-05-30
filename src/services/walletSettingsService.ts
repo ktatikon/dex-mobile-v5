@@ -10,6 +10,7 @@ export interface WalletSettings {
   default_currency: 'USD' | 'EUR' | 'GBP' | 'BTC' | 'ETH';
   privacy_mode_enabled: boolean;
   auto_lock_timeout: number; // in seconds
+  slippage_tolerance: number; // percentage (0.01% - 50%)
   transaction_notifications: boolean;
   price_alerts_enabled: boolean;
   created_at: string;
@@ -24,6 +25,7 @@ export const DEFAULT_WALLET_SETTINGS: Omit<WalletSettings, 'id' | 'user_id' | 'c
   default_currency: 'USD',
   privacy_mode_enabled: false,
   auto_lock_timeout: 300, // 5 minutes
+  slippage_tolerance: 0.50, // 0.5% default
   transaction_notifications: true,
   price_alerts_enabled: true
 };
@@ -43,6 +45,38 @@ export const CURRENCY_OPTIONS = [
   { value: 'BTC', label: 'Bitcoin (BTC)', symbol: '₿' },
   { value: 'ETH', label: 'Ethereum (ETH)', symbol: 'Ξ' }
 ];
+
+export const SLIPPAGE_TOLERANCE_PRESETS = [
+  { value: 0.1, label: '0.1%' },
+  { value: 0.5, label: '0.5%' },
+  { value: 1.0, label: '1.0%' },
+  { value: 3.0, label: '3.0%' }
+];
+
+/**
+ * Validate slippage tolerance value
+ * @param value The slippage tolerance percentage
+ * @returns Validation result with error message if invalid
+ */
+export const validateSlippageTolerance = (value: number): { isValid: boolean; error?: string } => {
+  if (isNaN(value)) {
+    return { isValid: false, error: 'Please enter a valid number' };
+  }
+
+  if (value < 0.01) {
+    return { isValid: false, error: 'Slippage tolerance must be at least 0.01%' };
+  }
+
+  if (value > 50) {
+    return { isValid: false, error: 'Slippage tolerance cannot exceed 50%' };
+  }
+
+  if (value > 5) {
+    return { isValid: true, error: 'Warning: High slippage tolerance may result in unfavorable trades' };
+  }
+
+  return { isValid: true };
+};
 
 /**
  * Get wallet settings for a user
@@ -135,7 +169,7 @@ export const updateWalletSettings = async (
 export const getOrCreateWalletSettings = async (userId: string): Promise<WalletSettings | null> => {
   try {
     let settings = await getWalletSettings(userId);
-    
+
     if (!settings) {
       settings = await createDefaultWalletSettings(userId);
     }
@@ -205,10 +239,10 @@ export const isBiometricAuthAvailable = async (): Promise<boolean> => {
   try {
     // Check if we're in a browser environment
     if (typeof window === 'undefined') return false;
-    
+
     // Check for WebAuthn support
     if (!window.PublicKeyCredential) return false;
-    
+
     // Check if biometric authentication is available
     const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
     return available;

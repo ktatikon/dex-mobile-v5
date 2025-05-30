@@ -197,6 +197,7 @@ const App = () => {
                   </PrivateRoute>
                 }
               />
+
               <Route
                 path="/wallet-details/:walletId"
                 element={
