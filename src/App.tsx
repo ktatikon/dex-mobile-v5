@@ -47,6 +47,7 @@ import LiveChatPage from "./pages/LiveChatPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import AdminDebugPage from "./pages/AdminDebugPage";
 import AdminRoute from "./components/AdminRoute";
+import AdminTestnetRoute from "./components/AdminTestnetRoute";
 import AdminHeader from "./components/AdminHeader";
 import { AdminProvider } from "./contexts/AdminContext";
 import DiagnosticsPage from "./pages/DiagnosticsPage";
@@ -508,17 +509,19 @@ const App = () => {
                 path="/testnet-wallet"
                 element={
                   <PrivateRoute>
-                    <DexHeader
-                      wallet={wallet}
-                      onConnectWallet={handleConnectWallet}
-                      onDisconnectWallet={handleDisconnectWallet}
-                    />
-                    <div className="pt-16 pb-20">
-                      <div className="container mx-auto px-4 mb-4">
-                        <TestnetWalletPageWithErrorBoundary />
+                    <AdminTestnetRoute requiredRole="report_viewer">
+                      <DexHeader
+                        wallet={wallet}
+                        onConnectWallet={handleConnectWallet}
+                        onDisconnectWallet={handleDisconnectWallet}
+                      />
+                      <div className="pt-16 pb-20">
+                        <div className="container mx-auto px-4 mb-4">
+                          <TestnetWalletPageWithErrorBoundary />
+                        </div>
+                        <DexNavigation />
                       </div>
-                      <DexNavigation />
-                    </div>
+                    </AdminTestnetRoute>
                   </PrivateRoute>
                 }
               />
