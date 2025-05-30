@@ -44,6 +44,7 @@ import ContactPage from "./pages/ContactPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/TermsOfServicePage";
 import LiveChatPage from "./pages/LiveChatPage";
+import P2PComingSoonPage from "./pages/P2PComingSoonPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import AdminDebugPage from "./pages/AdminDebugPage";
 import AdminRoute from "./components/AdminRoute";
@@ -648,6 +649,16 @@ const App = () => {
                       </div>
                       <DexNavigation />
                     </div>
+                  </PrivateRoute>
+                }
+              />
+
+              {/* P2P Coming Soon Route */}
+              <Route
+                path="/p2p-coming-soon"
+                element={
+                  <PrivateRoute>
+                    <P2PComingSoonPage />
                   </PrivateRoute>
                 }
               />
