@@ -10,21 +10,31 @@ import DocumentUploadForm from '@/components/kyc/DocumentUploadForm';
 import SelfieCapture from '@/components/kyc/SelfieCapture';
 import ReviewSubmit from '@/components/kyc/ReviewSubmit';
 import KYCStatus from '@/components/kyc/KYCStatus';
+import AMLInformation from '@/components/aml/AMLInformation';
+import AMLChecker from '@/components/aml/AMLChecker';
+import AMLHistory from '@/components/aml/AMLHistory';
+import type { AMLCheckRequest } from '@/types/aml';
 
 const KYCPage: React.FC = () => {
   const navigate = useNavigate();
   const { progress, kycStatus, saveAndExit, isLoading } = useKYC();
   const [showForm, setShowForm] = useState(kycStatus !== 'pending' && kycStatus !== 'approved');
-  
+  const [amlRefreshTrigger, setAmlRefreshTrigger] = useState(0);
+
   const handleStartKYC = () => {
     setShowForm(true);
   };
-  
+
   const handleSaveAndExit = async () => {
     await saveAndExit();
     navigate('/settings');
   };
-  
+
+  const handleAMLCheckComplete = (check: AMLCheckRequest) => {
+    // Trigger refresh of AML history
+    setAmlRefreshTrigger(prev => prev + 1);
+  };
+
   const renderStep = () => {
     switch (progress.currentStep) {
       case 1:
@@ -52,9 +62,9 @@ const KYCPage: React.FC = () => {
           >
             <ArrowLeft className="h-5 w-5 text-white" />
           </Button>
-          <h1 className="text-2xl font-bold text-white">KYC Verification</h1>
+          <h1 className="text-2xl font-bold text-white">KYC/AML Verification</h1>
         </div>
-        
+
         {showForm && progress.currentStep < 4 && (
           <Button
             variant="outline"
@@ -67,7 +77,7 @@ const KYCPage: React.FC = () => {
           </Button>
         )}
       </div>
-      
+
       {showForm ? (
         <>
           <KYCProgressIndicator className="mb-6" />
@@ -76,7 +86,7 @@ const KYCPage: React.FC = () => {
       ) : (
         <KYCStatus onStartKYC={handleStartKYC} />
       )}
-      
+
       <Card className="bg-dex-dark/80 border-dex-secondary/30 shadow-lg shadow-dex-secondary/10 mt-6">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg text-white">Why KYC is Important</CardTitle>
@@ -102,6 +112,18 @@ const KYCPage: React.FC = () => {
           </ul>
         </CardContent>
       </Card>
+
+      {/* AML Functionality - New Addition */}
+      <div className="mt-8 space-y-6">
+        {/* AML Information Section */}
+        <AMLInformation />
+
+        {/* AML Address Checker Interface */}
+        <AMLChecker onCheckComplete={handleAMLCheckComplete} />
+
+        {/* AML Request History */}
+        <AMLHistory refreshTrigger={amlRefreshTrigger} />
+      </div>
     </div>
   );
 };

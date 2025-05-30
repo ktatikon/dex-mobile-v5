@@ -120,8 +120,8 @@ const SettingsPage = () => {
             <div className="flex items-center gap-3">
               <FileCheck className="text-dex-secondary" size={20} />
               <div>
-                <p className="text-white font-medium">KYC Verification</p>
-                <p className="text-sm text-gray-400">Verify your identity</p>
+                <p className="text-white font-medium">KYC/AML Verification</p>
+                <p className="text-sm text-gray-400">Verify your identity and check suspicious addresses</p>
               </div>
             </div>
             <div className="flex items-center">
