@@ -34,7 +34,9 @@ import type {
 import { supabase } from '@/integrations/supabase/client';
 import {
   getConnectedHotWallets,
-  HOT_WALLET_OPTIONS
+  HOT_WALLET_OPTIONS,
+  connectHotWallet as hotWalletServiceConnect,
+  importWalletAddresses as hotWalletImportAddresses
 } from '@/services/hotWalletService';
 // Phase 4.5 Comprehensive Wallet Services (commented out to reduce warnings)
 // import {
@@ -514,14 +516,27 @@ const WalletDashboardPage: React.FC = () => {
     return { riskLevel: 'low', securityFeatures: [], recommendations: [] };
   };
 
+  // Use the actual hot wallet service instead of fallback
   const connectHotWallet = async (userId: string, walletOption: any) => {
-    console.log(`🔗 Connecting hot wallet ${walletOption.name} for user ${userId} (fallback)`);
-    return { success: false, error: 'Hot wallet connection not implemented yet', address: undefined };
+    console.log(`🔗 Connecting hot wallet ${walletOption.name} for user ${userId}`);
+    try {
+      const result = await hotWalletServiceConnect(userId, walletOption);
+      return result;
+    } catch (error: any) {
+      console.error('Hot wallet connection error:', error);
+      return { success: false, error: error.message, address: undefined };
+    }
   };
 
-  const importWalletAddresses = async (_userId: string, walletId: string, addresses: string[]) => {
-    console.log(`📥 Importing addresses for wallet ${walletId}: ${addresses.join(', ')} (fallback)`);
-    return { success: false, error: 'Address import not implemented yet' };
+  const importWalletAddresses = async (userId: string, walletId: string, addresses: string[]) => {
+    console.log(`📥 Importing addresses for wallet ${walletId}: ${addresses.join(', ')}`);
+    try {
+      const result = await hotWalletImportAddresses(userId, walletId, addresses);
+      return result;
+    } catch (error: any) {
+      console.error('Address import error:', error);
+      return { success: false, error: error.message };
+    }
   };
 
   const getWalletPortfolioValue = async (walletId: string) => {
