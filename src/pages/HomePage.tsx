@@ -1,6 +1,7 @@
 
 import React, { useMemo, useEffect, useState } from 'react';
 import PortfolioCard from '@/components/PortfolioCard';
+import SwapBlock from '@/components/SwapBlock';
 import TokenListItem from '@/components/TokenListItem';
 import { formatCurrency } from '@/services/realTimeData';
 import { Card } from '@/components/ui/card';
@@ -14,10 +15,12 @@ import { RefreshCw, TrendingUp, Wallet, Clock } from 'lucide-react';
 import { getUserTransactions } from '@/services/walletService';
 import { getPortfolioHoldings } from '@/services/portfolioService';
 import { Token, Transaction } from '@/types';
+import { useToast } from '@/hooks/use-toast';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
 
   // Use real-time token data with automatic updates
   const {
@@ -132,6 +135,26 @@ const HomePage: React.FC = () => {
     navigate('/wallet-dashboard');
   };
 
+  // Handle swap functionality
+  const handleSwap = (params: any) => {
+    const { fromToken, toToken, fromAmount, toAmount } = params;
+
+    // Show loading toast
+    toast({
+      title: "Swap Initiated",
+      description: `Swapping ${fromAmount} ${fromToken?.symbol} for ${toAmount} ${toToken?.symbol}`,
+    });
+
+    // Simulate transaction processing
+    setTimeout(() => {
+      toast({
+        title: "Swap Completed",
+        description: `Successfully swapped ${fromAmount} ${fromToken?.symbol} for ${toAmount} ${toToken?.symbol}`,
+        variant: "default",
+      });
+    }, 2000);
+  };
+
   const handleRefresh = async () => {
     try {
       await refreshRealTimeData();
@@ -173,15 +196,7 @@ const HomePage: React.FC = () => {
         </div>
 
         <div className="mb-8">
-          <Button
-            variant="primary"
-            className="py-4 px-5 h-auto w-full flex items-center justify-center gap-4 rounded-lg text-lg shadow-lg shadow-dex-primary/20"
-            onClick={handleGoToMarket}
-            disabled={loading}
-          >
-            <TrendingUp size={26} />
-            <span className="text-base font-medium">View Market Data</span>
-          </Button>
+          <SwapBlock tokens={userTokens} onSwap={handleSwap} />
         </div>
 
         <div className="mb-8">
@@ -207,14 +222,7 @@ const HomePage: React.FC = () => {
         </div>
 
         <div className="mb-8">
-          <Button
-            variant="primary"
-            className="py-4 px-5 h-auto w-full flex items-center justify-center gap-4 rounded-lg text-lg shadow-lg shadow-dex-primary/20"
-            onClick={handleGoToMarket}
-          >
-            <TrendingUp size={26} />
-            <span className="text-base font-medium">View Market Data</span>
-          </Button>
+          <SwapBlock tokens={userTokens} onSwap={handleSwap} />
         </div>
 
         <div className="mb-8">
@@ -268,16 +276,9 @@ const HomePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Quick actions */}
+      {/* Swap functionality */}
       <div className="mb-8">
-        <Button
-          variant="primary"
-          className="py-4 px-5 h-auto w-full flex items-center justify-center gap-4 rounded-lg text-lg shadow-lg shadow-dex-primary/20"
-          onClick={handleGoToMarket}
-        >
-          <TrendingUp size={26} />
-          <span className="text-base font-medium">View Market Data</span>
-        </Button>
+        <SwapBlock tokens={userTokens} onSwap={handleSwap} />
       </div>
 
       {/* Top assets */}
