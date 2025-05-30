@@ -46,19 +46,6 @@ const SwapBlock: React.FC<SwapBlockProps> = ({ tokens, onSwap }) => {
   // Use fallback tokens if no tokens provided or empty
   const effectiveTokens = tokens && tokens.length > 0 ? tokens : mockTokens;
 
-  // Debug tokens prop
-  console.log('🎯 SwapBlock received tokens:', {
-    originalTokensLength: tokens?.length || 0,
-    effectiveTokensLength: effectiveTokens?.length || 0,
-    usingFallback: tokens?.length === 0,
-    effectiveTokens: effectiveTokens?.map(t => ({
-      symbol: t.symbol,
-      balance: t.balance,
-      price: t.price,
-      hasBalance: !!t.balance && parseFloat(t.balance) > 0
-    }))
-  });
-
   // State management
   const [fromToken, setFromToken] = useState<Token | null>(null);
   const [toToken, setToToken] = useState<Token | null>(null);
@@ -82,23 +69,13 @@ const SwapBlock: React.FC<SwapBlockProps> = ({ tokens, onSwap }) => {
 
   // Calculate exchange rate and output amount
   useEffect(() => {
-    console.log('💰 Calculation Effect Triggered:', {
-      fromToken: fromToken?.symbol,
-      toToken: toToken?.symbol,
-      fromAmount,
-      fromAmountParsed: parseFloat(fromAmount || '0')
-    });
-
     if (fromToken && toToken && fromAmount && parseFloat(fromAmount) > 0) {
       setIsCalculating(true);
-      console.log('🔄 Starting calculation...');
 
       // Simulate API call delay
       const timer = setTimeout(() => {
         const fromPrice = fromToken.price || 0;
         const toPrice = toToken.price || 0;
-
-        console.log('📊 Price Data:', { fromPrice, toPrice });
 
         if (fromPrice > 0 && toPrice > 0) {
           const rate = fromPrice / toPrice;
@@ -108,14 +85,6 @@ const SwapBlock: React.FC<SwapBlockProps> = ({ tokens, onSwap }) => {
           // Calculate price impact (mock calculation)
           const impact = Math.min(parseFloat(fromAmount) * 0.001, 5); // Max 5%
           setPriceImpact(impact);
-
-          console.log('✅ Calculation Complete:', {
-            rate,
-            calculatedAmount,
-            impact
-          });
-        } else {
-          console.log('❌ Invalid prices, cannot calculate');
         }
 
         setIsCalculating(false);
@@ -123,7 +92,6 @@ const SwapBlock: React.FC<SwapBlockProps> = ({ tokens, onSwap }) => {
 
       return () => clearTimeout(timer);
     } else {
-      console.log('🚫 Clearing amounts - conditions not met');
       setToAmount('');
       setPriceImpact(0);
     }
@@ -131,13 +99,7 @@ const SwapBlock: React.FC<SwapBlockProps> = ({ tokens, onSwap }) => {
 
   // Available tokens for selection
   const availableTokens = useMemo(() => {
-    const filtered = effectiveTokens.filter(token => token.balance && parseFloat(token.balance) > 0);
-    console.log('🔍 Available tokens after filtering:', {
-      originalCount: effectiveTokens.length,
-      filteredCount: filtered.length,
-      filtered: filtered.map(t => ({ symbol: t.symbol, balance: t.balance, price: t.price }))
-    });
-    return filtered;
+    return effectiveTokens.filter(token => token.balance && parseFloat(token.balance) > 0);
   }, [effectiveTokens]);
 
   // Handle token swap (reverse from/to)
@@ -465,62 +427,46 @@ const SwapBlock: React.FC<SwapBlockProps> = ({ tokens, onSwap }) => {
       </div>
 
       {/* Enhanced Transaction Details */}
-      {(() => {
-        const shouldShow = fromToken && toToken && fromAmount && parseFloat(fromAmount) > 0 && toAmount && parseFloat(toAmount) > 0 && !isCalculating;
-        console.log('🔍 Transaction Details Debug:', {
-          fromToken: fromToken?.symbol,
-          toToken: toToken?.symbol,
-          fromAmount,
-          fromAmountParsed: parseFloat(fromAmount || '0'),
-          toAmount,
-          toAmountParsed: parseFloat(toAmount || '0'),
-          isCalculating,
-          shouldShow
-        });
-
-        return shouldShow ? (
-          <div className="bg-gray-800/20 rounded-xl p-4 space-y-3 text-sm border border-gray-700/30 mb-4">
-            {/* TDS Fees */}
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400">TDS Fees:</span>
-              <span className="text-white font-medium">
-                {(parseFloat(fromAmount) * 0.01).toFixed(6)} {fromToken.symbol}
-              </span>
-            </div>
-
-            {/* Estimated Rate */}
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400">Estimated Rate:</span>
-              <span className="text-white font-medium">
-                1 {fromToken.symbol} = {fromToken.price && toToken.price ?
-                  (fromToken.price / toToken.price).toFixed(6) : '0'} {toToken.symbol}
-              </span>
-            </div>
-
-            {/* Cashback */}
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400">Cashback!:</span>
-              <span className="text-green-400 font-medium">
-                {(parseFloat(fromAmount) * 0.001).toFixed(6)} {fromToken.symbol}
-              </span>
-            </div>
-
-            {/* Price Impact */}
-            <div className="flex justify-between items-center pt-2 border-t border-gray-700/30">
-              <span className="text-gray-400">Price Impact (24h):</span>
-              <span className="text-green-400 font-medium">
-                ≈ {priceImpact > 0 ? '+' : ''}{priceImpact.toFixed(2)}%
-              </span>
-            </div>
-
-            <div className="text-xs text-gray-500 text-center pt-1">
-              Rate is for reference only. Updated just now
-            </div>
+      {fromToken && toToken && fromAmount && parseFloat(fromAmount) > 0 && !isCalculating && (
+        <div className="bg-dex-secondary/10 rounded-xl p-4 space-y-3 text-sm border border-dex-secondary/30 mb-4">
+          {/* TDS Fees */}
+          <div className="flex justify-between items-center">
+            <span className="text-dex-text-secondary">TDS Fees:</span>
+            <span className="text-white font-medium">
+              {(parseFloat(fromAmount) * 0.01).toFixed(6)} {fromToken.symbol}
+            </span>
           </div>
-        ) : null;
-      })()}
 
+          {/* Estimated Rate */}
+          <div className="flex justify-between items-center">
+            <span className="text-dex-text-secondary">Estimated Rate:</span>
+            <span className="text-white font-medium">
+              1 {fromToken.symbol} = {fromToken.price && toToken.price ?
+                (fromToken.price / toToken.price).toFixed(6) : '0'} {toToken.symbol}
+            </span>
+          </div>
 
+          {/* Cashback */}
+          <div className="flex justify-between items-center">
+            <span className="text-dex-text-secondary">Cashback!:</span>
+            <span className="text-dex-positive font-medium">
+              {(parseFloat(fromAmount) * 0.001).toFixed(6)} {fromToken.symbol}
+            </span>
+          </div>
+
+          {/* Price Impact */}
+          <div className="flex justify-between items-center pt-2 border-t border-dex-secondary/20">
+            <span className="text-dex-text-secondary">Price Impact (24h):</span>
+            <span className="text-dex-positive font-medium">
+              ≈ {priceImpact > 0 ? '+' : ''}{priceImpact.toFixed(2)}%
+            </span>
+          </div>
+
+          <div className="text-xs text-dex-text-secondary text-center pt-1">
+            Rate is for reference only. Updated just now
+          </div>
+        </div>
+      )}
 
       {/* Action Button */}
       <Button

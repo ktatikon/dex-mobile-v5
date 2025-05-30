@@ -38,9 +38,7 @@ import {
   validateMnemonic,
   generateAddressesFromMnemonic,
   encryptSeedPhrase,
-  saveGeneratedWallet,
-  testWalletCreationFlow,
-  checkGeneratedWalletsTable
+  saveGeneratedWallet
 } from '@/services/walletGenerationService';
 
 // Define the steps in the wallet generation process
@@ -433,55 +431,6 @@ const WalletGenerationPage: React.FC = () => {
     document.body.removeChild(element);
   };
 
-  // Test database integration
-  const handleTestDatabaseIntegration = async () => {
-    if (!user) {
-      toast({
-        title: 'Authentication Required',
-        description: 'Please sign in to test database integration.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      // First check if table exists
-      const tableExists = await checkGeneratedWalletsTable();
-
-      if (!tableExists) {
-        toast({
-          title: 'Database Issue',
-          description: 'Generated wallets table does not exist or could not be created.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      // Run comprehensive test
-      const testResult = await testWalletCreationFlow(user.id);
-
-      if (testResult.success) {
-        toast({
-          title: 'Database Test Successful',
-          description: `Test wallet created successfully! ID: ${testResult.walletId}`,
-        });
-      } else {
-        toast({
-          title: 'Database Test Failed',
-          description: `Test failed: ${testResult.error}`,
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('❌ Database test error:', error);
-      toast({
-        title: 'Test Error',
-        description: `Database test failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: 'destructive',
-      });
-    }
-  };
-
   // Render the current step
   const renderStep = () => {
     switch (currentStep) {
@@ -607,23 +556,6 @@ const WalletGenerationPage: React.FC = () => {
           </p>
         </div>
       </div>
-
-      {/* Database Test Button (Development Only) */}
-      {user && (
-        <div className="mt-6">
-          <Button
-            variant="outline"
-            className="w-full border-dex-secondary/30 hover:bg-dex-secondary/20"
-            onClick={handleTestDatabaseIntegration}
-          >
-            <AlertTriangle className="mr-2 h-4 w-4 text-yellow-500" />
-            Test Database Integration
-          </Button>
-          <p className="text-xs text-gray-500 text-center mt-2">
-            Development tool to verify database connectivity and wallet creation flow
-          </p>
-        </div>
-      )}
     </div>
   );
 
