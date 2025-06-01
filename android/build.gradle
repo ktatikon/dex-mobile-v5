@@ -44,5 +44,14 @@ subprojects {
             sourceCompatibility = JavaVersion.VERSION_17
             targetCompatibility = JavaVersion.VERSION_17
         }
+
+        // Force Kotlin JVM target to 17
+        tasks.configureEach { task ->
+            if (task.class.name.contains('KotlinCompile')) {
+                task.kotlinOptions {
+                    jvmTarget = '17'
+                }
+            }
+        }
     }
 }
