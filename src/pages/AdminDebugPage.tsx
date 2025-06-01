@@ -22,7 +22,7 @@ type ConsoleArgument = string | number | boolean | object | null | undefined;
 type ConsoleArgs = ConsoleArgument[];
 
 const AdminDebugPage = () => {
-  const { user } = useAuth();
+  const { user, session, validateSession, forceSessionRefresh } = useAuth();
   const { adminUser, isAdmin, isLoading, refreshAdminStatus } = useAdmin();
   const [debugOutput, setDebugOutput] = useState<string>('');
   const [isRunning, setIsRunning] = useState(false);
@@ -135,6 +135,60 @@ const AdminDebugPage = () => {
     setIsRunning(false);
   };
 
+  const testSessionValidation = async () => {
+    setIsRunning(true);
+
+    let output = '🔍 Testing Session Validation...\n';
+    output += '='.repeat(40) + '\n\n';
+
+    try {
+      // Test current session state
+      output += '1️⃣ Current Context State:\n';
+      output += `   - Session exists: ${!!session}\n`;
+      output += `   - User exists: ${!!user}\n`;
+      output += `   - User email: ${user?.email || 'None'}\n`;
+      output += `   - User ID: ${user?.id || 'None'}\n\n`;
+
+      // Validate session
+      output += '2️⃣ Validating Session...\n';
+      const validation = await validateSession();
+      output += `   - Is valid: ${validation.isValid}\n`;
+      output += `   - Session exists: ${!!validation.session}\n`;
+      output += `   - Error: ${validation.error || 'None'}\n`;
+
+      if (validation.session) {
+        output += `   - Session user ID: ${validation.session.user.id}\n`;
+        output += `   - Session user email: ${validation.session.user.email}\n`;
+        output += `   - Session expires: ${validation.session.expires_at}\n`;
+      }
+      output += '\n';
+
+      // If validation failed, try force refresh
+      if (!validation.isValid) {
+        output += '3️⃣ Attempting Force Session Refresh...\n';
+        try {
+          await forceSessionRefresh();
+          output += '   ✅ Force refresh completed\n';
+
+          // Re-validate after refresh
+          const revalidation = await validateSession();
+          output += `   - Re-validation result: ${revalidation.isValid}\n`;
+          output += `   - Session now exists: ${!!revalidation.session}\n`;
+        } catch (refreshError) {
+          output += `   ❌ Force refresh failed: ${refreshError}\n`;
+        }
+      } else {
+        output += '3️⃣ Session is valid, no refresh needed\n';
+      }
+
+    } catch (error) {
+      output += `💥 Session validation test failed: ${error}\n`;
+    }
+
+    setDebugOutput(output);
+    setIsRunning(false);
+  };
+
   const getStatusIcon = (condition: boolean) => {
     return condition ? (
       <CheckCircle className="h-5 w-5 text-green-500" />
@@ -219,7 +273,7 @@ const AdminDebugPage = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Button
               onClick={runDebug}
               disabled={isRunning}
@@ -241,6 +295,16 @@ const AdminDebugPage = () => {
             >
               <User className="h-4 w-4 mr-2" />
               Test Context
+            </Button>
+
+            <Button
+              onClick={testSessionValidation}
+              disabled={isRunning}
+              variant="outline"
+              className="border-yellow-500 text-yellow-500 hover:bg-yellow-500/20 min-h-[44px]"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Test Session
             </Button>
 
             <Button

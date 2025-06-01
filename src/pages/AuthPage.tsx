@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,10 +9,10 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Eye, EyeOff } from 'lucide-react';
+import { AuthValidationService } from '@/services/authValidationService';
 
 const AuthPage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -29,38 +29,97 @@ const AuthPage = () => {
 
     try {
       if (action === 'login') {
+        // Validate login form
+        const loginValidation = AuthValidationService.validateLoginForm({
+          email: formData.email,
+          password: formData.password,
+        });
+
+        if (!loginValidation.isValid) {
+          throw new Error(loginValidation.error);
+        }
+
+        // Additional safety check
+        if (typeof signIn !== 'function') {
+          throw new Error('Authentication system is not properly initialized. Please refresh the page and try again.');
+        }
+
         await signIn(formData.email, formData.password);
-        // Always navigate to home page after successful login
         navigate('/');
       } else {
-        // Validate required fields
-        if (!formData.fullName.trim()) {
-          throw new Error('Full name is required');
+        // Validate signup form
+        const signupValidation = AuthValidationService.validateSignupForm({
+          email: formData.email,
+          password: formData.password,
+          fullName: formData.fullName,
+          phone: formData.phone,
+        });
+
+        if (!signupValidation.isValid) {
+          throw new Error(signupValidation.error);
         }
-        if (!formData.email.trim()) {
-          throw new Error('Email is required');
+
+        // Check email availability
+        const emailCheck = await AuthValidationService.checkEmailAvailability(formData.email);
+
+        if (!emailCheck.isAvailable) {
+          throw new Error(emailCheck.error || 'An account with this email address already exists. Please try logging in instead.');
         }
-        if (!formData.password.trim()) {
-          throw new Error('Password is required');
-        }
-        if (!formData.phone.trim()) {
-          throw new Error('Phone number is required');
+
+        // Additional safety check
+        if (typeof signUp !== 'function') {
+          throw new Error('Authentication system is not properly initialized. Please refresh the page and try again.');
         }
 
         await signUp(formData.email, formData.password, {
           full_name: formData.fullName,
           phone: formData.phone,
         });
-        toast({
-          title: "Success",
-          description: "Please check your email to verify your account.",
-        });
+
+        // For email confirmation flow, don't navigate immediately
+        // The user needs to check their email and click the confirmation link
+        // Only navigate if a session is immediately available (rare case)
+        setTimeout(async () => {
+          try {
+            const { validateSession } = useAuth();
+            const validation = await validateSession();
+
+            if (validation.isValid) {
+              // Session is available - user can proceed to home
+              navigate('/');
+            } else {
+              // No session - user needs to confirm email first
+              // Stay on auth page with success message already shown
+              console.log('Email confirmation required - staying on auth page');
+            }
+          } catch (error) {
+            // Stay on auth page for email confirmation
+            console.log('Waiting for email confirmation');
+          }
+        }, 2000); // 2-second check for immediate session
       }
     } catch (error: any) {
-      console.error('Auth error:', error);
+      // Enhanced error handling with specific recovery strategies
+      let errorMessage = AuthValidationService.formatAuthError(error);
+
+      // Handle specific authentication errors
+      if (error.message?.includes('AuthSessionMissingError') || error.message?.includes('Auth session missing')) {
+        errorMessage = 'Authentication session error. Please try again or refresh the page.';
+      } else if (error.message?.includes('Network')) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      } else if (error.message?.includes('User already registered')) {
+        errorMessage = 'An account with this email already exists. Please try logging in instead.';
+      } else if (error.message?.includes('Invalid email')) {
+        errorMessage = 'Please enter a valid email address.';
+      } else if (error.message?.includes('Password')) {
+        errorMessage = 'Password must be at least 6 characters long.';
+      } else if (error.message?.includes('Email not confirmed')) {
+        errorMessage = 'Please check your email and click the verification link before logging in.';
+      }
+
       toast({
-        title: "Error",
-        description: error.message || "An error occurred during authentication",
+        title: action === 'login' ? "Login Failed" : "Registration Failed",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -172,15 +231,14 @@ const AuthPage = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="signup-phone" className="text-white">Phone Number</Label>
+                <Label htmlFor="signup-phone" className="text-white">Phone Number (Optional)</Label>
                 <Input
                   id="signup-phone"
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   className="bg-dex-dark/70 border-dex-primary/30 text-white placeholder-gray-400 focus:ring-dex-accent"
-                  required
-                  placeholder="Enter your phone number"
+                  placeholder="Enter your phone number (optional)"
                 />
               </div>
 

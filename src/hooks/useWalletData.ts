@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useGlobalMarketData } from '@/contexts/MarketDataContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Token, Transaction } from '@/types';
-import { getWalletBalances, getUserTransactions, getUserWallets, createDefaultWallet } from '@/services/walletService';
+import { comprehensiveWalletService } from '@/services/comprehensiveWalletService';
 import { mockWallet } from '@/services/fallbackDataService';
 
 export function useWalletData() {
@@ -28,18 +28,18 @@ export function useWalletData() {
       setWalletLoading(true);
       try {
         // First, check if the user has any wallets
-        const userWallets = await getUserWallets(user.id);
+        const userWallets = await comprehensiveWalletService.getUserWalletsLegacy(user.id);
         setWallets(userWallets);
 
         // If no wallets, create a default one
         if (userWallets.length === 0) {
-          await createDefaultWallet(user.id);
-          const updatedWallets = await getUserWallets(user.id);
+          await comprehensiveWalletService.createDefaultWallet(user.id);
+          const updatedWallets = await comprehensiveWalletService.getUserWalletsLegacy(user.id);
           setWallets(updatedWallets);
         }
 
         // Get wallet balances
-        const balances = await getWalletBalances(user.id, activeWalletType);
+        const balances = await comprehensiveWalletService.getWalletBalancesLegacy(user.id, activeWalletType);
 
         // If we have real-time token data, merge it with the balances
         if (tokens.length > 0) {
@@ -60,7 +60,7 @@ export function useWalletData() {
         }
 
         // Get recent transactions
-        const userTransactions = await getUserTransactions(user.id, 10);
+        const userTransactions = await comprehensiveWalletService.getUserTransactions(user.id, 10);
         setTransactions(userTransactions);
 
         setLastUpdated(new Date());
@@ -178,7 +178,7 @@ export function useWalletData() {
       await refreshTokens();
 
       // Then refresh wallet data
-      const balances = await getWalletBalances(user.id, activeWalletType);
+      const balances = await comprehensiveWalletService.getWalletBalancesLegacy(user.id, activeWalletType);
 
       // Merge with real-time token data
       const updatedBalances = balances.map(balance => {
@@ -196,7 +196,7 @@ export function useWalletData() {
       setWalletTokens(updatedBalances);
 
       // Refresh transactions
-      const userTransactions = await getUserTransactions(user.id, 10);
+      const userTransactions = await comprehensiveWalletService.getUserTransactions(user.id, 10);
       setTransactions(userTransactions);
 
       setLastUpdated(new Date());

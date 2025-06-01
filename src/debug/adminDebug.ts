@@ -302,7 +302,7 @@ export const createAdminUser = async (userEmail: string, role: string = 'super_a
     // Use the create_initial_admin function instead of direct insert
     const { data: result, error: createError } = await supabase
       .rpc('create_initial_admin', {
-        p_email: userEmail,
+        p_user_id: authUser.id,
         p_role: role
       });
 

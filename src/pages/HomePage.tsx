@@ -12,7 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRealTimeTokens } from '@/hooks/useRealTimeTokens';
 import EmptyStateCard from '@/components/EmptyStateCard';
 import { RefreshCw, TrendingUp, Wallet, Clock } from 'lucide-react';
-import { getUserTransactions } from '@/services/walletService';
+import { comprehensiveWalletService } from '@/services/comprehensiveWalletService';
 import { getPortfolioHoldings } from '@/services/portfolioService';
 import { Token, Transaction } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -92,7 +92,7 @@ const HomePage: React.FC = () => {
         }
 
         // Get recent transactions
-        const transactions = await getUserTransactions(user.id, 5);
+        const transactions = await comprehensiveWalletService.getUserTransactions(user.id, 5);
         setRecentTransactions(transactions);
 
         setDataLoading(false);

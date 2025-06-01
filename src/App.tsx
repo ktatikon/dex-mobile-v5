@@ -23,7 +23,6 @@ import SettingsPage from "./pages/SettingsPage";
 import ProfileSettingsPage from "./pages/ProfileSettingsPage";
 
 import WalletGenerationPage from "./pages/WalletGenerationPage";
-import WalletDiagnosticPage from "./pages/WalletDiagnosticPage";
 import WalletDetailsPage from "./pages/WalletDetailsPage";
 import WalletDashboardPageWithErrorBoundary from "./pages/WalletDashboardPageWithErrorBoundary";
 import WalletSettingsPage from "./pages/WalletSettingsPage";
@@ -46,13 +45,10 @@ import TermsOfServicePage from "./pages/TermsOfServicePage";
 import LiveChatPage from "./pages/LiveChatPage";
 import P2PComingSoonPage from "./pages/P2PComingSoonPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
-import AdminDebugPage from "./pages/AdminDebugPage";
 import AdminRoute from "./components/AdminRoute";
 import AdminTestnetRoute from "./components/AdminTestnetRoute";
 import AdminHeader from "./components/AdminHeader";
 import { AdminProvider } from "./contexts/AdminContext";
-import DiagnosticsPage from "./pages/DiagnosticsPage";
-import EnhancedDiagnosticsPage from "./pages/EnhancedDiagnosticsPage";
 import { useState } from "react";
 
 const queryClient = new QueryClient();
@@ -145,60 +141,7 @@ const App = () => {
                   </PrivateRoute>
                 }
               />
-              <Route
-                path="/wallet-diagnostic"
-                element={
-                  <PrivateRoute>
-                    <DexHeader
-                      wallet={wallet}
-                      onConnectWallet={handleConnectWallet}
-                      onDisconnectWallet={handleDisconnectWallet}
-                    />
-                    <div className="pt-16 pb-20">
-                      <div className="container mx-auto px-4 mb-4">
-                        <WalletDiagnosticPage />
-                      </div>
-                      <DexNavigation />
-                    </div>
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/diagnostics"
-                element={
-                  <PrivateRoute>
-                    <DexHeader
-                      wallet={wallet}
-                      onConnectWallet={handleConnectWallet}
-                      onDisconnectWallet={handleDisconnectWallet}
-                    />
-                    <div className="pt-16 pb-20">
-                      <div className="container mx-auto px-4 mb-4">
-                        <DiagnosticsPage />
-                      </div>
-                      <DexNavigation />
-                    </div>
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/enhanced-diagnostics"
-                element={
-                  <PrivateRoute>
-                    <DexHeader
-                      wallet={wallet}
-                      onConnectWallet={handleConnectWallet}
-                      onDisconnectWallet={handleDisconnectWallet}
-                    />
-                    <div className="pt-16 pb-20">
-                      <div className="container mx-auto px-4 mb-4">
-                        <EnhancedDiagnosticsPage />
-                      </div>
-                      <DexNavigation />
-                    </div>
-                  </PrivateRoute>
-                }
-              />
+
 
               <Route
                 path="/wallet-details/:walletId"
@@ -678,18 +621,7 @@ const App = () => {
                 }
               />
 
-              {/* Admin Debug Route - No admin protection for debugging */}
-              <Route
-                path="/admin-debug"
-                element={
-                  <PrivateRoute>
-                    <AdminHeader title="Admin Debug" />
-                    <div className="pt-16 pb-20">
-                      <AdminDebugPage />
-                    </div>
-                  </PrivateRoute>
-                }
-              />
+
 
               <Route path="*" element={<NotFound />} />
             </Routes>

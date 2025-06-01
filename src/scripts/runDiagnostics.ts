@@ -2,7 +2,7 @@
  * Script to run comprehensive Phase 1 diagnostics
  */
 
-import { runPhase1Diagnostics, diagnosticTool } from '../utils/diagnostics';
+import { runPhase1Diagnostics, diagnosticTool } from '../utils/enhancedDiagnostics';
 
 async function main() {
   console.log('🚀 Starting Phase 1 Comprehensive Verification & Diagnostic Assessment...\n');

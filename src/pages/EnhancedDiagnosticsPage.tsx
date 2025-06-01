@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { runPhase1Diagnostics, DiagnosticReport } from '@/utils/diagnostics';
+import { runPhase1Diagnostics, DiagnosticReport } from '@/utils/enhancedDiagnostics';
 import { runEnhancedDiagnostics, EnhancedDiagnosticReport } from '@/utils/enhancedDiagnostics';
 import { Activity, CheckCircle, AlertTriangle, XCircle, RefreshCw, Zap, Settings } from 'lucide-react';
 

@@ -9,6 +9,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { ethers } from 'ethers';
 import { realBlockchainService } from './phase4/realBlockchainService';
 import { phase4ConfigManager } from './phase4/phase4ConfigService';
+import { Token, Transaction, TransactionStatus, TransactionType } from '@/types';
+import { v4 as uuidv4 } from 'uuid';
 
 // Enhanced Wallet Types
 export interface ComprehensiveWallet {
@@ -478,6 +480,245 @@ class ComprehensiveWalletService {
       this.balanceUpdateInterval = null;
     }
     console.log('🧹 Comprehensive Wallet Service destroyed');
+  }
+
+  // ===== LEGACY WALLET SERVICE FUNCTIONS (Consolidated from walletService.ts) =====
+
+  /**
+   * Creates a default wallet for a new user (Legacy function)
+   * @param userId The user's ID
+   * @returns The created wallet ID
+   */
+  async createDefaultWallet(userId: string): Promise<string | null> {
+    try {
+      const walletId = uuidv4();
+      const address = `0x${Math.random().toString(16).substring(2, 14)}...${Math.random().toString(16).substring(2, 6)}`;
+
+      const { data, error } = await supabase
+        .from('wallets')
+        .insert({
+          id: walletId,
+          user_id: userId,
+          wallet_name: 'Hot Wallet',
+          wallet_type: 'hot',
+          wallet_address: address,
+          network: 'ethereum',
+          provider: 'default',
+          source_table: 'wallet_connections',
+          source_id: uuidv4(),
+          addresses: { ethereum: address },
+          balance_cache: {},
+          transaction_count: 0,
+          risk_level: 'low',
+          is_active: true,
+          metadata: {
+            creation_method: 'default',
+            created_via: 'legacy_wallet_service'
+          }
+        })
+        .select('id')
+        .single();
+
+      if (error) {
+        console.error('Error creating default wallet:', error);
+        return null;
+      }
+
+      return data.id;
+    } catch (error) {
+      console.error('Error in createDefaultWallet:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Creates a cold wallet for a user (Legacy function)
+   * @param userId The user's ID
+   * @returns The created wallet ID
+   */
+  async createColdWallet(userId: string): Promise<string | null> {
+    try {
+      const walletId = uuidv4();
+      const address = `0x${Math.random().toString(16).substring(2, 14)}...${Math.random().toString(16).substring(2, 6)}`;
+
+      const { data, error } = await supabase
+        .from('wallets')
+        .insert({
+          id: walletId,
+          user_id: userId,
+          wallet_name: 'Cold Wallet',
+          wallet_type: 'hardware',
+          wallet_address: address,
+          network: 'ethereum',
+          provider: 'hardware',
+          source_table: 'wallet_connections',
+          source_id: uuidv4(),
+          addresses: { ethereum: address },
+          balance_cache: {},
+          transaction_count: 0,
+          risk_level: 'low',
+          is_active: true,
+          metadata: {
+            creation_method: 'cold',
+            created_via: 'legacy_wallet_service'
+          }
+        })
+        .select('id')
+        .single();
+
+      if (error) {
+        console.error('Error creating cold wallet:', error);
+        return null;
+      }
+
+      return data.id;
+    } catch (error) {
+      console.error('Error in createColdWallet:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Gets user wallets (Legacy function)
+   * @param userId The user's ID
+   * @returns Array of user wallets
+   */
+  async getUserWalletsLegacy(userId: string) {
+    try {
+      const { data: wallets, error } = await supabase
+        .from('wallets')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching user wallets:', error);
+        return [];
+      }
+
+      return wallets || [];
+    } catch (error) {
+      console.error('Error in getUserWalletsLegacy:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Gets wallet balances for a user (Legacy function)
+   * @param userId The user's ID
+   * @param walletType Optional wallet type filter ('hot' or 'hardware')
+   * @returns Array of wallet balances with token information
+   */
+  async getWalletBalancesLegacy(userId: string, walletType?: 'hot' | 'hardware') {
+    try {
+      // First get the user's wallets
+      let query = supabase
+        .from('wallets')
+        .select('id, wallet_type, wallet_address, network')
+        .eq('user_id', userId)
+        .eq('is_active', true);
+
+      if (walletType) {
+        query = query.eq('wallet_type', walletType);
+      }
+
+      const { data: wallets, error: walletError } = await query;
+
+      if (walletError) {
+        console.error('Error fetching wallets:', walletError);
+        return [];
+      }
+
+      if (!wallets || wallets.length === 0) {
+        return [];
+      }
+
+      // For each wallet, get balance information
+      const balancePromises = wallets.map(async (wallet) => {
+        try {
+          const balances = await this.updateWalletBalance(wallet.id);
+          return {
+            walletId: wallet.id,
+            walletType: wallet.wallet_type,
+            address: wallet.wallet_address,
+            network: wallet.network,
+            balances: balances
+          };
+        } catch (error) {
+          console.error(`Error fetching balance for wallet ${wallet.id}:`, error);
+          return {
+            walletId: wallet.id,
+            walletType: wallet.wallet_type,
+            address: wallet.wallet_address,
+            network: wallet.network,
+            balances: {}
+          };
+        }
+      });
+
+      const results = await Promise.all(balancePromises);
+      return results;
+    } catch (error) {
+      console.error('Error in getWalletBalancesLegacy:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Gets user transactions (Legacy function)
+   * @param userId The user's ID
+   * @param limit Optional limit for number of transactions
+   * @returns Array of user transactions
+   */
+  async getUserTransactions(userId: string, limit: number = 50): Promise<Transaction[]> {
+    try {
+      const { data: transactions, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.error('Error fetching user transactions:', error);
+        return [];
+      }
+
+      return transactions || [];
+    } catch (error) {
+      console.error('Error in getUserTransactions:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get wallet balance (Legacy function - wrapper for updateWalletBalance)
+   * @param address Wallet address
+   * @param network Network name
+   * @returns Balance information
+   */
+  async getWalletBalance(address: string, network: string): Promise<Record<string, string>> {
+    try {
+      // Find wallet by address and network
+      const { data: wallet, error } = await supabase
+        .from('wallets')
+        .select('id')
+        .eq('wallet_address', address)
+        .eq('network', network)
+        .eq('is_active', true)
+        .single();
+
+      if (error || !wallet) {
+        console.error('Wallet not found for balance lookup:', { address, network });
+        return {};
+      }
+
+      return await this.updateWalletBalance(wallet.id);
+    } catch (error) {
+      console.error('Error in getWalletBalance:', error);
+      return {};
+    }
   }
 }
 
