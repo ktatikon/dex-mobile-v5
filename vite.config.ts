@@ -19,4 +19,24 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    target: 'esnext',
+    minify: 'terser',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
+          charts: ['recharts', 'plotly.js-dist-min'],
+          crypto: ['@metamask/sdk', '@phantom/wallet-sdk']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000
+  },
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(mode),
+    global: 'globalThis',
+  }
 }));

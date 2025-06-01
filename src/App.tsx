@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { KYCProvider } from "@/contexts/KYCContext";
 import { MarketDataProvider } from "@/contexts/MarketDataContext";
@@ -45,6 +45,8 @@ import TermsOfServicePage from "./pages/TermsOfServicePage";
 import LiveChatPage from "./pages/LiveChatPage";
 import P2PComingSoonPage from "./pages/P2PComingSoonPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
+import AdminUserManagementPage from "./pages/AdminUserManagementPage";
+
 import AdminRoute from "./components/AdminRoute";
 import AdminTestnetRoute from "./components/AdminTestnetRoute";
 import AdminHeader from "./components/AdminHeader";
@@ -56,13 +58,24 @@ const queryClient = new QueryClient();
 const App = () => {
   const [wallet, setWallet] = useState(null);
 
-  const handleConnectWallet = () => {
-    // Mock wallet connection
-    setWallet({
-      address: '0x1234...5678',
-      balance: '10.5',
-      network: 'Ethereum'
-    });
+  const handleConnectWallet = async () => {
+    try {
+      // Production wallet connection logic
+      if (typeof window !== 'undefined' && window.ethereum) {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        if (accounts.length > 0) {
+          setWallet({
+            address: accounts[0],
+            balance: '0.0', // Will be fetched from blockchain
+            network: 'Ethereum'
+          });
+        }
+      } else {
+        console.warn('No wallet provider found');
+      }
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+    }
   };
 
   const handleDisconnectWallet = () => {
@@ -615,6 +628,19 @@ const App = () => {
                       <AdminHeader title="Admin Dashboard" />
                       <div className="pt-16 pb-20">
                         <AdminDashboardPage />
+                      </div>
+                    </AdminRoute>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/admin/users"
+                element={
+                  <PrivateRoute>
+                    <AdminRoute requiredRole="user_manager">
+                      <AdminHeader title="User Management" />
+                      <div className="pt-16 pb-20">
+                        <AdminUserManagementPage />
                       </div>
                     </AdminRoute>
                   </PrivateRoute>

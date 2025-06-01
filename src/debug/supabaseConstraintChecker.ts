@@ -322,7 +322,7 @@ export const testConstraintViolations = async (): Promise<{
  * Generate test data for debugging
  */
 export const generateTestUserData = (authId?: string) => {
-  const testAuthId = authId || '12345678-1234-1234-1234-123456789012';
+  const testAuthId = authId || crypto.randomUUID();
   const timestamp = Date.now();
 
   return {

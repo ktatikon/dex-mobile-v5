@@ -3,6 +3,12 @@ apply plugin: 'com.android.application'
 android {
     namespace "com.dexmobile.app"
     compileSdk rootProject.ext.compileSdkVersion
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_14
+        targetCompatibility JavaVersion.VERSION_14
+    }
+
     defaultConfig {
         applicationId "com.dexmobile.app"
         minSdkVersion rootProject.ext.minSdkVersion

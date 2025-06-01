@@ -1,0 +1,9 @@
+schemaname,tablename,policyname,permissive,roles,cmd,qual,with_check
+public,users,Users can insert their own profile,PERMISSIVE,{authenticated},INSERT,null,(auth.uid() = auth_id)
+public,users,users_insert_own_profile,PERMISSIVE,{public},INSERT,null,(auth.uid() = auth_id)
+public,users,users_delete_own_profile,PERMISSIVE,{public},DELETE,(auth.uid() = auth_id),null
+public,users,users_read_own_profile,PERMISSIVE,{public},SELECT,(auth.uid() = auth_id),null
+public,users,Users can view own profile,PERMISSIVE,{public},SELECT,(auth.uid() = auth_id),null
+public,users,Users can update own profile,PERMISSIVE,{public},UPDATE,(auth.uid() = auth_id),(auth.uid() = auth_id)
+public,users,Service role can manage all users,PERMISSIVE,{public},ALL,(auth.role() = 'service_role'::text),(auth.role() = 'service_role'::text)
+public,users,users_update_own_profile,PERMISSIVE,{public},UPDATE,(auth.uid() = auth_id),(auth.uid() = auth_id)

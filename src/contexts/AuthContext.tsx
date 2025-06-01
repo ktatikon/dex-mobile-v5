@@ -130,7 +130,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Database triggers will handle profile creation automatically
       console.log('✅ Supabase auth user created successfully:', userId);
       console.log('📧 Email verification will be sent to:', data.user?.email);
-      console.log('� Database triggers will create user profile automatically');
+      console.log('🔧 Database triggers will create user profile automatically');
+
+      // Enhanced logging for debugging
+      console.log('🔍 Auth user details:', {
+        id: data.user?.id,
+        email: data.user?.email,
+        metadata: data.user?.user_metadata,
+        created_at: data.user?.created_at
+      });
 
       // Handle immediate session (rare case)
       if (data.session) {
@@ -153,18 +161,56 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return; // SUCCESS EXIT - email verification flow
 
     } catch (error: any) {
-      console.error('Signup error:', {
+      console.error('🚨 Signup error occurred:', error);
+
+      // Enhanced error logging for debugging
+      console.error('🔍 Error details:', {
         message: error.message,
-        stack: error.stack,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        stack: error.stack
       });
+
+      // Check if this is a database error
+      if (error.message && error.message.includes('Database error')) {
+        console.error('🗄️ Database error detected - investigating...');
+
+        // Attempt to get more details about the database error
+        try {
+          const { data: dbHealth } = await supabase.from('users').select('count').limit(1);
+          console.log('🔍 Database connectivity test:', dbHealth ? 'Connected' : 'Failed');
+        } catch (dbError) {
+          console.error('🚨 Database connectivity failed:', dbError);
+        }
+      }
+
+      // Enhanced error handling with specific messages
+      let errorMessage = 'Registration failed. Please try again.';
+
+      if (error.message) {
+        if (error.message.includes('Email already in use')) {
+          errorMessage = 'An account with this email address already exists. Please try logging in instead.';
+        } else if (error.message.includes('Invalid email')) {
+          errorMessage = 'Please enter a valid email address.';
+        } else if (error.message.includes('Password')) {
+          errorMessage = 'Password must be at least 6 characters long.';
+        } else if (error.message.includes('phone')) {
+          errorMessage = 'Please enter a valid phone number or leave it empty.';
+        } else if (error.message.includes('Database error')) {
+          errorMessage = 'Database error saving new user. Please try again or contact support if the issue persists.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
 
       toast({
         title: "Registration Failed",
-        description: error.message || "An unexpected error occurred.",
+        description: errorMessage,
         variant: "destructive",
       });
 
-      throw error;
+      throw new Error(errorMessage);
     }
   };
 
