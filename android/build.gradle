@@ -27,3 +27,22 @@ apply from: "variables.gradle"
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
+// Force Java 17 for all subprojects to override Capacitor's Java 21 requirement
+subprojects {
+    afterEvaluate {
+        if (it.hasProperty('android')) {
+            android {
+                compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_17
+                    targetCompatibility JavaVersion.VERSION_17
+                }
+            }
+        }
+
+        tasks.withType(JavaCompile) {
+            sourceCompatibility = JavaVersion.VERSION_17
+            targetCompatibility = JavaVersion.VERSION_17
+        }
+    }
+}
