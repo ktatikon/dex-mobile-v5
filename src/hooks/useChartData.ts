@@ -75,9 +75,9 @@ export const useChartData = ({
       } catch (apiError) {
         console.warn(`📊 API fetch failed for ${targetTokenId}, using mock data:`, apiError);
 
-        // Fallback to mock data
-        data = generateMockChartData(tokenSymbol, targetInterval, currentPrice);
-        console.log(`📊 Generated mock data for ${tokenSymbol}: ${data.data.length} points`);
+        // Return empty data instead of mock data
+        data = { data: [], error: 'API fetch failed - no fallback data' };
+        console.log(`📊 API failed for ${tokenSymbol}, returning empty data`);
 
         // Set error but don't block rendering
         if (isMounted.current) {

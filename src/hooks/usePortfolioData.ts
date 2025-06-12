@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useGlobalMarketData } from '@/contexts/MarketDataContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Token } from '@/types';
-import { mockWallet } from '@/services/fallbackDataService';
+
 import { getPortfolioHoldings, getLiquidityPositions, getPortfolioChange24h } from '@/services/portfolioService';
 
 // Mock portfolio data for different tabs
@@ -239,28 +239,17 @@ export function usePortfolioData(activeTab: string = 'overview') {
         console.error('Error fetching portfolio data:', err);
         setPortfolioError(err instanceof Error ? err : new Error('Failed to fetch portfolio data'));
 
-        // If there's an error or no data, use mock data for demo purposes
+        // Use only real-time data from CoinGecko API
         if (tokensLoading || tokens.length === 0) {
           setPortfolioTokens([]);
         } else if (activeTab === 'overview' || activeTab === 'coins') {
-          // Use mock data as fallback
-          const balanceMap = new Map<string, string>();
-          mockPortfolioData.coins.forEach(token => {
-            balanceMap.set(token.id, token.balance || '0');
-          });
+          // Use real-time token data with zero balances for new users
+          const realTimeTokens = tokens.map(token => ({
+            ...token,
+            balance: '0' // Start with zero balance, will be updated by portfolio service
+          }));
 
-          // Merge real-time token data with mock balances
-          const mergedTokens = tokens
-            .filter(token => balanceMap.has(token.id))
-            .map(token => {
-              const balance = balanceMap.get(token.id) || '0';
-              return {
-                ...token,
-                balance
-              };
-            });
-
-          setPortfolioTokens(mergedTokens);
+          setPortfolioTokens(realTimeTokens);
         }
 
         setPortfolioLoading(false);

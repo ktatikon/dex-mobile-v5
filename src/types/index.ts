@@ -10,6 +10,11 @@ export interface Token {
   price?: number;
   priceChange24h?: number;
   isApproved?: boolean;
+  // Real-time market data from CoinGecko API
+  market_cap?: number;
+  circulating_supply?: number;
+  total_supply?: number;
+  market_cap_rank?: number;
 }
 
 // Transaction types

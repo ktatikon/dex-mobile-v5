@@ -1,44 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useWalletData } from '@/hooks/useWalletData';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { comprehensiveWalletService } from '@/services/comprehensiveWalletService';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
-  CardFooter
+  CardDescription
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   ArrowLeft,
   Copy,
   Download,
   Share2,
   Info,
-  RefreshCw
+  Wallet,
+  Shield
 } from 'lucide-react';
-import TokenIcon from '@/components/TokenIcon';
 import EnhancedTokenSelector from '@/components/TokenSelector';
 import { Token } from '@/types';
 import QRCode from 'react-qr-code';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 const ReceivePage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { walletTokens, address, refreshData } = useWalletData();
+  const { user } = useAuth();
+  const { walletTokens, address, loading, activeWalletType, setActiveWalletType } = useWalletData();
 
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
   const [amount, setAmount] = useState<string>('');
@@ -143,6 +139,20 @@ const ReceivePage = () => {
     }
   };
 
+  // Show loading state if wallet data is still loading (after all hooks are called)
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 pt-6 pb-24">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-dex-primary border-t-transparent mx-auto mb-4"></div>
+            <p className="text-white">Loading wallet data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 pt-6 pb-24">
       <div className="flex items-center mb-6">
@@ -166,6 +176,29 @@ const ReceivePage = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
+            {/* Wallet Type Selection */}
+            <div className="grid gap-2">
+              <Label className="text-white">Wallet Type</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant={activeWalletType === 'hot' ? 'primary' : 'outline'}
+                  onClick={() => setActiveWalletType('hot')}
+                  className={`min-h-[44px] border-dex-secondary/30 ${activeWalletType === 'hot' ? '' : 'text-white'}`}
+                >
+                  <Wallet className="mr-2 h-4 w-4" />
+                  Hot Wallet
+                </Button>
+                <Button
+                  variant={activeWalletType === 'cold' ? 'primary' : 'outline'}
+                  onClick={() => setActiveWalletType('cold')}
+                  className={`min-h-[44px] border-dex-secondary/30 ${activeWalletType === 'cold' ? '' : 'text-white'}`}
+                >
+                  <Shield className="mr-2 h-4 w-4" />
+                  Cold Wallet
+                </Button>
+              </div>
+            </div>
+
             {/* Enhanced Token Selection */}
             <div className="grid gap-2">
               <Label htmlFor="token" className="text-white">Select Token</Label>
@@ -342,4 +375,13 @@ const ReceivePage = () => {
   );
 };
 
-export default ReceivePage;
+// Wrapper component with error boundary
+const ReceivePageWithErrorBoundary = () => {
+  return (
+    <ErrorBoundary>
+      <ReceivePage />
+    </ErrorBoundary>
+  );
+};
+
+export default ReceivePageWithErrorBoundary;

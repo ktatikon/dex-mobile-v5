@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { Token } from '@/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Search, Star, StarOff, AlertCircle, ChevronDown, Loader2, Zap, TrendingUp } from 'lucide-react';
 import TokenIcon from './TokenIcon';
-import { realTimeTokenSearchService, TokenSearchResult } from '@/services/realTimeTokenSearchService';
+import { TokenSearchResult } from '@/services/realTimeTokenSearchService';
 import { useToast } from '@/hooks/use-toast';
 
 interface TokenSelectorProps {
@@ -68,21 +68,15 @@ const EnhancedTokenSelector: React.FC<TokenSelectorProps> = ({
     }
   }, []);
 
-  // Load popular tokens on component mount
+  // Load popular tokens on component mount - DISABLED to prevent API calls
   useEffect(() => {
-    const loadPopularTokens = async () => {
-      try {
-        const popular = await realTimeTokenSearchService.getPopularTokens();
-        setPopularTokens(popular);
-      } catch (error) {
-        console.error('Error loading popular tokens:', error);
-      }
-    };
-
-    loadPopularTokens();
+    // Disable popular tokens loading to prevent blocking API calls
+    // This was causing performance issues on Send/Receive pages
+    console.log('TokenSelector: Popular tokens loading disabled for performance');
+    setPopularTokens([]);
   }, []);
 
-  // Debounced search function
+  // Optimized search function - use local filtering instead of API calls
   const performSearch = useCallback(async (query: string) => {
     if (query.length < 2) {
       setSearchResults([]);
@@ -95,16 +89,27 @@ const EnhancedTokenSelector: React.FC<TokenSelectorProps> = ({
     setSearchError('');
 
     try {
-      const response = await realTimeTokenSearchService.searchTokens({
-        query,
-        limit: 20,
-        searchType: 'all'
-      });
+      // Use local token filtering instead of API calls for better performance
+      const filteredTokens = tokens.filter(token =>
+        token.symbol.toLowerCase().includes(query.toLowerCase()) ||
+        token.name.toLowerCase().includes(query.toLowerCase())
+      ).slice(0, 20).map(token => ({
+        id: token.id,
+        symbol: token.symbol,
+        name: token.name,
+        logo: token.logo,
+        price: token.price || 0,
+        marketCap: token.market_cap,
+        contractAddress: undefined,
+        network: 'ethereum',
+        verified: true,
+        source: 'local' as const
+      }));
 
-      setSearchResults(response.results);
+      setSearchResults(filteredTokens);
       setShowSearchResults(true);
 
-      if (response.results.length === 0) {
+      if (filteredTokens.length === 0) {
         setSearchError('No tokens found. Try a different search term.');
       }
 
@@ -115,9 +120,9 @@ const EnhancedTokenSelector: React.FC<TokenSelectorProps> = ({
     } finally {
       setIsSearching(false);
     }
-  }, []);
+  }, [tokens]);
 
-  // Handle search input with debouncing
+  // Optimized search input handler - no API calls, only local filtering
   const handleSearchChange = useCallback((query: string) => {
     setFilter(prev => ({ ...prev, searchQuery: query }));
 
@@ -126,12 +131,8 @@ const EnhancedTokenSelector: React.FC<TokenSelectorProps> = ({
       clearTimeout(searchDebounceTimer);
     }
 
-    // Set new timer for debounced search
-    const timer = setTimeout(() => {
-      performSearch(query);
-    }, 300); // 300ms debounce
-
-    setSearchDebounceTimer(timer);
+    // Use immediate local filtering instead of debounced API calls
+    performSearch(query);
   }, [searchDebounceTimer, performSearch]);
 
   // Save favorites to localStorage
@@ -556,4 +557,4 @@ const EnhancedTokenSelector: React.FC<TokenSelectorProps> = ({
   );
 };
 
-export default EnhancedTokenSelector;
+export default memo(EnhancedTokenSelector);

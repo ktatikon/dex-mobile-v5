@@ -80,40 +80,65 @@ const ManualUserCreation: React.FC = () => {
   // Emergency fallback function for when auth.signUp fails
   const createUserDirectly = async (logPrefix: string, userMetadata: any): Promise<CreationResult> => {
     try {
-      console.log(`${logPrefix} 🆘 Using emergency direct database creation...`);
+      console.log(`${logPrefix} 🆘 Using emergency admin API creation...`);
+      console.log(`${logPrefix} ⚠️ Switching to admin.createUser method to ensure proper auth.users entry`);
 
-      // Generate UUID for auth_id
-      const authId = crypto.randomUUID();
+      // Use Supabase admin API to create auth user with auto-confirmation
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
+        email_confirm: true, // Auto-confirm email to avoid verification step
+        user_metadata: userMetadata
+      });
 
-      // Insert directly into public.users table
-      const { data, error } = await supabase
-        .from('users')
-        .insert({
-          auth_id: authId,
-          email: formData.email.trim().toLowerCase(),
-          full_name: userMetadata.full_name,
-          phone: userMetadata.phone,
-          status: 'active',
-          role: userMetadata.role
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error(`${logPrefix} ❌ Direct database insert failed:`, error);
+      if (authError) {
+        console.error(`${logPrefix} ❌ Admin auth creation failed:`, authError);
         return {
           success: false,
           email: formData.email,
-          error: `Direct database creation failed: ${error.message}`,
+          error: `Admin auth creation failed: ${authError.message}`,
           timestamp: new Date()
         };
       }
 
-      console.log(`${logPrefix} ✅ Emergency user creation successful:`, data);
+      if (!authData.user) {
+        console.error(`${logPrefix} ❌ No auth user returned from admin creation`);
+        return {
+          success: false,
+          email: formData.email,
+          error: 'No auth user returned from admin creation',
+          timestamp: new Date()
+        };
+      }
+
+      console.log(`${logPrefix} ✅ Auth user created via admin API:`, authData.user.id);
+
+      // Wait for trigger to execute
+      console.log(`${logPrefix} ⏳ Waiting for trigger function to execute...`);
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Verify profile was created
+      const { data: profileData, error: profileError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('auth_id', authData.user.id)
+        .single();
+
+      if (profileError) {
+        console.error(`${logPrefix} ❌ Profile verification failed:`, profileError);
+        return {
+          success: false,
+          email: formData.email,
+          error: `Profile verification failed: ${profileError.message}`,
+          timestamp: new Date()
+        };
+      }
+
+      console.log(`${logPrefix} ✅ Emergency user creation successful:`, profileData);
 
       return {
         success: true,
-        userId: authId,
+        userId: authData.user.id,
         email: formData.email,
         timestamp: new Date()
       };

@@ -117,7 +117,6 @@ export const SUPPORTED_NETWORKS: Record<string, NetworkConfig> = {
 };
 
 class ComprehensiveWalletService {
-  private phase1FallbackActive = false;
   private consecutiveFailures = 0;
   private readonly MAX_FAILURES = 5;
   private balanceUpdateInterval: NodeJS.Timeout | null = null;
@@ -133,8 +132,7 @@ class ComprehensiveWalletService {
       // Check Phase 4 configuration
       const config = await phase4ConfigManager.getPhase4Config();
       if (!config.isEnabled) {
-        console.log('📊 Phase 4 not enabled, activating Phase 1 fallback mode');
-        this.activatePhase1Fallback();
+        console.log('📊 Phase 4 not enabled, using real-time data only');
         return;
       }
 
@@ -191,8 +189,8 @@ class ComprehensiveWalletService {
       console.error('❌ Error fetching user wallets:', error);
       this.handleServiceFailure();
       
-      // Return Phase 1 fallback data
-      return this.getPhase1FallbackWallets(userId);
+      // Return empty array instead of fallback data
+      return [];
     }
   }
 
@@ -297,11 +295,7 @@ class ComprehensiveWalletService {
         throw new Error(`Wallet not found: ${walletId}`);
       }
 
-      // Skip balance update if in Phase 1 fallback mode
-      if (this.phase1FallbackActive) {
-        console.log('📊 Phase 1 fallback mode active, using cached balances');
-        return wallet.balance_cache || {};
-      }
+      // Always fetch real balance from blockchain - no fallback mode
 
       // Fetch real balance from blockchain
       const balances = await this.fetchRealBalance(wallet.wallet_address, wallet.network);
@@ -423,52 +417,7 @@ class ComprehensiveWalletService {
    */
   private handleServiceFailure(): void {
     this.consecutiveFailures++;
-    
-    if (this.consecutiveFailures >= this.MAX_FAILURES) {
-      console.log(`⚠️ ${this.MAX_FAILURES} consecutive failures detected, activating Phase 1 fallback mode`);
-      this.activatePhase1Fallback();
-    }
-  }
-
-  /**
-   * Activate Phase 1 fallback mode
-   */
-  private activatePhase1Fallback(): void {
-    this.phase1FallbackActive = true;
-    
-    // Stop balance monitoring
-    if (this.balanceUpdateInterval) {
-      clearInterval(this.balanceUpdateInterval);
-      this.balanceUpdateInterval = null;
-    }
-    
-    console.log('📊 Phase 1 fallback mode activated - using cached data');
-  }
-
-  /**
-   * Get Phase 1 fallback wallets
-   */
-  private getPhase1FallbackWallets(userId: string): ComprehensiveWallet[] {
-    return [
-      {
-        id: `fallback_${userId}_1`,
-        user_id: userId,
-        wallet_name: 'Hot Wallet (Fallback)',
-        wallet_type: 'hot',
-        wallet_address: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b1',
-        network: 'ethereum',
-        provider: 'metamask',
-        addresses: { ETH: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b1' },
-        balance_cache: { ETH: '1.5263', USD: '2456.78' },
-        last_balance_update: new Date().toISOString(),
-        transaction_count: 15,
-        risk_level: 'low',
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        metadata: { fallback_mode: true }
-      }
-    ];
+    console.log(`⚠️ Service failure ${this.consecutiveFailures}/${this.MAX_FAILURES} - continuing with real data only`);
   }
 
   /**
@@ -585,6 +534,8 @@ class ComprehensiveWalletService {
    */
   async getUserWalletsLegacy(userId: string) {
     try {
+      console.log('🔍 getUserWalletsLegacy: Fetching wallets for user:', userId);
+
       const { data: wallets, error } = await supabase
         .from('wallets')
         .select('*')
@@ -593,13 +544,14 @@ class ComprehensiveWalletService {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching user wallets:', error);
+        console.error('❌ getUserWalletsLegacy: Error fetching user wallets:', error);
         return [];
       }
 
+      console.log('✅ getUserWalletsLegacy: Found wallets:', wallets?.length || 0);
       return wallets || [];
     } catch (error) {
-      console.error('Error in getUserWalletsLegacy:', error);
+      console.error('❌ getUserWalletsLegacy: Exception:', error);
       return [];
     }
   }

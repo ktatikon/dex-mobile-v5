@@ -25,17 +25,8 @@ export const PHASE2_CONFIG = {
   transactionHistoryLimit: 1000
 };
 
-// Fallback balances for demo purposes and new user onboarding
-const fallbackBalances: Record<string, string> = {
-  "ethereum": "1.5263",
-  "bitcoin": "0.0358",
-  "usd-coin": "523.67",
-  "tether": "745.21",
-  "solana": "12.431",
-  "cardano": "452.16",
-  "binancecoin": "3.482",
-  "ripple": "1250.32",
-};
+// Real-time balances - no fallback data, use only real wallet balances
+const realTimeBalances: Record<string, string> = {};
 
 // Fallback token data with static prices (used when CoinGecko API fails)
 export const mockTokens: Token[] = [
@@ -151,12 +142,12 @@ export async function getRealTimeTokens(): Promise<Token[]> {
       throw new Error('No tokens received from API');
     }
 
-    // Apply fallback balances to tokens for demo purposes
+    // Use real-time tokens with zero balances (balances will be fetched from wallet service)
     const tokensWithBalances = realTimeTokens.map(token => {
       try {
         return {
           ...token,
-          balance: fallbackBalances[token.id] || "0",
+          balance: "0", // Start with zero, real balances come from wallet service
           logo: token.logo?.startsWith('http') ? token.logo : `/crypto-icons/${token.symbol?.toLowerCase() || 'unknown'}.svg`,
           // Ensure required fields are present
           price: typeof token.price === 'number' ? token.price : 0,
@@ -172,15 +163,11 @@ export async function getRealTimeTokens(): Promise<Token[]> {
     return tokensWithBalances;
 
   } catch (error) {
-    console.error('❌ Error fetching real-time tokens, using fallback data:', error);
+    console.error('❌ Error fetching real-time tokens:', error);
 
-    // Ensure fallback data is valid
-    if (!mockTokens || !Array.isArray(mockTokens)) {
-      console.error('❌ Fallback data is invalid, returning empty array');
-      return [];
-    }
-
-    return mockTokens;
+    // Return empty array instead of mock data - let the UI handle the error state
+    console.log('🔄 Returning empty array - no fallback data used');
+    return [];
   }
 }
 
@@ -302,12 +289,12 @@ export async function getRealTimeTransactions(): Promise<Transaction[]> {
 
 
 
-// Fallback wallet data for demo purposes
+// Real wallet data - no mock data
 export const mockWallet: WalletInfo = {
-  address: "0xabc...def",
-  name: "Main Wallet",
-  balance: "5246.32",
-  tokens: mockTokens,
+  address: "0x0000000000000000000000000000000000000000",
+  name: "Wallet",
+  balance: "0",
+  tokens: [],
 };
 
 // Helper to calculate total balance

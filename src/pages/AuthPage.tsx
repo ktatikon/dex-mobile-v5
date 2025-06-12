@@ -78,25 +78,7 @@ const AuthPage = () => {
 
         // For email confirmation flow, don't navigate immediately
         // The user needs to check their email and click the confirmation link
-        // Only navigate if a session is immediately available (rare case)
-        setTimeout(async () => {
-          try {
-            const { validateSession } = useAuth();
-            const validation = await validateSession();
-
-            if (validation.isValid) {
-              // Session is available - user can proceed to home
-              navigate('/');
-            } else {
-              // No session - user needs to confirm email first
-              // Stay on auth page with success message already shown
-              console.log('Email confirmation required - staying on auth page');
-            }
-          } catch (error) {
-            // Stay on auth page for email confirmation
-            console.log('Waiting for email confirmation');
-          }
-        }, 2000); // 2-second check for immediate session
+        // Note: Navigation will happen automatically when auth state changes
       }
     } catch (error: any) {
       // Enhanced error handling with specific recovery strategies

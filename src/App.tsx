@@ -16,7 +16,7 @@ import DexHeader from "@/components/DexHeader";
 import HomePageWithErrorBoundary from "./pages/HomePageWithErrorBoundary";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
-import TradePage from "./pages/TradePage";
+import TradePageWithErrorBoundary from "./pages/TradePage";
 import ExplorePage from "./pages/ExplorePage";
 import PortfolioPageWithErrorBoundary from "./pages/PortfolioPageWithErrorBoundary";
 import SettingsPage from "./pages/SettingsPage";
@@ -32,8 +32,9 @@ import ActivityPage from "./pages/ActivityPage";
 import BuyPage from "./pages/BuyPage";
 import SellPage from "./pages/SellPage";
 import LimitPage from "./pages/LimitPage";
-import SendPage from "./pages/SendPage";
-import ReceivePage from "./pages/ReceivePage";
+import SendPageWithErrorBoundary from "./pages/SendPage";
+import ReceivePageWithErrorBoundary from "./pages/ReceivePage";
+import ErrorBoundary from "./components/ErrorBoundary";
 import KYCPage from "./pages/KYCPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import SecurityPage from "./pages/SecurityPage";
@@ -46,6 +47,8 @@ import LiveChatPage from "./pages/LiveChatPage";
 import P2PComingSoonPage from "./pages/P2PComingSoonPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import AdminUserManagementPage from "./pages/AdminUserManagementPage";
+import DebugPage from "./pages/DebugPage";
+
 
 import AdminRoute from "./components/AdminRoute";
 import AdminTestnetRoute from "./components/AdminTestnetRoute";
@@ -127,7 +130,7 @@ const App = () => {
                     />
                     <div className="pt-16 pb-20">
                       <div className="container mx-auto px-4 mb-4">
-                        <TradePage />
+                        <TradePageWithErrorBoundary />
                       </div>
                       <DexNavigation />
                     </div>
@@ -347,7 +350,7 @@ const App = () => {
                     />
                     <div className="pt-16 pb-20">
                       <div className="container mx-auto px-4 mb-4">
-                        <SendPage />
+                        <SendPageWithErrorBoundary />
                       </div>
                       <DexNavigation />
                     </div>
@@ -365,13 +368,24 @@ const App = () => {
                     />
                     <div className="pt-16 pb-20">
                       <div className="container mx-auto px-4 mb-4">
-                        <ReceivePage />
+                        <ReceivePageWithErrorBoundary />
                       </div>
                       <DexNavigation />
                     </div>
                   </PrivateRoute>
                 }
               />
+              <Route
+                path="/debug"
+                element={
+                  <div className="min-h-screen bg-black text-white">
+                    <div className="container mx-auto px-4 pt-6 pb-24">
+                      <DebugPage />
+                    </div>
+                  </div>
+                }
+              />
+
               <Route
                 path="/settings"
                 element={

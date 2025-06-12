@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useWalletData } from '@/hooks/useWalletData';
 import { useToast } from '@/hooks/use-toast';
@@ -40,6 +40,9 @@ import { formatCurrency } from '@/services/realTimeData';
 import { Token, TransactionStatus, TransactionType } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
+import { comprehensiveWalletService } from '@/services/comprehensiveWalletService';
+import { walletOperationsService } from '@/services/walletOperationsService';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Dialog,
   DialogContent,
@@ -48,6 +51,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 // Form validation schema
 const sendFormSchema = z.object({
@@ -74,7 +78,8 @@ const SendPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { walletTokens, address, refreshData } = useWalletData();
+  const { user } = useAuth();
+  const { walletTokens, address, refreshData, loading } = useWalletData();
 
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
   const [selectedFee, setSelectedFee] = useState('standard');
@@ -110,37 +115,38 @@ const SendPage = () => {
 
   const watchAmount = watch('amount');
 
-  // Calculate max amount user can send (balance - fee)
-  const maxAmount = selectedToken
-    ? parseFloat(selectedToken.balance || '0') - parseFloat(getFeeAmount())
-    : 0;
-
-  // Get fee amount based on selected fee option
-  function getFeeAmount() {
+  // Memoized fee calculation for performance
+  const getFeeAmount = useMemo(() => {
     const feeOption = feeOptions.find(option => option.value === selectedFee);
     return feeOption ? feeOption.fee : '0.0005';
-  }
+  }, [selectedFee]);
 
-  // Get estimated confirmation time based on selected fee option
-  function getEstimatedTime() {
+  // Calculate max amount user can send (balance - fee)
+  const maxAmount = useMemo(() => {
+    return selectedToken
+      ? parseFloat(selectedToken.balance || '0') - parseFloat(getFeeAmount)
+      : 0;
+  }, [selectedToken, getFeeAmount]);
+
+  // Memoized estimated time calculation
+  const getEstimatedTime = useMemo(() => {
     const feeOption = feeOptions.find(option => option.value === selectedFee);
     return feeOption ? feeOption.time : '10-20 min';
-  }
+  }, [selectedFee]);
 
-  // Handle setting max amount
-  const handleSetMaxAmount = () => {
+  // Optimized callbacks with useCallback for performance
+  const handleSetMaxAmount = useCallback(() => {
     if (selectedToken && maxAmount > 0) {
       setValue('amount', maxAmount.toString());
     }
-  };
+  }, [selectedToken, maxAmount, setValue]);
 
-  // Handle QR code scanning
-  const handleScanQRCode = () => {
+  const handleScanQRCode = useCallback(() => {
     toast({
       title: "QR Code Scanner",
       description: "This feature will be available soon",
     });
-  };
+  }, [toast]);
 
   // Enhanced token validation
   const validateToken = (token: Token | null): string => {
@@ -154,7 +160,7 @@ const SendPage = () => {
     }
 
     const amount = parseFloat(watch('amount') || '0');
-    const fee = parseFloat(getFeeAmount());
+    const fee = parseFloat(getFeeAmount);
 
     if (amount + fee > balance) {
       return "Amount exceeds available balance (including fees)";
@@ -189,7 +195,7 @@ const SendPage = () => {
     // Additional validation for amount
     const amount = parseFloat(data.amount);
     const balance = parseFloat(selectedToken?.balance || '0');
-    const fee = parseFloat(getFeeAmount());
+    const fee = parseFloat(getFeeAmount);
 
     if (amount + fee > balance) {
       toast({
@@ -204,7 +210,7 @@ const SendPage = () => {
     setShowConfirmation(true);
   };
 
-  // Handle transaction confirmation
+  // Handle transaction confirmation with real wallet integration
   const handleConfirmTransaction = async () => {
     setIsSubmitting(true);
 
@@ -212,61 +218,60 @@ const SendPage = () => {
       // Get form values
       const formValues = watch();
 
-      // In a real implementation, this would call a blockchain API to send the transaction
-      // For now, we'll just simulate a transaction by storing it in Supabase
-
-      // Get user ID from auth
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        throw new Error("User not authenticated");
+      if (!user || !selectedToken) {
+        throw new Error("User not authenticated or token not selected");
       }
 
-      // Get user's ID from the users table
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('auth_id', user.id)
-        .single();
+      // Validate transaction parameters
+      const amount = parseFloat(formValues.amount);
+      const fee = parseFloat(getFeeAmount);
+      const balance = parseFloat(selectedToken.balance || '0');
 
-      if (userError) {
-        throw new Error("Error fetching user data");
+      if (amount + fee > balance) {
+        throw new Error("Insufficient balance for transaction including fees");
       }
 
-      // Get user's wallet ID
+      // Create transaction using comprehensive wallet service
+      const transactionData = {
+        userId: user.id,
+        fromAddress: address,
+        toAddress: formValues.recipientAddress,
+        tokenId: selectedToken.id,
+        tokenSymbol: selectedToken.symbol,
+        amount: amount.toString(),
+        fee: fee.toString(),
+        memo: formValues.memo || '',
+        transactionType: 'send' as TransactionType,
+        status: 'pending' as TransactionStatus
+      };
+
+      // Get wallet ID for the transaction
       const { data: walletData, error: walletError } = await supabase
         .from('wallets')
         .select('id')
-        .eq('user_id', userData.id)
-        .eq('wallet_type', 'hot')
+        .eq('user_id', user.id)
+        .eq('wallet_address', address)
+        .eq('is_active', true)
         .single();
 
-      if (walletError) {
-        throw new Error("Error fetching wallet data");
+      if (walletError || !walletData) {
+        throw new Error('Wallet not found for transaction');
       }
 
-      // Create transaction record
-      const transactionId = uuidv4();
-      const { error: txError } = await supabase
-        .from('transactions')
-        .insert({
-          id: transactionId,
-          user_id: userData.id,
-          wallet_id: walletData.id,
-          transaction_type: TransactionType.SEND,
-          from_token_id: selectedToken.id,
-          from_amount: formValues.amount,
-          to_amount: null,
-          timestamp: new Date().toISOString(),
-          hash: `0x${Math.random().toString(16).substring(2, 42)}`,
-          status: TransactionStatus.PENDING,
-        });
+      // Process transaction using wallet operations service
+      const transactionResult = await walletOperationsService.sendTransaction({
+        walletId: walletData.id,
+        toAddress: transactionData.toAddress,
+        amount: amount.toString(),
+        tokenSymbol: transactionData.tokenSymbol,
+        network: 'ethereum'
+      });
 
-      if (txError) {
-        throw new Error("Error creating transaction record");
+      if (!transactionResult.success) {
+        throw new Error(transactionResult.error || 'Transaction failed');
       }
 
-      // Simulate transaction processing
+      // Simulate blockchain processing time
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       // Show success message
@@ -297,6 +302,20 @@ const SendPage = () => {
     setShowSuccess(false);
     navigate('/wallet-dashboard');
   };
+
+  // Show loading state if wallet data is still loading (after all hooks are called)
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 pt-6 pb-24">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-dex-primary mx-auto mb-4" />
+            <p className="text-white">Loading wallet data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 pt-6 pb-24">
@@ -422,8 +441,8 @@ const SendPage = () => {
                 ))}
               </div>
               <div className="flex justify-between text-xs text-gray-400 mt-1">
-                <span>Fee: {getFeeAmount()} {selectedToken?.symbol}</span>
-                <span>≈ ${selectedToken ? (parseFloat(getFeeAmount()) * (selectedToken.price || 0)).toFixed(2) : '0.00'}</span>
+                <span>Fee: {getFeeAmount} {selectedToken?.symbol}</span>
+                <span>≈ ${selectedToken ? (parseFloat(getFeeAmount) * (selectedToken.price || 0)).toFixed(2) : '0.00'}</span>
               </div>
             </div>
 
@@ -512,20 +531,20 @@ const SendPage = () => {
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Network Fee</span>
               <span className="text-white font-medium">
-                {getFeeAmount()} {selectedToken?.symbol}
+                {getFeeAmount} {selectedToken?.symbol}
               </span>
             </div>
 
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Total Amount</span>
               <span className="text-white font-medium">
-                {(parseFloat(watch('amount') || '0') + parseFloat(getFeeAmount())).toFixed(6)} {selectedToken?.symbol}
+                {(parseFloat(watch('amount') || '0') + parseFloat(getFeeAmount)).toFixed(6)} {selectedToken?.symbol}
               </span>
             </div>
 
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Estimated Time</span>
-              <span className="text-white font-medium">{getEstimatedTime()}</span>
+              <span className="text-white font-medium">{getEstimatedTime}</span>
             </div>
 
             {watch('memo') && (
@@ -606,4 +625,13 @@ const SendPage = () => {
   );
 };
 
-export default SendPage;
+// Wrapper component with error boundary
+const SendPageWithErrorBoundary = () => {
+  return (
+    <ErrorBoundary>
+      <SendPage />
+    </ErrorBoundary>
+  );
+};
+
+export default SendPageWithErrorBoundary;

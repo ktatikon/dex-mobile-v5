@@ -480,8 +480,8 @@ export async function fetchTokenList(vsCurrency = 'usd'): Promise<CoinGeckoToken
         console.log('Returning cached data due to rate limit');
         return cachedData;
       }
-      console.log('No cached data available, returning fallback data');
-      return FALLBACK_MOCK_DATA;
+      console.log('No cached data available, returning empty array');
+      return [];
     }
 
     // Prepare API request
@@ -530,8 +530,8 @@ export async function fetchTokenList(vsCurrency = 'usd'): Promise<CoinGeckoToken
       return cachedData;
     }
 
-    console.log('No cached data available, using fallback mock data');
-    return FALLBACK_MOCK_DATA;
+    console.log('No cached data available, returning empty array');
+    return [];
   }
 }
 
@@ -543,7 +543,7 @@ export function adaptCoinGeckoData(coingeckoData: CoinGeckoToken[]): Token[] {
     // Validate input
     if (!coingeckoData || !Array.isArray(coingeckoData)) {
       console.error('Invalid data passed to adaptCoinGeckoData:', coingeckoData);
-      return FALLBACK_MOCK_DATA.map(mockCoin => createTokenFromMockData(mockCoin));
+      return [];
     }
 
     // Process each coin with error handling
@@ -576,6 +576,11 @@ export function adaptCoinGeckoData(coingeckoData: CoinGeckoToken[]): Token[] {
           balance: "0", // Default balance
           price: typeof coin.current_price === 'number' ? coin.current_price : 0,
           priceChange24h: typeof coin.price_change_percentage_24h === 'number' ? coin.price_change_percentage_24h : 0,
+          // Real-time market data from CoinGecko API
+          market_cap: typeof coin.market_cap === 'number' ? coin.market_cap : undefined,
+          circulating_supply: typeof coin.circulating_supply === 'number' ? coin.circulating_supply : undefined,
+          total_supply: typeof coin.total_supply === 'number' ? coin.total_supply : undefined,
+          market_cap_rank: typeof coin.market_cap_rank === 'number' ? coin.market_cap_rank : undefined,
         };
       } catch (coinError) {
         console.error('Error processing coin:', coinError);
@@ -584,7 +589,7 @@ export function adaptCoinGeckoData(coingeckoData: CoinGeckoToken[]): Token[] {
     }).filter(token => token !== null); // Filter out any null tokens
   } catch (error) {
     console.error('Error in adaptCoinGeckoData:', error);
-    return FALLBACK_MOCK_DATA.map(mockCoin => createTokenFromMockData(mockCoin));
+    return [];
   }
 }
 
@@ -601,6 +606,11 @@ function createTokenFromMockData(mockCoin: CoinGeckoToken): Token {
     balance: "0",
     price: mockCoin.current_price,
     priceChange24h: mockCoin.price_change_percentage_24h || 0,
+    // Real-time market data from mock CoinGecko data
+    market_cap: mockCoin.market_cap,
+    circulating_supply: mockCoin.circulating_supply,
+    total_supply: mockCoin.total_supply || undefined,
+    market_cap_rank: mockCoin.market_cap_rank,
   };
 }
 

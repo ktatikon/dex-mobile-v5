@@ -379,11 +379,9 @@ class WalletConnectivityService {
 
       this.consecutiveFailures++;
 
-      // Check if we should activate fallback mode
+      // Log failures but continue with real data only
       if (this.consecutiveFailures >= this.MAX_CONSECUTIVE_FAILURES) {
-        console.log(`⚠️ ${this.consecutiveFailures} consecutive balance fetch failures detected, activating Phase 1 fallback`);
-        this.activatePhase1Fallback();
-        return this.createMockBalances(network);
+        console.log(`⚠️ ${this.consecutiveFailures} consecutive balance fetch failures detected - continuing with real data only`);
       }
 
       // Return cached data if available
@@ -393,9 +391,9 @@ class WalletConnectivityService {
         return cached.balances;
       }
 
-      // Last resort: return mock balances
-      console.log('🔄 No cached data available, returning mock balances');
-      return this.createMockBalances(network);
+      // Last resort: return empty balances
+      console.log('🔄 No cached data available, returning empty balances');
+      return [];
     }
   }
 
