@@ -1,2 +1,0 @@
-function_name,security_definer,proowner,schema_name
-handle_new_user,true,16384,public

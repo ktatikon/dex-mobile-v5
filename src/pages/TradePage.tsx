@@ -11,14 +11,15 @@ import { MarketFilterType, AltFilterType } from '@/types/api';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import TokenIcon from '@/components/TokenIcon';
 import EnhancedTokenSelector from '@/components/TokenSelector';
+import { TradingTabsContainer } from '@/components/trade';
 import { TradingChart } from '@/components/TradingChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent } from '@/components/ui/tabs';
+// import { Tabs, TabsContent } from '@/components/ui/tabs'; // Removed - using custom tabs in TradingTabsContainer
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-import { TrendingUp, TrendingDown, ChevronDown, RefreshCw, Activity, DollarSign, BarChart3, Search, CheckCircle, AlertCircle } from 'lucide-react';
+import { TrendingUp, TrendingDown, ChevronDown, RefreshCw, Activity, DollarSign, BarChart3, CheckCircle, AlertCircle } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -130,7 +131,7 @@ const EnhancedTabsList: React.FC<EnhancedTabsListProps> = memo(({ children, clas
   );
 });
 
-// Enhanced Tab Trigger with Gradient Effects
+// Enhanced Tab Trigger with Updated Gradient Effects
 interface EnhancedTabTriggerProps {
   value: string;
   isActive: boolean;
@@ -151,23 +152,23 @@ const EnhancedTabTrigger: React.FC<EnhancedTabTriggerProps> = memo(({
       className={`
         relative flex-shrink-0 px-4 py-3 min-w-[80px] text-center transition-all duration-300 ease-in-out
         ${isActive
-          ? 'text-lg font-semibold text-white'
+          ? 'text-lg font-semibold'
           : 'text-sm font-medium text-white hover:text-gray-300'
         }
         ${className || ''}
       `}
-      style={isActive ? {
-        background: 'linear-gradient(to right, #F66F13, #E5E7E8)',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        backgroundClip: 'text',
-        color: '#F66F13'
-      } : {}}
     >
-      <span className="relative z-10" style={isActive ? {
-        color: '#F66F13',
-        textShadow: '0 0 1px rgba(246, 111, 19, 0.5)'
-      } : {}}>
+      <span
+        className="relative z-10"
+        style={isActive ? {
+          background: 'linear-gradient(to right, #F66F13, #E5E7E8)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          color: '#F66F13', // Fallback for browsers that don't support gradient text
+          fontWeight: '600' // Ensure semibold weight
+        } : {}}
+      >
         {children}
       </span>
       {isActive && (
@@ -182,7 +183,420 @@ const EnhancedTabTrigger: React.FC<EnhancedTabTriggerProps> = memo(({
   );
 });
 
+// Unified Swipeable Tab-Content Component
+interface UnifiedTabContentProps {
+  filter: MarketFilterType;
+  altFilter: AltFilterType;
+  setFilter: (filter: MarketFilterType) => void;
+  setAltFilter: (filter: AltFilterType) => void;
+  onSwipe: (direction: 'left' | 'right') => void;
+  onUnifiedSwipe: (e: React.TouchEvent | React.MouseEvent) => void;
+  tokens: Token[];
+  sortedByMarketCap: Token[];
+  sortedByPriceChange: Token[];
+  loading: boolean;
+  error: Error | null;
+  onSelectToken: (token: Token) => void;
+  onRefresh: () => void;
+}
 
+const UnifiedTabContent: React.FC<UnifiedTabContentProps> = memo(({
+  filter,
+  altFilter,
+  setFilter,
+  setAltFilter,
+  onSwipe,
+  onUnifiedSwipe,
+  tokens,
+  sortedByMarketCap,
+  sortedByPriceChange,
+  loading,
+  error,
+  onSelectToken,
+  onRefresh
+}) => {
+  return (
+    <div
+      className="w-full"
+      onTouchStart={onUnifiedSwipe}
+      onTouchEnd={onUnifiedSwipe}
+    >
+      {/* Enhanced Tab Navigation - No background highlights */}
+      <EnhancedTabsList
+        className="w-full mb-6 px-2 py-2 rounded-lg"
+        onSwipe={onSwipe}
+      >
+        <EnhancedTabTrigger
+          value="all"
+          isActive={filter === 'all'}
+          onClick={() => setFilter('all')}
+          className="min-h-[44px]"
+        >
+          All Assets
+        </EnhancedTabTrigger>
+        <EnhancedTabTrigger
+          value="gainers"
+          isActive={filter === 'gainers'}
+          onClick={() => setFilter('gainers')}
+          className="min-h-[44px]"
+        >
+          Top Gainers
+        </EnhancedTabTrigger>
+        <EnhancedTabTrigger
+          value="losers"
+          isActive={filter === 'losers'}
+          onClick={() => setFilter('losers')}
+          className="min-h-[44px]"
+        >
+          Top Losers
+        </EnhancedTabTrigger>
+        <EnhancedTabTrigger
+          value="inr"
+          isActive={filter === 'inr'}
+          onClick={() => setFilter('inr')}
+          className="min-h-[44px]"
+        >
+          INR
+        </EnhancedTabTrigger>
+        <EnhancedTabTrigger
+          value="usdt"
+          isActive={filter === 'usdt'}
+          onClick={() => setFilter('usdt')}
+          className="min-h-[44px]"
+        >
+          USDT
+        </EnhancedTabTrigger>
+        <EnhancedTabTrigger
+          value="btc"
+          isActive={filter === 'btc'}
+          onClick={() => setFilter('btc')}
+          className="min-h-[44px]"
+        >
+          BTC
+        </EnhancedTabTrigger>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setFilter('alts');
+              }}
+              className={`
+                relative flex-shrink-0 px-4 py-3 min-w-[80px] text-center transition-all duration-300 ease-in-out min-h-[44px] flex items-center gap-1
+                ${filter === 'alts'
+                  ? 'text-lg font-semibold'
+                  : 'text-sm font-medium text-white hover:text-gray-300'
+                }
+              `}
+            >
+              <span
+                className="relative z-10"
+                style={filter === 'alts' ? {
+                  background: 'linear-gradient(to right, #F66F13, #E5E7E8)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  color: '#F66F13', // Fallback for browsers that don't support gradient text
+                  fontWeight: '600' // Ensure semibold weight
+                } : {}}
+              >
+                ALTs
+              </span>
+              <ChevronDown className="h-3 w-3 ml-0.5" style={filter === 'alts' ? {
+                color: '#F66F13'
+              } : {}} />
+              {filter === 'alts' && (
+                <div
+                  className="absolute bottom-0 left-1/2 transform -translate-x-1/2 h-0.5 w-8 rounded-full transition-all duration-300"
+                  style={{
+                    background: 'linear-gradient(to right, #F66F13, #E5E7E8)'
+                  }}
+                />
+              )}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            className="bg-dex-dark border-dex-secondary/30 text-white rounded-lg shadow-lg min-w-[200px] z-50"
+            align="center"
+            sideOffset={4}
+          >
+            <DropdownMenuLabel className="text-white font-semibold px-4 py-3 sticky top-0 bg-dex-dark z-10">
+              Filter ALTs
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-dex-secondary/20" />
+            <DropdownMenuRadioGroup value={altFilter} onValueChange={(value) => {
+              setAltFilter(value as AltFilterType);
+              if (filter !== 'alts') {
+                setFilter('alts');
+              }
+            }}>
+              <DropdownMenuRadioItem value="all" className="text-white hover:bg-dex-primary/20 cursor-pointer px-4 py-2">
+                All Altcoins
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="usdc" className="text-white hover:bg-dex-primary/20 cursor-pointer px-4 py-2">
+                USDC Pairs
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="bnb" className="text-white hover:bg-dex-primary/20 cursor-pointer px-4 py-2">
+                BNB Pairs
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="eth" className="text-white hover:bg-dex-primary/20 cursor-pointer px-4 py-2">
+                ETH Pairs
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="xrp" className="text-white hover:bg-dex-primary/20 cursor-pointer px-4 py-2">
+                XRP Pairs
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="dai" className="text-white hover:bg-dex-primary/20 cursor-pointer px-4 py-2">
+                DAI Pairs
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="tusd" className="text-white hover:bg-dex-primary/20 cursor-pointer px-4 py-2">
+                TUSD Pairs
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="trx" className="text-white hover:bg-dex-primary/20 cursor-pointer px-4 py-2">
+                TRX Pairs
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </EnhancedTabsList>
+
+      {/* Unified Content Area with Smooth Transitions */}
+      <div className="transition-all duration-300 ease-in-out">
+        <TokenListContent
+          filter={filter}
+          altFilter={altFilter}
+          tokens={tokens}
+          sortedByMarketCap={sortedByMarketCap}
+          sortedByPriceChange={sortedByPriceChange}
+          loading={loading}
+          error={error}
+          onSelectToken={onSelectToken}
+          onRefresh={onRefresh}
+        />
+      </div>
+    </div>
+  );
+});
+
+// Token List Content Component
+interface TokenListContentProps {
+  filter: MarketFilterType;
+  altFilter: AltFilterType;
+  tokens: Token[];
+  sortedByMarketCap: Token[];
+  sortedByPriceChange: Token[];
+  loading: boolean;
+  error: Error | null;
+  onSelectToken: (token: Token) => void;
+  onRefresh: () => void;
+}
+
+const TokenListContent: React.FC<TokenListContentProps> = memo(({
+  filter,
+  altFilter,
+  tokens,
+  sortedByMarketCap,
+  sortedByPriceChange,
+  loading,
+  error,
+  onSelectToken,
+  onRefresh
+}) => {
+  // Render loading state
+  const renderLoadingState = () => (
+    <div className="p-6 text-center text-dex-text-secondary">
+      <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />
+      Loading market data...
+    </div>
+  );
+
+  // Render error state
+  const renderErrorState = () => (
+    <div className="p-6 text-center text-dex-negative">
+      <div className="mb-2">Failed to load market data</div>
+      <Button
+        size="sm"
+        onClick={onRefresh}
+        className="bg-dex-primary text-white"
+      >
+        Retry
+      </Button>
+    </div>
+  );
+
+  // Individual render functions for each tab content
+  const renderAllTokens = () => {
+    return sortedByMarketCap.map(token => renderTokenRow(token, token.symbol));
+  };
+
+  const renderGainers = () => {
+    return sortedByPriceChange
+      .filter(token => (token.priceChange24h || 0) > 0)
+      .slice(0, 20)
+      .map(token => renderTokenRow(token, token.symbol, 'text-green-500', 'bg-green-500/10 hover:bg-green-500/20 border-green-500/30 text-green-400'));
+  };
+
+  const renderLosers = () => {
+    return sortedByPriceChange
+      .filter(token => (token.priceChange24h || 0) < 0)
+      .slice(0, 20)
+      .map(token => renderTokenRow(token, token.symbol, 'text-red-500', 'bg-red-500/10 hover:bg-red-500/20 border-red-500/30 text-red-400'));
+  };
+
+  const renderINRPairs = () => {
+    return sortedByMarketCap.slice(0, 10).map(token =>
+      renderTokenRow(token, `${token.symbol}/INR`, undefined, 'bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/30 text-orange-400',
+        `₹${formatCurrency(token.price ? token.price * 83.5 : 0)}`));
+  };
+
+  const renderUSDTPairs = () => {
+    return sortedByMarketCap
+      .filter(token => token.symbol !== 'USDT')
+      .slice(0, 50)
+      .map(token => renderTokenRow(token, `${token.symbol}/USDT`, undefined, 'bg-green-500/10 hover:bg-green-500/20 border-green-500/30 text-green-400'));
+  };
+
+  const renderBTCPairs = () => {
+    const btcToken = sortedByMarketCap.find(t => t.symbol === 'BTC');
+    const btcPrice = btcToken?.price || 0;
+
+    return sortedByMarketCap
+      .filter(token => token.symbol !== 'BTC')
+      .slice(0, 30)
+      .map(token => renderTokenRow(token, `${token.symbol}/BTC`, undefined, 'bg-yellow-500/10 hover:bg-yellow-500/20 border-yellow-500/30 text-yellow-400',
+        `${formatCurrency((token.price || 0) / btcPrice, 8)} BTC`));
+  };
+
+  const renderAltcoins = () => {
+    const majorCoins = ['BTC', 'ETH', 'BNB', 'ADA', 'SOL', 'XRP', 'DOT', 'AVAX', 'MATIC', 'LINK'];
+    const stablecoins = ['USDT', 'USDC', 'BUSD', 'DAI', 'TUSD', 'USDD', 'FRAX', 'LUSD'];
+    const wrappedTokens = ['WBTC', 'WETH', 'WBNB'];
+    const excludedTokens = [...majorCoins, ...stablecoins, ...wrappedTokens];
+
+    const filteredTokens = sortedByMarketCap.filter(token => {
+      if (altFilter === 'all') {
+        return !excludedTokens.includes(token.symbol) &&
+               !token.symbol.includes('USD') &&
+               !token.symbol.startsWith('W');
+      }
+
+      // Handle specific alt filters
+      const filterMap: Record<string, string> = {
+        'usdc': 'USDC', 'bnb': 'BNB', 'eth': 'ETH', 'xrp': 'XRP',
+        'dai': 'DAI', 'tusd': 'TUSD', 'trx': 'TRX'
+      };
+
+      return token.symbol !== filterMap[altFilter];
+    }).slice(0, 50);
+
+    return filteredTokens.map(token => {
+      const showAsPair = altFilter !== 'all';
+      const pairSymbol = showAsPair ? altFilter.toUpperCase() : '';
+      const displaySymbol = showAsPair ? `${token.symbol}/${pairSymbol}` : token.symbol;
+
+      let displayPrice = `$${formatCurrency(token.price || 0)}`;
+      if (showAsPair && pairSymbol) {
+        const getBaseCurrencyPrice = (symbol: string): number => {
+          const baseCurrency = sortedByMarketCap.find(t => t.symbol === symbol);
+          return baseCurrency?.price || 0;
+        };
+
+        const tokenPrice = token.price || 0;
+        switch (pairSymbol) {
+          case 'BNB':
+            const bnbPrice = getBaseCurrencyPrice('BNB');
+            displayPrice = `${formatCurrency(tokenPrice / bnbPrice, 6)} BNB`;
+            break;
+          case 'ETH':
+            const ethPrice = getBaseCurrencyPrice('ETH');
+            displayPrice = `${formatCurrency(tokenPrice / ethPrice, 6)} ETH`;
+            break;
+          case 'USDC':
+            displayPrice = `${formatCurrency(tokenPrice)} USDC`;
+            break;
+          case 'XRP':
+            const xrpPrice = getBaseCurrencyPrice('XRP');
+            displayPrice = `${formatCurrency(tokenPrice / xrpPrice, 4)} XRP`;
+            break;
+          case 'DAI':
+            displayPrice = `${formatCurrency(tokenPrice)} DAI`;
+            break;
+          case 'TUSD':
+            displayPrice = `${formatCurrency(tokenPrice)} TUSD`;
+            break;
+          case 'TRX':
+            const trxPrice = getBaseCurrencyPrice('TRX');
+            displayPrice = `${formatCurrency(tokenPrice / trxPrice, 2)} TRX`;
+            break;
+        }
+      }
+
+      return renderTokenRow(token, displaySymbol, undefined, 'bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/30 text-purple-400', displayPrice);
+    });
+  };
+
+  const renderTokenRow = (token: Token, displaySymbol: string, changeColorClass?: string, buttonClass?: string, customPrice?: string) => {
+    const priceChangeClass = changeColorClass || (token.priceChange24h && token.priceChange24h > 0 ? 'text-green-500' : 'text-red-500');
+    const tradeButtonClass = buttonClass || 'bg-dex-primary/10 hover:bg-dex-primary/20 border-dex-primary/30 text-white';
+
+    return (
+      <div key={token.id} className="grid grid-cols-12 p-3 border-b border-gray-800 hover:bg-dex-dark/50 cursor-pointer transition-colors" onClick={() => onSelectToken(token)}>
+        <div className="col-span-4 flex items-center gap-3">
+          <TokenIcon token={token} size="sm" />
+          <div>
+            <div className="font-medium text-white">{displaySymbol}</div>
+            <div className="text-xs text-gray-400">{token.name}</div>
+          </div>
+        </div>
+        <div className="col-span-3 text-right text-white font-medium">
+          {customPrice || `$${formatCurrency(token.price || 0)}`}
+        </div>
+        <div className={`col-span-3 text-right flex items-center justify-end gap-1 font-medium ${priceChangeClass}`}>
+          {token.priceChange24h && token.priceChange24h > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+          {token.priceChange24h && token.priceChange24h > 0 ? '+' : ''}{(token.priceChange24h || 0).toFixed(2)}%
+        </div>
+        <div className="col-span-2 text-right">
+          <Button
+            size="sm"
+            variant="outline"
+            className={`text-xs ${tradeButtonClass}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectToken(token);
+            }}
+          >
+            Trade
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <Card className="bg-dex-dark/80 border-dex-primary/30">
+      <CardContent className="p-0">
+        <div className="grid grid-cols-12 text-xs text-gray-400 p-3 border-b border-gray-800">
+          <div className="col-span-4">Asset</div>
+          <div className="col-span-3 text-right">Price</div>
+          <div className="col-span-3 text-right">Change</div>
+          <div className="col-span-2 text-right">Trade</div>
+        </div>
+
+        {loading && tokens.length === 0 ? renderLoadingState() :
+         error && tokens.length === 0 ? renderErrorState() : (
+          <div className="transition-opacity duration-300">
+            {filter === 'all' && renderAllTokens()}
+            {filter === 'gainers' && renderGainers()}
+            {filter === 'losers' && renderLosers()}
+            {filter === 'inr' && renderINRPairs()}
+            {filter === 'usdt' && renderUSDTPairs()}
+            {filter === 'btc' && renderBTCPairs()}
+            {filter === 'alts' && renderAltcoins()}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+});
 
 // Main component
 const TradePage = () => {
@@ -271,7 +685,7 @@ const TradePage = () => {
       </div>
     );
   });
-  const [timeframe, setTimeframe] = useState<'24h' | '7d' | '30d'>('24h');
+  // const [timeframe, setTimeframe] = useState<'24h' | '7d' | '30d'>('24h'); // Removed - was only used in old orderbook section
   const [orderType, setOrderType] = useState<'market' | 'limit'>('market');
   const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
   const [amount, setAmount] = useState('');
@@ -295,7 +709,7 @@ const TradePage = () => {
   // Tab order for swipe navigation
   const tabOrder: MarketFilterType[] = ['all', 'gainers', 'losers', 'inr', 'usdt', 'btc', 'alts'];
 
-  // Handle swipe navigation
+  // Handle swipe navigation with smooth transitions
   const handleSwipe = useCallback((direction: 'left' | 'right') => {
     const currentIndex = tabOrder.indexOf(filter);
     let newIndex: number;
@@ -310,6 +724,40 @@ const TradePage = () => {
 
     setFilter(tabOrder[newIndex]);
   }, [filter, setFilter]);
+
+  // Unified swipe handler for both tab and content areas
+  const handleUnifiedSwipe = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+    const isTouch = 'touches' in e;
+    let startX: number, endX: number;
+
+    if (isTouch) {
+      const touchEvent = e as React.TouchEvent;
+      if (touchEvent.type === 'touchstart') {
+        startX = touchEvent.touches[0].clientX;
+        e.currentTarget.setAttribute('data-start-x', startX.toString());
+        return;
+      } else if (touchEvent.type === 'touchend') {
+        startX = parseFloat(e.currentTarget.getAttribute('data-start-x') || '0');
+        endX = touchEvent.changedTouches[0].clientX;
+      } else {
+        return;
+      }
+    } else {
+      // Mouse events handled by EnhancedTabsList
+      return;
+    }
+
+    const swipeDistance = startX - endX;
+    const swipeThreshold = 50;
+
+    if (Math.abs(swipeDistance) > swipeThreshold) {
+      if (swipeDistance > 0) {
+        handleSwipe('left'); // Swipe left = next tab
+      } else {
+        handleSwipe('right'); // Swipe right = previous tab
+      }
+    }
+  }, [handleSwipe]);
 
   // Set default selected token (first token when data is loaded)
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
@@ -764,9 +1212,9 @@ const TradePage = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Trading interface - Left column */}
-        <div className="lg:col-span-1">
+      <div className="mb-6">
+        {/* Trading interface - Now full width */}
+        <div className="max-w-md mx-auto lg:max-w-lg">
           <Card className="bg-dex-dark/80 border-dex-primary/30 h-full">
             <CardHeader className="pb-2">
               <div className="flex justify-between items-center">
@@ -943,772 +1391,44 @@ const TradePage = () => {
           </Card>
         </div>
 
-        {/* Order book or recent trades - Middle column */}
-        <div className="lg:col-span-2">
-          <Card className="bg-dex-dark/80 border-dex-primary/30 h-full">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between mb-3">
-                <CardTitle className="text-lg text-white">
-                  {showRecentTrades ? 'Recent Trades' : 'Order Book'}
-                </CardTitle>
-                <div className="flex items-center gap-2 text-xs text-dex-text-secondary">
-                  <Activity size={12} className="text-green-500" />
-                  <span>Live Data</span>
-                </div>
-              </div>
-
-              {/* Order Book Controls */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant={!showRecentTrades ? 'default' : 'outline'}
-                    className={!showRecentTrades ? 'bg-dex-primary text-white' : 'text-white border-dex-primary/30 bg-dex-dark'}
-                    onClick={() => setShowRecentTrades(false)}
-                  >
-                    Order Book
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={showRecentTrades ? 'default' : 'outline'}
-                    className={showRecentTrades ? 'bg-dex-primary text-white' : 'text-white border-dex-primary/30 bg-dex-dark'}
-                    onClick={() => setShowRecentTrades(true)}
-                  >
-                    Recent Trades
-                  </Button>
-                </div>
-
-                {/* Timeframe Controls */}
-                <div className="bg-dex-dark/50 rounded-lg p-1">
-                  <Button
-                    size="sm"
-                    variant={timeframe === '24h' ? 'default' : 'ghost'}
-                    className="text-xs"
-                    onClick={() => setTimeframe('24h')}
-                  >
-                    24H
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={timeframe === '7d' ? 'default' : 'ghost'}
-                    className="text-xs"
-                    onClick={() => setTimeframe('7d')}
-                  >
-                    7D
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={timeframe === '30d' ? 'default' : 'ghost'}
-                    className="text-xs"
-                    onClick={() => setTimeframe('30d')}
-                  >
-                    30D
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              {!showRecentTrades ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 h-[400px] overflow-hidden">
-                  {/* Asks (Sell orders) */}
-                  <div className="border-r border-dex-primary/20">
-                    <div className="grid grid-cols-3 text-xs text-gray-400 p-2 border-b border-gray-800">
-                      <div>Price (USD)</div>
-                      <div className="text-right">Amount</div>
-                      <div className="text-right">Total</div>
-                    </div>
-                    <div className="overflow-y-auto h-[360px]">
-                      {orderBook.asks.map((ask, index) => (
-                        <div key={`ask-${index}`} className="grid grid-cols-3 p-2 text-sm border-b border-gray-800 hover:bg-dex-dark/50">
-                          <div className="text-red-500">${formatCurrency(ask.price)}</div>
-                          <div className="text-right text-white">{ask.amount.toFixed(4)}</div>
-                          <div className="text-right text-gray-400">{ask.total.toFixed(4)}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Bids (Buy orders) */}
-                  <div>
-                    <div className="grid grid-cols-3 text-xs text-gray-400 p-2 border-b border-gray-800">
-                      <div>Price (USD)</div>
-                      <div className="text-right">Amount</div>
-                      <div className="text-right">Total</div>
-                    </div>
-                    <div className="overflow-y-auto h-[360px]">
-                      {orderBook.bids.map((bid, index) => (
-                        <div key={`bid-${index}`} className="grid grid-cols-3 p-2 text-sm border-b border-gray-800 hover:bg-dex-dark/50">
-                          <div className="text-green-500">${formatCurrency(bid.price)}</div>
-                          <div className="text-right text-white">{bid.amount.toFixed(4)}</div>
-                          <div className="text-right text-gray-400">{bid.total.toFixed(4)}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="h-[400px] overflow-y-auto">
-                  <div className="grid grid-cols-4 text-xs text-gray-400 p-2 border-b border-gray-800">
-                    <div>Price (USD)</div>
-                    <div className="text-right">Amount</div>
-                    <div className="text-right">Total</div>
-                    <div className="text-right">Time</div>
-                  </div>
-                  {recentTrades.map((trade) => (
-                    <div key={trade.id} className="grid grid-cols-4 p-2 text-sm border-b border-gray-800 hover:bg-dex-dark/50">
-                      <div className={trade.type === 'buy' ? 'text-green-500' : 'text-red-500'}>
-                        ${formatCurrency(trade.price)}
-                      </div>
-                      <div className="text-right text-white">{trade.amount.toFixed(4)}</div>
-                      <div className="text-right text-gray-400">${formatCurrency(trade.value)}</div>
-                      <div className="text-right text-gray-400">
-                        {trade.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+        {/* Old standalone orderbook section removed - now available in TradingTabsContainer */}
       </div>
 
-      {/* Unified Tab-Content Sliding System */}
-      <div
-        className="w-full"
-        onTouchStart={(e) => {
-          const touch = e.touches[0];
-          e.currentTarget.setAttribute('data-start-x', touch.clientX.toString());
+      {/* Unified Trading Tabs Container - Positioned after orderbook section */}
+      <TradingTabsContainer
+        // Orderbook props
+        selectedToken={selectedToken}
+        orderBook={orderBook}
+        recentTrades={recentTrades}
+        showRecentTrades={showRecentTrades}
+        onToggleView={() => setShowRecentTrades(!showRecentTrades)}
+
+        // Trading props
+        tokens={tokens}
+        selectedFromToken={selectedToken}
+        selectedToToken={null}
+        onTokenSelect={(fromToken, toToken) => {
+          setSelectedToken(fromToken);
+          console.log('Token selection:', fromToken.symbol, '→', toToken.symbol);
         }}
-        onTouchEnd={(e) => {
-          const startX = parseFloat(e.currentTarget.getAttribute('data-start-x') || '0');
-          const endX = e.changedTouches[0].clientX;
-          const diff = startX - endX;
+      />
 
-          // Minimum swipe distance
-          if (Math.abs(diff) > 50) {
-            if (diff > 0) {
-              // Swipe left = next tab
-              handleSwipe('left');
-            } else {
-              // Swipe right = previous tab
-              handleSwipe('right');
-            }
-          }
-        }}
-      >
-        <EnhancedTabsList
-          className="w-full mb-6 px-2 py-2 bg-dex-dark/20 rounded-lg border border-dex-secondary/20"
-          onSwipe={handleSwipe}
-        >
-          <EnhancedTabTrigger
-            value="all"
-            isActive={filter === 'all'}
-            onClick={() => setFilter('all')}
-            className="min-h-[44px]"
-          >
-            All Assets
-          </EnhancedTabTrigger>
-          <EnhancedTabTrigger
-            value="gainers"
-            isActive={filter === 'gainers'}
-            onClick={() => setFilter('gainers')}
-            className="min-h-[44px]"
-          >
-            Top Gainers
-          </EnhancedTabTrigger>
-          <EnhancedTabTrigger
-            value="losers"
-            isActive={filter === 'losers'}
-            onClick={() => setFilter('losers')}
-            className="min-h-[44px]"
-          >
-            Top Losers
-          </EnhancedTabTrigger>
-          <EnhancedTabTrigger
-            value="inr"
-            isActive={filter === 'inr'}
-            onClick={() => setFilter('inr')}
-            className="min-h-[44px]"
-          >
-            INR
-          </EnhancedTabTrigger>
-          <EnhancedTabTrigger
-            value="usdt"
-            isActive={filter === 'usdt'}
-            onClick={() => setFilter('usdt')}
-            className="min-h-[44px]"
-          >
-            USDT
-          </EnhancedTabTrigger>
-          <EnhancedTabTrigger
-            value="btc"
-            isActive={filter === 'btc'}
-            onClick={() => setFilter('btc')}
-            className="min-h-[44px]"
-          >
-            BTC
-          </EnhancedTabTrigger>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <EnhancedTabTrigger
-                value="alts"
-                isActive={filter === 'alts'}
-                onClick={() => setFilter('alts')}
-                className="min-h-[44px] flex items-center gap-1"
-              >
-                ALTs <ChevronDown className="h-3 w-3 ml-0.5" />
-              </EnhancedTabTrigger>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              className="bg-dex-dark border-dex-secondary/30 text-white rounded-lg shadow-lg min-w-[180px]"
-              align="center"
-              sideOffset={4}
-            >
-              <DropdownMenuLabel className="text-white font-semibold px-4 py-3 sticky top-0 bg-dex-dark z-10">
-                Filter ALTs
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-dex-secondary/20" />
-              <DropdownMenuRadioGroup value={altFilter} onValueChange={(value) => {
-                setAltFilter(value as AltFilterType);
-                // Ensure we're on the ALTs tab when changing filter
-                if (filter !== 'alts') {
-                  setFilter('alts');
-                }
-              }}>
-                <DropdownMenuRadioItem
-                  value="all"
-                  className="text-white h-11 min-h-[44px] py-2 px-4 hover:bg-dex-primary/10 focus:bg-dex-primary/10 cursor-pointer"
-                >
-                  All ALTs
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem
-                  value="usdc"
-                  className="text-white h-11 min-h-[44px] py-2 px-4 hover:bg-dex-primary/10 focus:bg-dex-primary/10 cursor-pointer"
-                >
-                  USDC
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem
-                  value="bnb"
-                  className="text-white h-11 min-h-[44px] py-2 px-4 hover:bg-dex-primary/10 focus:bg-dex-primary/10 cursor-pointer"
-                >
-                  BNB
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem
-                  value="eth"
-                  className="text-white h-11 min-h-[44px] py-2 px-4 hover:bg-dex-primary/10 focus:bg-dex-primary/10 cursor-pointer"
-                >
-                  ETH
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem
-                  value="xrp"
-                  className="text-white h-11 min-h-[44px] py-2 px-4 hover:bg-dex-primary/10 focus:bg-dex-primary/10 cursor-pointer"
-                >
-                  XRP
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem
-                  value="dai"
-                  className="text-white h-11 min-h-[44px] py-2 px-4 hover:bg-dex-primary/10 focus:bg-dex-primary/10 cursor-pointer"
-                >
-                  DAI
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem
-                  value="tusd"
-                  className="text-white h-11 min-h-[44px] py-2 px-4 hover:bg-dex-primary/10 focus:bg-dex-primary/10 cursor-pointer"
-                >
-                  TUSD
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem
-                  value="trx"
-                  className="text-white h-11 min-h-[44px] py-2 px-4 hover:bg-dex-primary/10 focus:bg-dex-primary/10 cursor-pointer"
-                >
-                  TRX
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </EnhancedTabsList>
-
-        <Tabs value={filter} onValueChange={(value) => setFilter(value as MarketFilterType)} className="w-full">
-        <TabsContent value="all" className="space-y-4">
-          <Card className="bg-dex-dark/80 border-dex-primary/30">
-            <CardContent className="p-0">
-              <div className="grid grid-cols-12 text-xs text-gray-400 p-3 border-b border-gray-800">
-                <div className="col-span-4">Asset</div>
-                <div className="col-span-3 text-right">Price</div>
-                <div className="col-span-3 text-right">Change</div>
-                <div className="col-span-2 text-right">Trade</div>
-              </div>
-
-              {loading && tokens.length === 0 ? (
-                <div className="p-6 text-center text-dex-text-secondary">
-                  <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />
-                  Loading market data...
-                </div>
-              ) : error && tokens.length === 0 ? (
-                <div className="p-6 text-center text-dex-negative">
-                  <div className="mb-2">Failed to load market data</div>
-                  <Button
-                    size="sm"
-                    onClick={handleRefresh}
-                    className="bg-dex-primary text-white"
-                  >
-                    Retry
-                  </Button>
-                </div>
-              ) : (
-                sortedByMarketCap.map(token => (
-                  <div key={token.id} className="grid grid-cols-12 p-3 border-b border-gray-800 hover:bg-dex-dark/50 cursor-pointer transition-colors" onClick={() => handleSelectToken(token)}>
-                    <div className="col-span-4 flex items-center gap-3">
-                      <TokenIcon token={token} size="sm" />
-                      <div>
-                        <div className="font-medium text-white">{token.symbol}</div>
-                        <div className="text-xs text-gray-400">{token.name}</div>
-                      </div>
-                    </div>
-                    <div className="col-span-3 text-right text-white font-medium">
-                      ${formatCurrency(token.price || 0)}
-                    </div>
-                    <div className={`col-span-3 text-right flex items-center justify-end gap-1 font-medium ${token.priceChange24h && token.priceChange24h > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {token.priceChange24h && token.priceChange24h > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                      {token.priceChange24h && token.priceChange24h > 0 ? '+' : ''}{(token.priceChange24h || 0).toFixed(2)}%
-                    </div>
-                    <div className="col-span-2 text-right">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-xs bg-dex-primary/10 hover:bg-dex-primary/20 border-dex-primary/30 text-white"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSelectToken(token);
-                        }}
-                      >
-                        Trade
-                      </Button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="gainers" className="space-y-4">
-          <Card className="bg-dex-dark/80 border-dex-primary/30">
-            <CardContent className="p-0">
-              <div className="grid grid-cols-12 text-xs text-gray-400 p-3 border-b border-gray-800">
-                <div className="col-span-4">Asset</div>
-                <div className="col-span-3 text-right">Price</div>
-                <div className="col-span-3 text-right">Change</div>
-                <div className="col-span-2 text-right">Trade</div>
-              </div>
-
-              {loading && tokens.length === 0 ? (
-                <div className="p-6 text-center text-dex-text-secondary">
-                  <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />
-                  Loading market data...
-                </div>
-              ) : error && tokens.length === 0 ? (
-                <div className="p-6 text-center text-dex-negative">
-                  <div className="mb-2">Failed to load market data</div>
-                  <Button
-                    size="sm"
-                    onClick={handleRefresh}
-                    className="bg-dex-primary text-white"
-                  >
-                    Retry
-                  </Button>
-                </div>
-              ) : (
-                sortedByPriceChange
-                  .filter(token => (token.priceChange24h || 0) > 0)
-                  .slice(0, 20) // Show top 20 gainers
-                  .map(token => (
-                  <div key={token.id} className="grid grid-cols-12 p-3 border-b border-gray-800 hover:bg-dex-dark/50 cursor-pointer transition-colors" onClick={() => handleSelectToken(token)}>
-                    <div className="col-span-4 flex items-center gap-3">
-                      <TokenIcon token={token} size="sm" />
-                      <div>
-                        <div className="font-medium text-white">{token.symbol}</div>
-                        <div className="text-xs text-gray-400">{token.name}</div>
-                      </div>
-                    </div>
-                    <div className="col-span-3 text-right text-white font-medium">
-                      ${formatCurrency(token.price || 0)}
-                    </div>
-                    <div className="col-span-3 text-right flex items-center justify-end gap-1 text-green-500 font-medium">
-                      <TrendingUp size={14} />
-                      +{(token.priceChange24h || 0).toFixed(2)}%
-                    </div>
-                    <div className="col-span-2 text-right">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-xs bg-green-500/10 hover:bg-green-500/20 border-green-500/30 text-green-400"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSelectToken(token);
-                        }}
-                      >
-                        Trade
-                      </Button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="losers" className="space-y-4">
-          <Card className="bg-dex-dark/80 border-dex-primary/30">
-            <CardContent className="p-0">
-              <div className="grid grid-cols-12 text-xs text-gray-400 p-3 border-b border-gray-800">
-                <div className="col-span-4">Asset</div>
-                <div className="col-span-3 text-right">Price</div>
-                <div className="col-span-3 text-right">Change</div>
-                <div className="col-span-2 text-right">Trade</div>
-              </div>
-
-              {loading && tokens.length === 0 ? (
-                <div className="p-6 text-center text-dex-text-secondary">
-                  <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />
-                  Loading market data...
-                </div>
-              ) : error && tokens.length === 0 ? (
-                <div className="p-6 text-center text-dex-negative">
-                  <div className="mb-2">Failed to load market data</div>
-                  <Button
-                    size="sm"
-                    onClick={handleRefresh}
-                    className="bg-dex-primary text-white"
-                  >
-                    Retry
-                  </Button>
-                </div>
-              ) : (
-                sortedByPriceChange
-                  .filter(token => (token.priceChange24h || 0) < 0)
-                  .slice(0, 20) // Show top 20 losers
-                  .map(token => (
-                  <div key={token.id} className="grid grid-cols-12 p-3 border-b border-gray-800 hover:bg-dex-dark/50 cursor-pointer transition-colors" onClick={() => handleSelectToken(token)}>
-                    <div className="col-span-4 flex items-center gap-3">
-                      <TokenIcon token={token} size="sm" />
-                      <div>
-                        <div className="font-medium text-white">{token.symbol}</div>
-                        <div className="text-xs text-gray-400">{token.name}</div>
-                      </div>
-                    </div>
-                    <div className="col-span-3 text-right text-white font-medium">
-                      ${formatCurrency(token.price || 0)}
-                    </div>
-                    <div className="col-span-3 text-right flex items-center justify-end gap-1 text-red-500 font-medium">
-                      <TrendingDown size={14} />
-                      {(token.priceChange24h || 0).toFixed(2)}%
-                    </div>
-                    <div className="col-span-2 text-right">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-xs bg-red-500/10 hover:bg-red-500/20 border-red-500/30 text-red-400"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSelectToken(token);
-                        }}
-                      >
-                        Trade
-                      </Button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="inr" className="space-y-4">
-          <Card className="bg-dex-dark/80 border-dex-primary/30">
-            <CardContent className="p-0">
-              <div className="grid grid-cols-12 text-xs text-gray-400 p-3 border-b border-gray-800">
-                <div className="col-span-4">Asset</div>
-                <div className="col-span-3 text-right">Price</div>
-                <div className="col-span-3 text-right">Change</div>
-                <div className="col-span-2 text-right">Trade</div>
-              </div>
-
-              {/* Filter tokens that can be traded with INR (show top 10 by market cap) */}
-              {sortedByMarketCap.slice(0, 10).map(token => (
-                <div key={token.id} className="grid grid-cols-12 p-3 border-b border-gray-800 hover:bg-dex-dark/50 cursor-pointer transition-colors" onClick={() => handleSelectToken(token)}>
-                  <div className="col-span-4 flex items-center gap-3">
-                    <TokenIcon token={token} size="sm" />
-                    <div>
-                      <div className="font-medium text-white">{token.symbol}/INR</div>
-                      <div className="text-xs text-gray-400">{token.name}</div>
-                    </div>
-                  </div>
-                  <div className="col-span-3 text-right text-white font-medium">
-                    ₹{formatCurrency(token.price ? token.price * 83.5 : 0)} {/* Approximate INR conversion */}
-                  </div>
-                  <div className={`col-span-3 text-right flex items-center justify-end gap-1 font-medium ${token.priceChange24h && token.priceChange24h > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    {token.priceChange24h && token.priceChange24h > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                    {token.priceChange24h && token.priceChange24h > 0 ? '+' : ''}{(token.priceChange24h || 0).toFixed(2)}%
-                  </div>
-                  <div className="col-span-2 text-right">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-xs bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/30 text-orange-400"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSelectToken(token);
-                      }}
-                    >
-                      Trade
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="usdt" className="space-y-4">
-          <Card className="bg-dex-dark/80 border-dex-primary/30">
-            <CardContent className="p-0">
-              <div className="grid grid-cols-12 text-xs text-gray-400 p-3 border-b border-gray-800">
-                <div className="col-span-4">Asset</div>
-                <div className="col-span-3 text-right">Price</div>
-                <div className="col-span-3 text-right">Change</div>
-                <div className="col-span-2 text-right">Trade</div>
-              </div>
-
-              {/* Filter tokens that can be paired with USDT (excluding USDT itself) */}
-              {sortedByMarketCap
-                .filter(token => token.symbol !== 'USDT')
-                .slice(0, 50) // Show top 50 USDT pairs
-                .map(token => (
-                <div key={token.id} className="grid grid-cols-12 p-3 border-b border-gray-800 hover:bg-dex-dark/50 cursor-pointer transition-colors" onClick={() => handleSelectToken(token)}>
-                  <div className="col-span-4 flex items-center gap-3">
-                    <TokenIcon token={token} size="sm" />
-                    <div>
-                      <div className="font-medium text-white">{token.symbol}/USDT</div>
-                      <div className="text-xs text-gray-400">{token.name}</div>
-                    </div>
-                  </div>
-                  <div className="col-span-3 text-right text-white font-medium">
-                    ${formatCurrency(token.price || 0)}
-                  </div>
-                  <div className={`col-span-3 text-right flex items-center justify-end gap-1 font-medium ${token.priceChange24h && token.priceChange24h > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    {token.priceChange24h && token.priceChange24h > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                    {token.priceChange24h && token.priceChange24h > 0 ? '+' : ''}{(token.priceChange24h || 0).toFixed(2)}%
-                  </div>
-                  <div className="col-span-2 text-right">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-xs bg-green-500/10 hover:bg-green-500/20 border-green-500/30 text-green-400"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSelectToken(token);
-                      }}
-                    >
-                      Trade
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="btc" className="space-y-4">
-          <Card className="bg-dex-dark/80 border-dex-primary/30">
-            <CardContent className="p-0">
-              <div className="grid grid-cols-12 text-xs text-gray-400 p-3 border-b border-gray-800">
-                <div className="col-span-4">Asset</div>
-                <div className="col-span-3 text-right">Price</div>
-                <div className="col-span-3 text-right">Change</div>
-                <div className="col-span-2 text-right">Trade</div>
-              </div>
-
-              {/* Filter tokens that can be paired with BTC (excluding BTC itself) */}
-              {sortedByMarketCap
-                .filter(token => token.symbol !== 'BTC')
-                .slice(0, 30) // Show top 30 BTC pairs
-                .map(token => {
-                  // Get BTC price from the tokens list for accurate conversion
-                  const btcToken = sortedByMarketCap.find(t => t.symbol === 'BTC');
-                  const btcPrice = btcToken?.price || 0; // Use real-time price only
-
-                  return (
-                    <div key={token.id} className="grid grid-cols-12 p-3 border-b border-gray-800 hover:bg-dex-dark/50 cursor-pointer transition-colors" onClick={() => handleSelectToken(token)}>
-                      <div className="col-span-4 flex items-center gap-3">
-                        <TokenIcon token={token} size="sm" />
-                        <div>
-                          <div className="font-medium text-white">{token.symbol}/BTC</div>
-                          <div className="text-xs text-gray-400">{token.name}</div>
-                        </div>
-                      </div>
-                      <div className="col-span-3 text-right text-white font-medium">
-                        {formatCurrency((token.price || 0) / btcPrice, 8)} BTC
-                      </div>
-                      <div className={`col-span-3 text-right flex items-center justify-end gap-1 font-medium ${token.priceChange24h && token.priceChange24h > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                        {token.priceChange24h && token.priceChange24h > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                        {token.priceChange24h && token.priceChange24h > 0 ? '+' : ''}{(token.priceChange24h || 0).toFixed(2)}%
-                      </div>
-                      <div className="col-span-2 text-right">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-xs bg-yellow-500/10 hover:bg-yellow-500/20 border-yellow-500/30 text-yellow-400"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelectToken(token);
-                          }}
-                        >
-                          Trade
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="alts" className="space-y-4">
-          <Card className="bg-dex-dark/80 border-dex-primary/30">
-            <CardContent className="p-0">
-              <div className="grid grid-cols-12 text-xs text-gray-400 p-3 border-b border-gray-800">
-                <div className="col-span-4">Asset</div>
-                <div className="col-span-3 text-right">Price</div>
-                <div className="col-span-3 text-right">Change</div>
-                <div className="col-span-2 text-right">Trade</div>
-              </div>
-
-              {/* Fixed altcoin filtering with proper trading pair logic */}
-              {sortedByMarketCap
-                .filter(token => {
-                  // Enhanced altcoin filter: exclude major coins and stablecoins for 'all' filter
-                  const majorCoins = ['BTC', 'ETH', 'BNB', 'ADA', 'SOL', 'XRP', 'DOT', 'AVAX', 'MATIC', 'LINK'];
-                  const stablecoins = ['USDT', 'USDC', 'BUSD', 'DAI', 'TUSD', 'USDD', 'FRAX', 'LUSD'];
-                  const wrappedTokens = ['WBTC', 'WETH', 'WBNB'];
-                  const excludedTokens = [...majorCoins, ...stablecoins, ...wrappedTokens];
-
-                  // For 'all' filter, show only altcoins (exclude major coins, stablecoins, wrapped tokens)
-                  if (altFilter === 'all') {
-                    return !excludedTokens.includes(token.symbol) &&
-                           !token.symbol.includes('USD') && // Exclude other USD-pegged tokens
-                           !token.symbol.startsWith('W'); // Exclude other wrapped tokens
-                  }
-
-                  // For specific filters, show tokens that can be paired with the selected base currency
-                  // Exclude the base currency itself and apply reasonable pairing logic
-                  if (altFilter === 'usdc') {
-                    // Show all tokens except USDC itself (including major coins for USDC pairs)
-                    return token.symbol !== 'USDC';
-                  } else if (altFilter === 'bnb') {
-                    // Show all tokens except BNB itself
-                    return token.symbol !== 'BNB';
-                  } else if (altFilter === 'eth') {
-                    // Show all tokens except ETH itself
-                    return token.symbol !== 'ETH';
-                  } else if (altFilter === 'xrp') {
-                    // Show all tokens except XRP itself
-                    return token.symbol !== 'XRP';
-                  } else if (altFilter === 'dai') {
-                    // Show all tokens except DAI itself
-                    return token.symbol !== 'DAI';
-                  } else if (altFilter === 'tusd') {
-                    // Show all tokens except TUSD itself
-                    return token.symbol !== 'TUSD';
-                  } else if (altFilter === 'trx') {
-                    // Show all tokens except TRX itself
-                    return token.symbol !== 'TRX';
-                  }
-
-                  // Default fallback to altcoin filter
-                  return !excludedTokens.includes(token.symbol) &&
-                         !token.symbol.includes('USD') &&
-                         !token.symbol.startsWith('W');
-                })
-                .slice(0, 50) // Show top 50 tokens
-                .map(token => {
-                  // Determine if we need to show trading pair format
-                  const showAsPair = altFilter !== 'all';
-                  const pairSymbol = showAsPair ? altFilter.toUpperCase() : '';
-
-                  return (
-                    <div key={token.id} className="grid grid-cols-12 p-3 border-b border-gray-800 hover:bg-dex-dark/50 cursor-pointer transition-colors" onClick={() => handleSelectToken(token)}>
-                      <div className="col-span-4 flex items-center gap-3">
-                        <TokenIcon token={token} size="sm" />
-                        <div>
-                          <div className="font-medium text-white">
-                            {showAsPair ? `${token.symbol}/${pairSymbol}` : token.symbol}
-                          </div>
-                          <div className="text-xs text-gray-400">{token.name}</div>
-                        </div>
-                      </div>
-                      <div className="col-span-3 text-right text-white font-medium">
-                        {showAsPair ? (() => {
-                          // Get the base currency price for accurate conversion
-                          const getBaseCurrencyPrice = (symbol: string): number => {
-                            const baseCurrency = sortedByMarketCap.find(t => t.symbol === symbol);
-                            return baseCurrency?.price || 0;
-                          };
-
-                          const tokenPrice = token.price || 0;
-
-                          switch (pairSymbol) {
-                            case 'BNB':
-                              const bnbPrice = getBaseCurrencyPrice('BNB') || 304.12;
-                              return `${formatCurrency(tokenPrice / bnbPrice, 6)} BNB`;
-                            case 'ETH':
-                              const ethPrice = getBaseCurrencyPrice('ETH') || 2845.23;
-                              return `${formatCurrency(tokenPrice / ethPrice, 6)} ETH`;
-                            case 'USDC':
-                              return `${formatCurrency(tokenPrice)} USDC`;
-                            case 'XRP':
-                              const xrpPrice = getBaseCurrencyPrice('XRP') || 0.5;
-                              return `${formatCurrency(tokenPrice / xrpPrice, 4)} XRP`;
-                            case 'DAI':
-                              return `${formatCurrency(tokenPrice)} DAI`;
-                            case 'TUSD':
-                              return `${formatCurrency(tokenPrice)} TUSD`;
-                            case 'TRX':
-                              const trxPrice = getBaseCurrencyPrice('TRX') || 0.1;
-                              return `${formatCurrency(tokenPrice / trxPrice, 2)} TRX`;
-                            default:
-                              return `$${formatCurrency(tokenPrice)}`;
-                          }
-                        })() : (
-                          `$${formatCurrency(token.price || 0)}`
-                        )}
-                      </div>
-                      <div className={`col-span-3 text-right flex items-center justify-end gap-1 font-medium ${token.priceChange24h && token.priceChange24h > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                        {token.priceChange24h && token.priceChange24h > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                        {token.priceChange24h && token.priceChange24h > 0 ? '+' : ''}{(token.priceChange24h || 0).toFixed(2)}%
-                      </div>
-                      <div className="col-span-2 text-right">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-xs bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/30 text-purple-400"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelectToken(token);
-                          }}
-                        >
-                          Trade
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-      </div>
+      {/* Unified Swipeable Tab-Content Component */}
+      <UnifiedTabContent
+        filter={filter}
+        altFilter={altFilter}
+        setFilter={setFilter}
+        setAltFilter={setAltFilter}
+        onSwipe={handleSwipe}
+        onUnifiedSwipe={handleUnifiedSwipe}
+        tokens={tokens}
+        sortedByMarketCap={sortedByMarketCap}
+        sortedByPriceChange={sortedByPriceChange}
+        loading={loading}
+        error={error}
+        onSelectToken={handleSelectToken}
+        onRefresh={handleRefresh}
+      />
     </div>
   );
 };

@@ -31,9 +31,40 @@
   </head>
 
   <body>
-    <div id="root"></div>
-    <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
+    <div id="root">
+      <!-- Loading fallback -->
+      <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #000; color: #fff; font-family: Arial, sans-serif;">
+        <div style="text-align: center;">
+          <div style="color: #FF3B30; font-size: 24px; margin-bottom: 10px;">🚀</div>
+          <div>Loading V-DEX Mobile...</div>
+          <div style="font-size: 12px; margin-top: 10px; opacity: 0.7;" id="loading-info"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Debug info in loading screen
+      document.getElementById('loading-info').textContent =
+        'Host: ' + window.location.host + ' | ' + new Date().toLocaleTimeString();
+
+      // Log loading progress
+      console.log('📄 HTML loaded');
+      console.log('🌐 Current URL:', window.location.href);
+    </script>
+
+    <!-- Load main app first, external scripts after -->
     <script type="module" src="/src/main.tsx"></script>
+    <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
+    <script>
+      // Load external script with error handling
+      const script = document.createElement('script');
+      script.src = 'https://cdn.gpteng.co/gptengineer.js';
+      script.type = 'module';
+      script.async = true;
+      script.onerror = function() {
+        console.warn('External script failed to load, continuing without it');
+      };
+      document.head.appendChild(script);
+    </script>
   </body>
 </html>

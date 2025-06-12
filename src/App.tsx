@@ -86,18 +86,21 @@ const App = () => {
   };
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <AdminProvider>
-          <KYCProvider>
-            <MarketDataProvider>
-              <TestnetProvider>
-                <ChatProvider>
-                  <LanguageProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ErrorBoundary>
+          <AuthProvider>
+            <ErrorBoundary>
+              <AdminProvider>
+                <KYCProvider>
+                  <MarketDataProvider>
+                    <TestnetProvider>
+                      <ChatProvider>
+                        <LanguageProvider>
+                          <TooltipProvider>
+                            <Toaster />
+                            <Sonner />
+                            <BrowserRouter>
                 <div className="min-h-screen dark bg-gradient-to-br from-dex-dark via-dex-primary/10 to-dex-secondary/10">
                 <Routes>
                 <Route path="/auth" element={<AuthPage />} />
@@ -666,16 +669,19 @@ const App = () => {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
-              </BrowserRouter>
-            </TooltipProvider>
-                </LanguageProvider>
-              </ChatProvider>
-          </TestnetProvider>
-        </MarketDataProvider>
-      </KYCProvider>
-      </AdminProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+                            </BrowserRouter>
+                          </TooltipProvider>
+                        </LanguageProvider>
+                      </ChatProvider>
+                    </TestnetProvider>
+                  </MarketDataProvider>
+                </KYCProvider>
+              </AdminProvider>
+            </ErrorBoundary>
+          </AuthProvider>
+        </ErrorBoundary>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

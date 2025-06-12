@@ -29,17 +29,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        setLoading(false); // Ensure loading stops on auth state change
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    // Check for existing session with timeout
+    const sessionTimeout = setTimeout(() => {
+      console.warn('⚠️ Auth session check timed out, proceeding without authentication');
       setLoading(false);
-    });
+    }, 10000); // 10 second timeout
 
-    return () => subscription.unsubscribe();
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        clearTimeout(sessionTimeout);
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      })
+      .catch((error) => {
+        clearTimeout(sessionTimeout);
+        console.error('❌ Auth session check failed:', error);
+        setLoading(false); // Still stop loading even on error
+      });
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(sessionTimeout);
+    };
   }, []);
 
   const signUp = async (email: string, password: string, metadata: { full_name: string; phone: string }) => {
@@ -93,8 +109,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw new Error('Email already in use');
       }
 
-      // Safe email redirect URL
-      const emailRedirectTo = window.location.origin ? `${window.location.origin}/auth` : '/auth';
+      // Safe email redirect URL - handle tunnel URLs
+      const currentOrigin = window.location.origin;
+      const emailRedirectTo = currentOrigin ? `${currentOrigin}/auth` : '/auth';
 
       // Signup with Supabase
       const { data, error } = await supabase.auth.signUp({

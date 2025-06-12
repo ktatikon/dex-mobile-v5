@@ -8,10 +8,29 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+// Detect tunnel environment
+const isTunnel = typeof window !== 'undefined' && (
+  window.location.host.includes('.devtunnels.ms') ||
+  window.location.host.includes('.github.dev') ||
+  window.location.host.includes('.gitpod.io')
+);
+
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
+    persistSession: !isTunnel, // Disable session persistence in tunnels
+    detectSessionInUrl: false, // Disable for tunnel compatibility
+    flowType: 'pkce',
+    storageKey: isTunnel ? 'sb-tunnel-auth' : 'sb-auth-token'
+  },
+  global: {
+    headers: {
+      'Access-Control-Allow-Origin': '*'
+    }
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: isTunnel ? 5 : 10 // Reduce realtime events in tunnels
+    }
   }
 });

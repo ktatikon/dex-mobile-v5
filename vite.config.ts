@@ -4,10 +4,26 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ mode }) => {
+  // Detect if running in tunnel environment
+  const isTunnel = process.env.CODESPACES || process.env.GITPOD_WORKSPACE_URL;
+
+  return {
+  base: '/',
   server: {
-    host: "::",
+    host: "0.0.0.0",
     port: 8080,
+    strictPort: true,
+    cors: true,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+    hmr: {
+      port: 8080,
+      host: 'localhost'
+    },
   },
   plugins: [
     react(),
@@ -39,4 +55,5 @@ export default defineConfig(({ mode }) => ({
     'process.env.NODE_ENV': JSON.stringify(mode),
     global: 'globalThis',
   }
-}));
+  };
+});

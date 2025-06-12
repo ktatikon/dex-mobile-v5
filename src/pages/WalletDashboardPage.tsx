@@ -78,8 +78,8 @@ import {
   Users
 } from 'lucide-react';
 
-// Phase 4 Advanced Trading Components
-import AdvancedTradingPanel from '@/components/phase4/AdvancedTradingPanel';
+// Phase 4 Advanced Trading Components - Moved to TradePage
+// import AdvancedTradingPanel from '@/components/phase4/AdvancedTradingPanel';
 import DeFiIntegrationPanel from '@/components/phase4/DeFiIntegrationPanel';
 // Phase 4.3 Cross-Chain Components
 import CrossChainBridgePanel from '@/components/phase4/CrossChainBridgePanel';
@@ -1251,16 +1251,10 @@ const WalletDashboardPage: React.FC = () => {
 
       {/* Tabs for different views */}
       <Tabs defaultValue="wallets" className="w-full">
-        <TabsList className={`grid w-full ${socialTradingEnabled ? 'grid-cols-8' : aiAnalyticsEnabled ? 'grid-cols-7' : crossChainEnabled ? 'grid-cols-6' : phase4Enabled ? 'grid-cols-5' : 'grid-cols-4'} mb-6 bg-dex-dark/50 p-1.5 rounded-lg border border-dex-secondary/20`}>
+        <TabsList className={`grid w-full ${socialTradingEnabled ? 'grid-cols-7' : aiAnalyticsEnabled ? 'grid-cols-6' : crossChainEnabled ? 'grid-cols-5' : 'grid-cols-4'} mb-6 bg-dex-dark/50 p-1.5 rounded-lg border border-dex-secondary/20`}>
           <TabsTrigger value="wallets" className="text-white data-[state=active]:bg-dex-primary">
             Wallets
           </TabsTrigger>
-          {phase4Enabled && (
-            <TabsTrigger value="trading" className="text-white data-[state=active]:bg-dex-primary">
-              <Target size={16} className="mr-1" />
-              Trading
-            </TabsTrigger>
-          )}
           <TabsTrigger value="defi" className="text-white data-[state=active]:bg-dex-primary">
             DeFi
           </TabsTrigger>
@@ -1694,20 +1688,8 @@ const WalletDashboardPage: React.FC = () => {
           </div>
         </TabsContent>
 
-        {/* Phase 4 Advanced Trading Tab */}
-        {phase4Enabled && (
-          <TabsContent value="trading">
-            <div className="space-y-6">
-              {/* Phase 4 Advanced Trading Panel */}
-              <AdvancedTradingPanel
-                tokens={availableTokens}
-                onTokenSelect={(fromToken, toToken) => {
-                  console.log('Token selection:', fromToken.symbol, '→', toToken.symbol);
-                }}
-              />
-            </div>
-          </TabsContent>
-        )}
+        {/* Phase 4 Advanced Trading Tab - Moved to TradePage */}
+        {/* Trading functionality now available on /trade page */}
 
         <TabsContent value="defi">
           <div className="space-y-6">
