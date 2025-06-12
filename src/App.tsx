@@ -56,6 +56,13 @@ import AdminHeader from "./components/AdminHeader";
 import { AdminProvider } from "./contexts/AdminContext";
 import { useState } from "react";
 
+// New sliding navigation panel page imports
+import DeFiPageWithErrorBoundary from "./components/wrappers/DeFiPageWithErrorBoundary";
+import MultiNetworkPortfolioPageWithErrorBoundary from "./components/wrappers/MultiNetworkPortfolioPageWithErrorBoundary";
+import AIAnalyticsPageWithErrorBoundary from "./components/wrappers/AIAnalyticsPageWithErrorBoundary";
+import SocialPageWithErrorBoundary from "./components/wrappers/SocialPageWithErrorBoundary";
+import KYCAMLPageWithErrorBoundary from "./components/wrappers/KYCAMLPageWithErrorBoundary";
+
 const queryClient = new QueryClient();
 
 const App = () => {
@@ -621,6 +628,88 @@ const App = () => {
                         <LiveChatPage />
                       </div>
                       <DexNavigation />
+                    </div>
+                  </PrivateRoute>
+                }
+              />
+
+              {/* New Sliding Navigation Panel Routes */}
+              <Route
+                path="/defi"
+                element={
+                  <PrivateRoute>
+                    <DexHeader
+                      wallet={wallet}
+                      onConnectWallet={handleConnectWallet}
+                      onDisconnectWallet={handleDisconnectWallet}
+                    />
+                    <div className="pt-16 pb-20">
+                      <DexNavigation />
+                      <DeFiPageWithErrorBoundary />
+                    </div>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/multi-network-portfolio"
+                element={
+                  <PrivateRoute>
+                    <DexHeader
+                      wallet={wallet}
+                      onConnectWallet={handleConnectWallet}
+                      onDisconnectWallet={handleDisconnectWallet}
+                    />
+                    <div className="pt-16 pb-20">
+                      <DexNavigation />
+                      <MultiNetworkPortfolioPageWithErrorBoundary />
+                    </div>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/ai-analytics"
+                element={
+                  <PrivateRoute>
+                    <DexHeader
+                      wallet={wallet}
+                      onConnectWallet={handleConnectWallet}
+                      onDisconnectWallet={handleDisconnectWallet}
+                    />
+                    <div className="pt-16 pb-20">
+                      <DexNavigation />
+                      <AIAnalyticsPageWithErrorBoundary />
+                    </div>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/social"
+                element={
+                  <PrivateRoute>
+                    <DexHeader
+                      wallet={wallet}
+                      onConnectWallet={handleConnectWallet}
+                      onDisconnectWallet={handleDisconnectWallet}
+                    />
+                    <div className="pt-16 pb-20">
+                      <DexNavigation />
+                      <SocialPageWithErrorBoundary />
+                    </div>
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/kyc-aml"
+                element={
+                  <PrivateRoute>
+                    <DexHeader
+                      wallet={wallet}
+                      onConnectWallet={handleConnectWallet}
+                      onDisconnectWallet={handleDisconnectWallet}
+                    />
+                    <div className="pt-16 pb-20">
+                      <DexNavigation />
+                      <KYCAMLPageWithErrorBoundary />
                     </div>
                   </PrivateRoute>
                 }

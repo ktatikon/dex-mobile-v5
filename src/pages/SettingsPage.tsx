@@ -113,41 +113,7 @@ const SettingsPage = () => {
             <ChevronRight className="text-dex-secondary" size={18} />
           </div>
 
-          <div
-            className="flex items-center justify-between p-2 rounded-lg hover:bg-dex-secondary/5 cursor-pointer transition-all duration-200"
-            onClick={() => navigate('/kyc')}
-          >
-            <div className="flex items-center gap-3">
-              <FileCheck className="text-dex-secondary" size={20} />
-              <div>
-                <p className="text-white font-medium">KYC/AML Verification</p>
-                <p className="text-sm text-gray-400">Verify your identity and check suspicious addresses</p>
-              </div>
-            </div>
-            <div className="flex items-center">
-              {kycStatus === 'approved' ? (
-                <Badge className="mr-2 bg-green-600 text-white">
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  Verified
-                </Badge>
-              ) : kycStatus === 'pending' ? (
-                <Badge className="mr-2 bg-yellow-600 text-white">
-                  <Clock className="h-3 w-3 mr-1" />
-                  Pending
-                </Badge>
-              ) : kycStatus === 'rejected' ? (
-                <Badge className="mr-2 bg-dex-primary text-white">
-                  <AlertTriangle className="h-3 w-3 mr-1" />
-                  Rejected
-                </Badge>
-              ) : (
-                <Badge className="mr-2 bg-dex-secondary/20 text-white">
-                  Required
-                </Badge>
-              )}
-              <ChevronRight className="text-dex-secondary" size={18} />
-            </div>
-          </div>
+          {/* KYC/AML section moved to dedicated page accessible via sliding navigation panel */}
         </CardContent>
       </Card>
 

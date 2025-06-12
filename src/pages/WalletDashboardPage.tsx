@@ -1251,37 +1251,16 @@ const WalletDashboardPage: React.FC = () => {
 
       {/* Tabs for different views */}
       <Tabs defaultValue="wallets" className="w-full">
-        <TabsList className={`grid w-full ${socialTradingEnabled ? 'grid-cols-7' : aiAnalyticsEnabled ? 'grid-cols-6' : crossChainEnabled ? 'grid-cols-5' : 'grid-cols-4'} mb-6 bg-dex-dark/50 p-1.5 rounded-lg border border-dex-secondary/20`}>
+        <TabsList className="grid w-full grid-cols-3 mb-6 bg-dex-dark/50 p-1.5 rounded-lg border border-dex-secondary/20">
           <TabsTrigger value="wallets" className="text-white data-[state=active]:bg-dex-primary">
             Wallets
           </TabsTrigger>
-          <TabsTrigger value="defi" className="text-white data-[state=active]:bg-dex-primary">
-            DeFi
-          </TabsTrigger>
-          {crossChainEnabled && (
-            <TabsTrigger value="bridge" className="text-white data-[state=active]:bg-dex-primary">
-              <ArrowUpDown size={16} className="mr-1" />
-              Bridge
-            </TabsTrigger>
-          )}
           <TabsTrigger value="transactions" className="text-white data-[state=active]:bg-dex-primary">
             Transactions
           </TabsTrigger>
           <TabsTrigger value="analytics" className="text-white data-[state=active]:bg-dex-primary">
             Analytics
           </TabsTrigger>
-          {aiAnalyticsEnabled && (
-            <TabsTrigger value="ai-analytics" className="text-white data-[state=active]:bg-dex-primary">
-              <Brain size={16} className="mr-1" />
-              AI Analytics
-            </TabsTrigger>
-          )}
-          {socialTradingEnabled && (
-            <TabsTrigger value="social" className="text-white data-[state=active]:bg-dex-primary">
-              <Users size={16} className="mr-1" />
-              Social
-            </TabsTrigger>
-          )}
         </TabsList>
 
         <TabsContent value="wallets">
@@ -1688,97 +1667,6 @@ const WalletDashboardPage: React.FC = () => {
           </div>
         </TabsContent>
 
-        {/* Phase 4 Advanced Trading Tab - Moved to TradePage */}
-        {/* Trading functionality now available on /trade page */}
-
-        <TabsContent value="defi">
-          <div className="space-y-6">
-            {/* Phase 4.2 DeFi Integration Panel */}
-            {defiEnabled ? (
-              <DeFiIntegrationPanel
-                tokens={availableTokens}
-                onPositionCreate={(position) => {
-                  console.log('DeFi position created:', position);
-                  // Refresh dashboard data
-                  fetchDashboardData();
-                }}
-              />
-            ) : (
-              <>
-                {/* Legacy DeFi Portfolio Summary */}
-                <Card className="p-6 bg-dex-dark border-dex-secondary/30">
-                  <h3 className="text-lg font-medium text-white mb-4">DeFi Portfolio</h3>
-
-                  {defiSummary ? (
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                      <div className="p-4 bg-dex-secondary/10 rounded-lg">
-                        <p className="text-sm text-gray-400">Total Staked</p>
-                        <p className="text-xl font-bold text-white">
-                          {showBalances ? `$${parseFloat(defiSummary.totalStaked).toFixed(2)}` : '••••••'}
-                        </p>
-                      </div>
-                      <div className="p-4 bg-dex-secondary/10 rounded-lg">
-                        <p className="text-sm text-gray-400">Total Rewards</p>
-                        <p className="text-xl font-bold text-dex-positive">
-                          {showBalances ? `$${parseFloat(defiSummary.totalRewards).toFixed(2)}` : '••••••'}
-                        </p>
-                      </div>
-                      <div className="p-4 bg-dex-secondary/10 rounded-lg">
-                        <p className="text-sm text-gray-400">Active Positions</p>
-                        <p className="text-xl font-bold text-white">{defiSummary.activePositions}</p>
-                      </div>
-                      <div className="p-4 bg-dex-secondary/10 rounded-lg">
-                        <p className="text-sm text-gray-400">Average APY</p>
-                        <p className="text-xl font-bold text-white">{defiSummary.averageApy.toFixed(1)}%</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-gray-400">
-                      <TrendingUp size={32} className="mx-auto mb-2 opacity-50" />
-                      <p>No DeFi positions found</p>
-                    </div>
-                  )}
-                </Card>
-              </>
-            )}
-
-            {/* Enhanced Staking Opportunities Panel - Always Visible */}
-            <StakingOpportunitiesPanel
-              className="mb-6"
-              onStakeSelect={(opportunity) => {
-                console.log('Staking opportunity selected:', opportunity);
-                toast({
-                  title: "Staking Opportunity Selected",
-                  description: `Selected ${opportunity.protocol} (${opportunity.token}) with ${opportunity.apy}% APY`,
-                });
-              }}
-            />
-          </div>
-        </TabsContent>
-
-        {/* Phase 4.3 Cross-Chain Bridge Tab */}
-        {crossChainEnabled && (
-          <TabsContent value="bridge">
-            <div className="space-y-6">
-              {/* Multi-Network Portfolio Overview */}
-              <MultiNetworkPortfolio
-                userId={user?.id || 'current-user'}
-                className="mb-6"
-              />
-
-              {/* Cross-Chain Bridge Panel */}
-              <CrossChainBridgePanel
-                tokens={availableTokens}
-                onBridgeComplete={(transaction) => {
-                  console.log('Bridge transaction completed:', transaction);
-                  // Refresh dashboard data to show updated balances
-                  fetchDashboardData();
-                }}
-              />
-            </div>
-          </TabsContent>
-        )}
-
         <TabsContent value="transactions">
           <div className="space-y-6">
             {/* Transaction Filters and Export */}
@@ -2088,40 +1976,10 @@ const WalletDashboardPage: React.FC = () => {
             )}
           </Card>
         </TabsContent>
-
-        {/* Phase 4.4 AI Analytics Tab */}
-        {aiAnalyticsEnabled && (
-          <TabsContent value="ai-analytics">
-            <div className="space-y-6">
-              {/* AI Analytics Panel */}
-              <AIAnalyticsPanel
-                userId={user?.id || 'current-user'}
-                className="w-full"
-              />
-            </div>
-          </TabsContent>
-        )}
-
-        {/* Phase 4.5 Social Trading Tab */}
-        {socialTradingEnabled && (
-          <TabsContent value="social">
-            <div className="space-y-6">
-              {/* Social Trading Panel */}
-              <SocialTradingPanel
-                userId={user?.id || 'current-user'}
-                onError={(error) => {
-                  console.error('Social Trading Error:', error);
-                  toast({
-                    title: "Social Trading Error",
-                    description: error,
-                    variant: "destructive",
-                  });
-                }}
-              />
-            </div>
-          </TabsContent>
-        )}
       </Tabs>
+
+
+
 
       {/* Hot Wallet Connection Dialog */}
       <Dialog open={showHotWalletDialog} onOpenChange={setShowHotWalletDialog}>
@@ -2315,7 +2173,7 @@ const WalletDashboardPage: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
-      </div>
+    </div>
     </ErrorBoundary>
   );
 };

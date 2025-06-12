@@ -1,10 +1,12 @@
 
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { formatAddress } from '@/services/fallbackDataService';
 import { WalletInfo } from '@/types';
 import { Beaker } from 'lucide-react';
+import SlidingNavigationPanel from '@/components/navigation/SlidingNavigationPanel';
+import NavigationOverlay from '@/components/navigation/NavigationOverlay';
 
 // Custom settings icon
 const SettingsIcon = ({ size = 24, className = "" }) => (
@@ -31,18 +33,35 @@ interface DexHeaderProps {
   onDisconnectWallet: () => void;
 }
 
-const DexHeader: React.FC<DexHeaderProps> = ({
+const DexHeader: React.FC<DexHeaderProps> = React.memo(({
   wallet,
   onConnectWallet,
   onDisconnectWallet
 }) => {
+  // State for sliding navigation panel
+  const [isNavigationOpen, setIsNavigationOpen] = useState(false);
+
+  // Handle navigation panel toggle
+  const handleNavigationToggle = useCallback(() => {
+    setIsNavigationOpen(prev => !prev);
+  }, []);
+
+  const handleNavigationClose = useCallback(() => {
+    setIsNavigationOpen(false);
+  }, []);
+
   return (
-    <header className="px-4 py-4 flex items-center justify-between bg-dex-dark sticky top-0 z-10 border-b border-dex-secondary/20 shadow-[0_2px_10px_rgba(0,0,0,0.2)]">
-      <div className="flex items-center">
-        <h1 className="text-xl font-bold text-white">
-          <span className="text-dex-primary">V</span>-DEX
-        </h1>
-      </div>
+    <>
+      <header className="px-4 py-4 flex items-center justify-between bg-dex-dark sticky top-0 z-20 border-b border-dex-secondary/20 shadow-[0_2px_10px_rgba(0,0,0,0.2)]">
+        <div className="flex items-center">
+          <button
+            onClick={handleNavigationToggle}
+            className="text-xl font-bold text-white hover:opacity-80 transition-opacity duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-dex-primary/50 rounded-lg p-1"
+            aria-label="Open navigation menu"
+          >
+            <span className="text-dex-primary">V</span>-DEX
+          </button>
+        </div>
 
       <div className="flex items-center gap-4">
         <Link to="/testnet-wallet">
@@ -67,7 +86,22 @@ const DexHeader: React.FC<DexHeaderProps> = ({
         </Link>
       </div>
     </header>
+
+    {/* Navigation Overlay */}
+    <NavigationOverlay
+      isOpen={isNavigationOpen}
+      onClose={handleNavigationClose}
+    />
+
+    {/* Sliding Navigation Panel */}
+    <SlidingNavigationPanel
+      isOpen={isNavigationOpen}
+      onClose={handleNavigationClose}
+    />
+  </>
   );
-};
+});
+
+DexHeader.displayName = 'DexHeader';
 
 export default DexHeader;
