@@ -3,11 +3,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowUpDown, Loader2, RefreshCw } from 'lucide-react';
+import { ArrowUpDown, Loader2 } from 'lucide-react';
 import { Token } from '@/types';
 import { formatCurrency } from '@/services/realTimeData';
 import { useToast } from '@/hooks/use-toast';
-import { mockTokens } from '@/services/fallbackDataService';
+import { useRealTimeTokens } from '@/hooks/useRealTimeTokens';
+import { useWalletData } from '@/hooks/useWalletData';
 import TokenIcon from '@/components/TokenIcon';
 
 interface SwapBlockProps {
@@ -26,31 +27,160 @@ interface SwapParams {
   fee: string;
 }
 
+// Network Icon Components
+const NetworkIcon = ({ network, size = 20 }: { network: string; size?: number }) => {
+  const iconProps = {
+    width: size,
+    height: size,
+    className: "text-dex-primary"
+  };
+
+  switch (network) {
+    case 'ethereum':
+      return (
+        <svg {...iconProps} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 1.5L5.25 12.75L12 16.5L18.75 12.75L12 1.5ZM12 18L5.25 14.25L12 22.5L18.75 14.25L12 18Z"/>
+        </svg>
+      );
+    case 'polygon':
+      return (
+        <svg {...iconProps} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2L2 7L12 12L22 7L12 2ZM2 17L12 22L22 17L12 12L2 17Z"/>
+        </svg>
+      );
+    case 'bsc':
+      return (
+        <svg {...iconProps} viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M8 12L12 8L16 12L12 16L8 12Z" fill="black"/>
+        </svg>
+      );
+    case 'arbitrum':
+      return (
+        <svg {...iconProps} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2L22 12L12 22L2 12L12 2ZM12 6L6 12L12 18L18 12L12 6Z"/>
+        </svg>
+      );
+    case 'optimism':
+      return (
+        <svg {...iconProps} viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="12" cy="12" r="10"/>
+          <circle cx="9" cy="9" r="2" fill="white"/>
+          <circle cx="15" cy="9" r="2" fill="white"/>
+          <path d="M8 15Q12 19 16 15" stroke="white" strokeWidth="2" fill="none"/>
+        </svg>
+      );
+    case 'avalanche':
+      return (
+        <svg {...iconProps} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2L22 20H2L12 2ZM12 8L6 18H18L12 8Z"/>
+        </svg>
+      );
+    case 'fantom':
+      return (
+        <svg {...iconProps} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12S6.48 22 12 22 22 17.52 22 12 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12S7.59 4 12 4 20 7.59 20 12 16.41 20 12 20Z"/>
+          <path d="M12 6L8 10H16L12 6ZM8 14L12 18L16 14H8Z"/>
+        </svg>
+      );
+    default:
+      return (
+        <svg {...iconProps} viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="12" cy="12" r="10"/>
+        </svg>
+      );
+  }
+};
+
 // Network configuration
 const SUPPORTED_NETWORKS = [
-  { id: 'ethereum', name: 'Ethereum', symbol: 'ETH', icon: '⟠' },
-  { id: 'polygon', name: 'Polygon', symbol: 'MATIC', icon: '⬟' },
-  { id: 'bsc', name: 'BSC', symbol: 'BNB', icon: '🟡' },
-  { id: 'arbitrum', name: 'Arbitrum', symbol: 'ARB', icon: '🔵' },
-  { id: 'optimism', name: 'Optimism', symbol: 'OP', icon: '🔴' },
-  { id: 'avalanche', name: 'Avalanche', symbol: 'AVAX', icon: '🔺' },
-  { id: 'fantom', name: 'Fantom', symbol: 'FTM', icon: '👻' }
+  { id: 'ethereum', name: 'Ethereum', symbol: 'ETH' },
+  { id: 'polygon', name: 'Polygon', symbol: 'MATIC' },
+  { id: 'bsc', name: 'BSC', symbol: 'BNB' },
+  { id: 'arbitrum', name: 'Arbitrum', symbol: 'ARB' },
+  { id: 'optimism', name: 'Optimism', symbol: 'OP' },
+  { id: 'avalanche', name: 'Avalanche', symbol: 'AVAX' },
+  { id: 'fantom', name: 'Fantom', symbol: 'FTM' }
 ];
-
-// Mock wallet address for display
-const MOCK_WALLET_ADDRESS = "0x1234...5678";
 
 const SwapBlock: React.FC<SwapBlockProps> = ({ tokens, onSwap }) => {
   const { toast } = useToast();
 
-  // Use fallback tokens if no tokens provided or empty
-  const effectiveTokens = tokens && tokens.length > 0 ? tokens : mockTokens;
+  // Get real wallet address and data
+  const { address: walletAddress, wallets } = useWalletData();
+
+  // Get real-time tokens as fallback when no user tokens are provided
+  const { tokens: realTimeTokens } = useRealTimeTokens({
+    autoRefresh: true,
+    refreshOnMount: true
+  });
+
+  // Use provided tokens or real-time tokens with zero balances (no mock data)
+  const effectiveTokens = tokens && tokens.length > 0 ? tokens : realTimeTokens.map(token => ({
+    ...token,
+    balance: '0' // Real-time tokens start with zero balance
+  }));
+
+  // Update addresses when wallet address changes
+  useEffect(() => {
+    if (walletAddress) {
+      setFromAddress(walletAddress);
+      setToAddress(walletAddress);
+    }
+  }, [walletAddress]);
+
+  // Available wallet addresses for selection
+  const availableAddresses = useMemo(() => {
+    const addresses = [];
+
+    // Add current wallet address
+    if (walletAddress) {
+      addresses.push({
+        address: walletAddress,
+        label: 'Current Wallet',
+        type: 'current'
+      });
+    }
+
+    // Add other wallet addresses from user's wallets
+    wallets.forEach((wallet, index) => {
+      if (wallet.wallet_address && wallet.wallet_address !== walletAddress) {
+        addresses.push({
+          address: wallet.wallet_address,
+          label: wallet.wallet_name || `Wallet ${index + 1}`,
+          type: wallet.wallet_type || 'unknown'
+        });
+      }
+
+      // Add addresses from generated wallets
+      if (wallet.addresses) {
+        Object.entries(wallet.addresses).forEach(([currency, address]) => {
+          if (address && address !== walletAddress) {
+            addresses.push({
+              address: address as string,
+              label: `${wallet.wallet_name || 'Generated'} (${currency})`,
+              type: 'generated'
+            });
+          }
+        });
+      }
+    });
+
+    return addresses;
+  }, [walletAddress, wallets]);
+
+  // Format address for display
+  const formatAddress = (address: string) => {
+    return address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'No Address';
+  };
 
   // State management
   const [fromToken, setFromToken] = useState<Token | null>(null);
   const [toToken, setToToken] = useState<Token | null>(null);
   const [fromNetwork, setFromNetwork] = useState(SUPPORTED_NETWORKS[0]);
   const [toNetwork, setToNetwork] = useState(SUPPORTED_NETWORKS[0]);
+  const [fromAddress, setFromAddress] = useState(walletAddress);
+  const [toAddress, setToAddress] = useState(walletAddress);
   const [fromAmount, setFromAmount] = useState('');
   const [toAmount, setToAmount] = useState('');
   const [isCalculating, setIsCalculating] = useState(false);
@@ -97,9 +227,9 @@ const SwapBlock: React.FC<SwapBlockProps> = ({ tokens, onSwap }) => {
     }
   }, [fromToken, toToken, fromAmount]);
 
-  // Available tokens for selection
+  // Available tokens for selection - show all tokens for both From and To
   const availableTokens = useMemo(() => {
-    return effectiveTokens.filter(token => token.balance && parseFloat(token.balance) > 0);
+    return effectiveTokens; // Show all tokens, not just those with balance > 0
   }, [effectiveTokens]);
 
   // Handle token swap (reverse from/to)
@@ -186,30 +316,35 @@ const SwapBlock: React.FC<SwapBlockProps> = ({ tokens, onSwap }) => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold">Swap</h2>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 hover:bg-dex-secondary/10"
-          >
-            <RefreshCw size={16} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 hover:bg-dex-secondary/10"
-          >
-            <ArrowUpDown size={16} />
-          </Button>
-        </div>
       </div>
 
       {/* Two-panel layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* From Panel */}
         <div className="bg-dex-tertiary p-6 rounded-xl border border-dex-secondary/30 space-y-6 min-h-[320px] flex flex-col">
-          <div className="text-sm text-dex-text-secondary">
-            From: {MOCK_WALLET_ADDRESS}
+          {/* From Address Selector */}
+          <div>
+            <label className="block text-sm font-medium mb-2">From Address</label>
+            <Select
+              value={fromAddress}
+              onValueChange={setFromAddress}
+            >
+              <SelectTrigger className="bg-dex-secondary/20 border-dex-secondary/30 text-white h-12">
+                <SelectValue>
+                  <span className="font-mono text-sm">{formatAddress(fromAddress)}</span>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="bg-dex-dark border-dex-secondary/30 z-[100] shadow-xl">
+                {availableAddresses.map((addr) => (
+                  <SelectItem key={addr.address} value={addr.address} className="text-white hover:bg-dex-secondary/20 focus:bg-dex-secondary/30 focus:text-white">
+                    <div className="flex flex-col gap-1 w-full">
+                      <span className="font-medium">{addr.label}</span>
+                      <span className="font-mono text-xs text-dex-text-secondary">{formatAddress(addr.address)}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Token Selection */}
@@ -240,7 +375,7 @@ const SwapBlock: React.FC<SwapBlockProps> = ({ tokens, onSwap }) => {
                       <div className="flex-1">
                         <span className="font-medium">{token.symbol}</span>
                         <span className="text-dex-text-secondary text-xs ml-2">
-                          {formatCurrency(parseFloat(token.balance || '0'))}
+                          Available: {formatCurrency(parseFloat(token.balance || '0'))}
                         </span>
                       </div>
                     </div>
@@ -267,7 +402,7 @@ const SwapBlock: React.FC<SwapBlockProps> = ({ tokens, onSwap }) => {
                 {SUPPORTED_NETWORKS.map((network) => (
                   <SelectItem key={network.id} value={network.id} className="text-white hover:bg-dex-secondary/20 focus:bg-dex-secondary/30 focus:text-white">
                     <div className="flex items-center gap-2">
-                      <span>{network.icon}</span>
+                      <NetworkIcon network={network.id} size={16} />
                       <span>{network.name}</span>
                     </div>
                   </SelectItem>
@@ -313,8 +448,29 @@ const SwapBlock: React.FC<SwapBlockProps> = ({ tokens, onSwap }) => {
 
         {/* To Panel */}
         <div className="bg-dex-tertiary p-6 rounded-xl border border-dex-secondary/30 space-y-6 min-h-[320px] flex flex-col">
-          <div className="text-sm text-dex-text-secondary">
-            To: {MOCK_WALLET_ADDRESS}
+          {/* To Address Selector */}
+          <div>
+            <label className="block text-sm font-medium mb-2">To Address</label>
+            <Select
+              value={toAddress}
+              onValueChange={setToAddress}
+            >
+              <SelectTrigger className="bg-dex-secondary/20 border-dex-secondary/30 text-white h-12">
+                <SelectValue>
+                  <span className="font-mono text-sm">{formatAddress(toAddress)}</span>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="bg-dex-dark border-dex-secondary/30 z-[100] shadow-xl">
+                {availableAddresses.map((addr) => (
+                  <SelectItem key={addr.address} value={addr.address} className="text-white hover:bg-dex-secondary/20 focus:bg-dex-secondary/30 focus:text-white">
+                    <div className="flex flex-col gap-1 w-full">
+                      <span className="font-medium">{addr.label}</span>
+                      <span className="font-mono text-xs text-dex-text-secondary">{formatAddress(addr.address)}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Token Selection */}
@@ -323,7 +479,7 @@ const SwapBlock: React.FC<SwapBlockProps> = ({ tokens, onSwap }) => {
             <Select
               value={toToken?.symbol || ''}
               onValueChange={(value) => {
-                const token = effectiveTokens.find(t => t.symbol === value);
+                const token = availableTokens.find(t => t.symbol === value);
                 if (token) setToToken(token);
               }}
             >
@@ -338,7 +494,7 @@ const SwapBlock: React.FC<SwapBlockProps> = ({ tokens, onSwap }) => {
                 </SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-dex-dark border-dex-secondary/30 z-[100] shadow-xl">
-                {effectiveTokens.map((token) => (
+                {availableTokens.map((token) => (
                   <SelectItem key={token.symbol} value={token.symbol} className="text-white hover:bg-dex-secondary/20 focus:bg-dex-secondary/30 focus:text-white">
                     <div className="flex items-center gap-3 w-full">
                       <TokenIcon token={token} size="sm" />
@@ -372,7 +528,7 @@ const SwapBlock: React.FC<SwapBlockProps> = ({ tokens, onSwap }) => {
                 {SUPPORTED_NETWORKS.map((network) => (
                   <SelectItem key={network.id} value={network.id} className="text-white hover:bg-dex-secondary/20 focus:bg-dex-secondary/30 focus:text-white">
                     <div className="flex items-center gap-2">
-                      <span>{network.icon}</span>
+                      <NetworkIcon network={network.id} size={16} />
                       <span>{network.name}</span>
                     </div>
                   </SelectItem>
@@ -463,7 +619,7 @@ const SwapBlock: React.FC<SwapBlockProps> = ({ tokens, onSwap }) => {
           </div>
 
           <div className="text-xs text-dex-text-secondary text-center pt-1">
-            Rate is for reference only. Updated just now
+            Rate is for reference only
           </div>
         </div>
       )}

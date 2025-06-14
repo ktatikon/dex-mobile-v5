@@ -5,20 +5,35 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-[44px] min-w-[44px]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-[44px] min-w-[44px] font-poppins",
   {
     variants: {
       variant: {
-        default: "bg-gradient-to-r from-dex-secondary to-dex-secondary/80 text-black shadow-md shadow-dex-secondary/30 backdrop-blur-sm border border-dex-secondary/30 hover:shadow-lg hover:shadow-dex-secondary/50 hover:scale-[1.02] hover:shadow-[0_0_10px_rgba(255,255,255,0.3)] active:scale-[0.98] active:shadow-[0_0_8px_rgba(0,0,0,0.5)] transition-all duration-200",
-        destructive:
-          "bg-gradient-to-r from-dex-primary to-dex-primary/80 text-white shadow-md shadow-dex-primary/30 backdrop-blur-sm border border-dex-primary/30 hover:shadow-lg hover:shadow-dex-primary/50 hover:scale-[1.02] hover:shadow-[0_0_10px_rgba(255,255,255,0.3)] active:scale-[0.98] active:shadow-[0_0_8px_rgba(0,0,0,0.5)] transition-all duration-200",
-        outline:
-          "border border-dex-secondary/50 bg-dex-secondary/10 text-white hover:bg-dex-secondary/20 backdrop-blur-sm shadow-sm hover:shadow-md hover:shadow-dex-secondary/30 hover:shadow-[0_0_8px_rgba(255,255,255,0.2)] active:shadow-[0_0_5px_rgba(0,0,0,0.3)] transition-all duration-200",
-        secondary:
-          "bg-gradient-to-r from-dex-accent/90 to-dex-accent/70 text-white shadow-md shadow-dex-accent/30 backdrop-blur-sm border border-dex-accent/30 hover:shadow-lg hover:shadow-dex-accent/50 hover:scale-[1.02] hover:shadow-[0_0_10px_rgba(255,255,255,0.3)] active:scale-[0.98] active:shadow-[0_0_8px_rgba(0,0,0,0.5)] transition-all duration-200",
-        ghost: "hover:bg-dex-secondary/10 hover:text-dex-secondary hover:shadow-[0_0_8px_rgba(255,255,255,0.15)] active:shadow-[0_0_5px_rgba(0,0,0,0.2)] transition-all duration-200",
-        link: "text-dex-secondary underline-offset-4 hover:underline",
-        glossy: "bg-gradient-to-r from-dex-secondary via-dex-secondary/90 to-dex-secondary/80 text-black shadow-md shadow-dex-secondary/40 backdrop-blur-sm border border-white/10 hover:shadow-lg hover:shadow-dex-secondary/60 hover:scale-[1.02] hover:shadow-[0_0_15px_rgba(255,255,255,0.4)] active:scale-[0.98] active:shadow-[0_0_10px_rgba(0,0,0,0.6)] transition-all duration-200 relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/30 before:opacity-70",
+        // Primary 3D button with dark orange gradient and white ambient glow
+        default: "bg-gradient-to-br from-dex-primary to-[#8B3508] text-white shadow-[0_4px_8px_rgba(255,255,255,0.05),0_1px_3px_rgba(177,66,10,0.3),inset_0_1px_2px_rgba(255,255,255,0.1)] border border-dex-primary/20 hover:shadow-[0_4px_16px_rgba(255,255,255,0.1),0_1px_4px_rgba(177,66,10,0.6),inset_0_1px_1px_rgba(255,255,255,0.15)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200",
+
+        // Positive actions with green gradient and green ambient glow
+        positive: "bg-gradient-to-br from-dex-positive to-[#28A745] text-white shadow-[0_4px_8px_rgba(255,255,255,0.05),0_1px_3px_rgba(52,199,89,0.3),inset_0_1px_2px_rgba(255,255,255,0.1)] border border-dex-positive/20 hover:shadow-[0_4px_16px_rgba(255,255,255,0.1),0_1px_4px_rgba(52,199,89,0.6),inset_0_1px_1px_rgba(255,255,255,0.15)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200",
+
+        // Negative/destructive actions with red gradient and red ambient glow
+        destructive: "bg-gradient-to-br from-dex-negative to-[#DC2626] text-white shadow-[0_4px_8px_rgba(255,255,255,0.05),0_1px_3px_rgba(255,59,48,0.3),inset_0_1px_2px_rgba(255,255,255,0.1)] border border-dex-negative/20 hover:shadow-[0_4px_16px_rgba(255,255,255,0.1),0_1px_4px_rgba(255,59,48,0.6),inset_0_1px_1px_rgba(255,255,255,0.15)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200",
+
+        // Neutral outline button with white ambient glow
+        outline: "border border-dex-secondary/50 bg-dex-secondary/10 text-white shadow-[0_2px_4px_rgba(255,255,255,0.05),0_1px_2px_rgba(28,28,30,0.2)] hover:bg-dex-secondary/20 hover:shadow-[0_4px_8px_rgba(255,255,255,0.1),0_1px_3px_rgba(28,28,30,0.3)] hover:scale-[1.01] active:scale-[0.99] transition-all duration-200",
+
+        // Secondary button with accent color
+        secondary: "bg-gradient-to-br from-dex-accent to-[#CD853F] text-white shadow-[0_4px_8px_rgba(255,255,255,0.05),0_1px_3px_rgba(210,105,30,0.3),inset_0_1px_2px_rgba(255,255,255,0.1)] border border-dex-accent/20 hover:shadow-[0_4px_16px_rgba(255,255,255,0.1),0_1px_4px_rgba(210,105,30,0.6),inset_0_1px_1px_rgba(255,255,255,0.15)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200",
+
+        // Ghost button with subtle effects
+        ghost: "hover:bg-dex-secondary/10 hover:text-dex-text-primary hover:shadow-[0_2px_8px_rgba(255,255,255,0.1)] active:shadow-[0_1px_4px_rgba(0,0,0,0.2)] transition-all duration-200",
+
+        // Link style
+        link: "text-dex-primary underline-offset-4 hover:underline hover:text-dex-accent transition-colors duration-200",
+
+        // Premium glossy button with enhanced effects
+        glossy: "bg-gradient-to-br from-dex-primary via-[#B1420A] to-[#8B3508] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70",
+
+        // Legacy primary for compatibility
         primary: "bg-dex-primary text-white shadow-md shadow-dex-primary/30 backdrop-blur-sm border border-dex-primary/30 hover:shadow-lg hover:shadow-dex-primary/50 hover:bg-dex-primary/90 active:scale-[0.98] transition-all duration-200",
       },
       size: {

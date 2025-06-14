@@ -123,8 +123,8 @@ const DeFiPage: React.FC<DeFiPageProps> = React.memo(({ className = '' }) => {
     <div className={`container mx-auto px-4 pt-6 pb-24 ${className}`}>
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white mb-2">DeFi Operations</h1>
-        <p className="text-gray-400">
+        <h1 className="text-3xl font-medium text-white mb-2 font-poppins">DeFi Operations</h1>
+        <p className="text-dex-text-secondary font-poppins">
           Manage your decentralized finance positions, staking, and yield farming
         </p>
       </div>
@@ -144,28 +144,28 @@ const DeFiPage: React.FC<DeFiPageProps> = React.memo(({ className = '' }) => {
 
         {/* DeFi Portfolio Summary */}
         {defiSummary && (
-          <Card className="p-6 bg-dex-dark border-dex-secondary/30">
-            <h3 className="text-lg font-medium text-white mb-4">DeFi Portfolio Summary</h3>
+          <Card className="p-6 bg-dex-dark border-dex-secondary/30 shadow-[0_4px_12px_rgba(0,0,0,0.2),0_1px_3px_rgba(177,66,10,0.1)]">
+            <h3 className="text-xl font-medium text-white mb-4 font-poppins">DeFi Portfolio Summary</h3>
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="p-4 bg-dex-secondary/10 rounded-lg">
-                <p className="text-sm text-gray-400">Total Staked</p>
-                <p className="text-xl font-bold text-white">
+              <div className="p-4 bg-dex-secondary/10 rounded-lg border border-dex-secondary/20">
+                <p className="text-sm text-dex-text-secondary font-poppins">Total Staked</p>
+                <p className="text-2xl font-medium text-white font-poppins">
                   {showBalances ? `$${parseFloat(defiSummary.totalStaked).toFixed(2)}` : '••••••'}
                 </p>
               </div>
-              <div className="p-4 bg-dex-secondary/10 rounded-lg">
-                <p className="text-sm text-gray-400">Total Rewards</p>
-                <p className="text-xl font-bold text-dex-positive">
+              <div className="p-4 bg-dex-secondary/10 rounded-lg border border-dex-secondary/20">
+                <p className="text-sm text-dex-text-secondary font-poppins">Total Rewards</p>
+                <p className="text-2xl font-medium text-dex-positive font-poppins">
                   {showBalances ? `$${parseFloat(defiSummary.totalRewards).toFixed(2)}` : '••••••'}
                 </p>
               </div>
-              <div className="p-4 bg-dex-secondary/10 rounded-lg">
-                <p className="text-sm text-gray-400">Active Positions</p>
-                <p className="text-xl font-bold text-white">{defiSummary.activePositions}</p>
+              <div className="p-4 bg-dex-secondary/10 rounded-lg border border-dex-secondary/20">
+                <p className="text-sm text-dex-text-secondary font-poppins">Active Positions</p>
+                <p className="text-2xl font-medium text-white font-poppins">{defiSummary.activePositions}</p>
               </div>
-              <div className="p-4 bg-dex-secondary/10 rounded-lg">
-                <p className="text-sm text-gray-400">Average APY</p>
-                <p className="text-xl font-bold text-white">{defiSummary.averageApy.toFixed(1)}%</p>
+              <div className="p-4 bg-dex-secondary/10 rounded-lg border border-dex-secondary/20">
+                <p className="text-sm text-dex-text-secondary font-poppins">Average APY</p>
+                <p className="text-2xl font-medium text-white font-poppins">{defiSummary.averageApy.toFixed(1)}%</p>
               </div>
             </div>
           </Card>

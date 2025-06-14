@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -61,7 +63,7 @@
     --popover: 0 0% 17%; /* #2C2C2E */
     --popover-foreground: 0 0% 100%; /* #FFFFFF */
 
-    --primary: 3 100% 59%; /* #FF3B30 - Red */
+    --primary: 18 89% 37%; /* #B1420A - Dark Orange */
     --primary-foreground: 0 0% 100%; /* #FFFFFF */
 
     --secondary: 0 0% 11%; /* #1C1C1E */
@@ -73,7 +75,7 @@
     --accent: 142 70% 49%; /* #34C759 - Green */
     --accent-foreground: 0 0% 100%; /* #FFFFFF */
 
-    --destructive: 3 100% 59%; /* #FF3B30 - Red */
+    --destructive: 3 100% 59%; /* #FF3B30 - Red (kept for negative actions) */
     --destructive-foreground: 0 0% 100%; /* #FFFFFF */
 
     --border: 0 0% 11%; /* #1C1C1E */
@@ -99,11 +101,37 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground;
+    font-family: 'Poppins', sans-serif;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold;
+    @apply font-medium;
+  }
+
+  /* Enhanced typography hierarchy with size variations instead of weight */
+  h1 {
+    @apply text-4xl font-medium font-poppins;
+  }
+
+  h2 {
+    @apply text-3xl font-medium font-poppins;
+  }
+
+  h3 {
+    @apply text-2xl font-medium font-poppins;
+  }
+
+  h4 {
+    @apply text-xl font-medium font-poppins;
+  }
+
+  h5 {
+    @apply text-lg font-medium font-poppins;
+  }
+
+  h6 {
+    @apply text-base font-medium font-poppins;
   }
 
   button {
@@ -124,11 +152,11 @@
   }
 
   .nav-text {
-    @apply text-xs font-medium;
+    @apply text-xs font-medium font-poppins;
   }
 
   .nav-indicator {
-    @apply h-1 w-6 bg-dex-primary rounded-full mt-1;
+    @apply h-1 w-6 bg-dex-primary rounded-full mt-1 shadow-[0_0_8px_rgba(177,66,10,0.4)];
   }
 
   /* Ensure proper touch targets for mobile */

@@ -95,8 +95,8 @@ const MultiNetworkPortfolioPage: React.FC<MultiNetworkPortfolioPageProps> = Reac
     <div className={`container mx-auto px-4 pt-6 pb-24 ${className}`}>
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white mb-2">Multi-Network Portfolio</h1>
-        <p className="text-gray-400">
+        <h1 className="text-3xl font-medium text-white mb-2 font-poppins">Multi-Network Portfolio</h1>
+        <p className="text-dex-text-secondary font-poppins">
           Manage your assets across multiple blockchain networks and bridge tokens seamlessly
         </p>
       </div>

@@ -109,11 +109,11 @@ const DexNavigation = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-black border-t border-dex-secondary/30 py-2 px-2 flex justify-between items-center z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.3)]">
+    <nav className="fixed bottom-0 left-0 right-0 bg-black border-t border-dex-secondary/30 py-2 px-2 flex justify-between items-center z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.3),0_-2px_8px_rgba(177,66,10,0.1)] backdrop-blur-sm">
       <Link to="/" className="flex-1">
         <div className={`nav-item ${isActive('/') ? 'text-dex-primary' : 'text-white'}`}>
           <HomeIcon size={26} className={`nav-icon ${isActive('/') ? 'text-dex-primary' : 'text-white'}`} />
-          <span className="nav-text">{t('menu.home', 'Home')}</span>
+          <span className="nav-text font-poppins">{t('menu.home', 'Home')}</span>
           {isActive('/') && <div className="nav-indicator"></div>}
         </div>
       </Link>
@@ -121,7 +121,7 @@ const DexNavigation = () => {
       <Link to="/trade" className="flex-1">
         <div className={`nav-item ${isActive('/trade') ? 'text-dex-primary' : 'text-white'}`}>
           <MarketIcon size={26} className={`nav-icon ${isActive('/trade') ? 'text-dex-primary' : 'text-white'}`} />
-          <span className="nav-text">{t('menu.market', 'Market')}</span>
+          <span className="nav-text font-poppins">{t('menu.market', 'Market')}</span>
           {isActive('/trade') && <div className="nav-indicator"></div>}
         </div>
       </Link>
@@ -129,7 +129,7 @@ const DexNavigation = () => {
       <Link to="/wallet-dashboard" className="flex-1">
         <div className={`nav-item ${isActive('/wallet-dashboard') ? 'text-dex-primary' : 'text-white'}`}>
           <WalletIcon size={26} className={`nav-icon ${isActive('/wallet-dashboard') ? 'text-dex-primary' : 'text-white'}`} />
-          <span className="nav-text">{t('menu.wallet', 'Wallet')}</span>
+          <span className="nav-text font-poppins">{t('menu.wallet', 'Wallet')}</span>
           {isActive('/wallet-dashboard') && <div className="nav-indicator"></div>}
         </div>
       </Link>
@@ -137,7 +137,7 @@ const DexNavigation = () => {
       <Link to="/portfolio" className="flex-1">
         <div className={`nav-item ${isActive('/portfolio') ? 'text-dex-primary' : 'text-white'}`}>
           <ProfileIcon size={26} className={`nav-icon ${isActive('/portfolio') ? 'text-dex-primary' : 'text-white'}`} />
-          <span className="nav-text">{t('menu.portfolio', 'Portfolio')}</span>
+          <span className="nav-text font-poppins">{t('menu.portfolio', 'Portfolio')}</span>
           {isActive('/portfolio') && <div className="nav-indicator"></div>}
         </div>
       </Link>

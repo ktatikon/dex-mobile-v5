@@ -130,8 +130,8 @@ const KYCAMLPage: React.FC<KYCAMLPageProps> = React.memo(({
             <ArrowLeft size={20} />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-white">KYC/AML Verification</h1>
-            <p className="text-gray-400">
+            <h1 className="text-3xl font-medium text-white font-poppins">KYC/AML Verification</h1>
+            <p className="text-dex-text-secondary font-poppins">
               Complete identity verification and check address compliance
             </p>
           </div>
@@ -144,8 +144,8 @@ const KYCAMLPage: React.FC<KYCAMLPageProps> = React.memo(({
               <div className="flex items-center gap-3">
                 <Shield className="text-dex-primary" size={24} />
                 <div>
-                  <p className="text-white font-medium">Verification Status</p>
-                  <p className="text-sm text-gray-400">
+                  <p className="text-white font-medium font-poppins">Verification Status</p>
+                  <p className="text-sm text-dex-text-secondary font-poppins">
                     {user?.email || 'Not signed in'}
                   </p>
                 </div>

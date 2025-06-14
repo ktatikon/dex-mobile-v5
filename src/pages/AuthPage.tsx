@@ -71,14 +71,32 @@ const AuthPage = () => {
           throw new Error('Authentication system is not properly initialized. Please refresh the page and try again.');
         }
 
-        await signUp(formData.email, formData.password, {
+        const result = await signUp(formData.email, formData.password, {
           full_name: formData.fullName,
           phone: formData.phone,
         });
 
-        // For email confirmation flow, don't navigate immediately
-        // The user needs to check their email and click the confirmation link
-        // Note: Navigation will happen automatically when auth state changes
+        if (result.needsVerification) {
+          toast({
+            title: "Registration Successful",
+            description: "Please check your email to verify your account.",
+            variant: "default",
+          });
+
+          // Navigate to email verification page with email
+          navigate('/auth/verify-email', {
+            state: { email: result.email },
+            replace: true
+          });
+        } else {
+          // Fallback for auto-confirmed accounts
+          toast({
+            title: "Registration Successful",
+            description: "Welcome to V-DEX! You can now start trading.",
+            variant: "default",
+          });
+          navigate('/');
+        }
       }
     } catch (error: any) {
       // Enhanced error handling with specific recovery strategies

@@ -128,17 +128,17 @@ const SlidingNavigationPanel: React.FC<SlidingNavigationPanelProps> = React.memo
       >
         {/* Panel Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
-          <h2 
+          <h2
             id="navigation-panel-title"
-            className="text-xl font-bold text-white"
+            className="text-2xl font-medium text-white font-poppins"
           >
-            <span className="text-[#FF3B30]">V</span>-DEX Navigation
+            <span className="text-[#B1420A]">V</span>-DEX Navigation
           </h2>
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
             onClick={onClose}
-            className="h-10 w-10 rounded-lg hover:bg-white/10 text-white"
+            className="h-10 w-10 rounded-lg hover:bg-white/10 text-white font-poppins"
             aria-label="Close navigation panel"
           >
             <X size={20} />
@@ -146,30 +146,30 @@ const SlidingNavigationPanel: React.FC<SlidingNavigationPanelProps> = React.memo
         </div>
 
         {/* Navigation Menu */}
-        <div className="p-4 space-y-2">
+        <div className="p-4 space-y-3">
           {navigationItems.map((item) => {
             const IconComponent = item.icon;
             return (
               <Card
                 key={item.id}
-                className="bg-transparent border-white/10 hover:bg-white/5 transition-colors duration-200 cursor-pointer"
+                className="bg-transparent border-dex-secondary/30 hover:bg-dex-secondary/10 transition-all duration-200 cursor-pointer hover:border-dex-primary/30 hover:shadow-[0_2px_8px_rgba(177,66,10,0.1)] rounded-xl"
                 onClick={() => handleNavigationClick(item.path)}
               >
                 <div className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#FF3B30]/20 flex items-center justify-center">
-                      <IconComponent size={20} className="text-[#FF3B30]" />
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#B1420A]/20 to-[#D2691E]/20 flex items-center justify-center shadow-[0_2px_4px_rgba(177,66,10,0.2)]">
+                      <IconComponent size={22} className="text-[#B1420A]" />
                     </div>
                     <div>
-                      <h3 className="font-medium text-white text-sm">
+                      <h3 className="font-medium text-white text-base font-poppins">
                         {item.label}
                       </h3>
-                      <p className="text-xs text-white/60 mt-1">
+                      <p className="text-sm text-white/70 mt-1 font-poppins font-light">
                         {item.description}
                       </p>
                     </div>
                   </div>
-                  <ChevronRight size={16} className="text-white/40" />
+                  <ChevronRight size={18} className="text-dex-primary/60" />
                 </div>
               </Card>
             );
@@ -179,10 +179,10 @@ const SlidingNavigationPanel: React.FC<SlidingNavigationPanelProps> = React.memo
         {/* Panel Footer */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10">
           <div className="text-center">
-            <p className="text-xs text-white/60">
+            <p className="text-sm text-white/70 font-poppins font-medium">
               V-DEX Mobile v5.0
             </p>
-            <p className="text-xs text-white/40 mt-1">
+            <p className="text-xs text-white/50 mt-1 font-poppins font-light">
               Decentralized Exchange Platform
             </p>
           </div>

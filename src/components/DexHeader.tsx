@@ -56,7 +56,7 @@ const DexHeader: React.FC<DexHeaderProps> = React.memo(({
         <div className="flex items-center">
           <button
             onClick={handleNavigationToggle}
-            className="text-xl font-bold text-white hover:opacity-80 transition-opacity duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-dex-primary/50 rounded-lg p-1"
+            className="text-2xl font-medium text-white hover:opacity-80 transition-opacity duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-dex-primary/50 rounded-lg p-1 font-poppins"
             aria-label="Open navigation menu"
           >
             <span className="text-dex-primary">V</span>-DEX
@@ -66,9 +66,9 @@ const DexHeader: React.FC<DexHeaderProps> = React.memo(({
       <div className="flex items-center gap-4">
         <Link to="/testnet-wallet">
           <Button
-            variant="primary"
+            variant="secondary"
             size="sm"
-            className="text-white font-medium rounded-lg px-4 py-2 h-11 flex items-center"
+            className="font-poppins flex items-center"
           >
             <Beaker size={18} className="mr-2" />
             Testnet Wallet
@@ -77,9 +77,9 @@ const DexHeader: React.FC<DexHeaderProps> = React.memo(({
 
         <Link to="/settings">
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
-            className="rounded-lg h-11 w-11 flex items-center justify-center border border-dex-secondary/20 bg-dex-secondary/5"
+            className="h-11 w-11 flex items-center justify-center"
           >
             <SettingsIcon size={26} className="text-white" />
           </Button>

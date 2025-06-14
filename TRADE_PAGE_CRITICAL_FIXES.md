@@ -13,8 +13,8 @@
 **Solution Implemented**:
 ```typescript
 // Before (Broken):
-className={isActive 
-  ? 'text-lg font-semibold bg-gradient-to-r from-[#F66F13] to-[#E5E7E8] bg-clip-text text-transparent'
+className={isActive
+  ? 'text-lg font-semibold bg-gradient-to-r from-[#B1420A] to-[#D2691E] bg-clip-text text-transparent'
   : 'text-sm font-medium text-white hover:text-gray-300'
 }
 
@@ -24,17 +24,17 @@ className={isActive
   : 'text-sm font-medium text-white hover:text-gray-300'
 }
 style={isActive ? {
-  background: 'linear-gradient(to right, #F66F13, #E5E7E8)',
+  background: 'linear-gradient(to right, #B1420A, #D2691E)',
   WebkitBackgroundClip: 'text',
   WebkitTextFillColor: 'transparent',
   backgroundClip: 'text',
-  fallbacks: { color: '#F66F13' }
+  fallbacks: { color: '#B1420A' }
 } : {}}
 ```
 
 **Fallback Strategy**:
 - Added inline styles for better browser compatibility
-- Implemented fallback color `#F66F13` for browsers that don't support gradient text
+- Implemented fallback color `#B1420A` for browsers that don't support gradient text
 - Added text shadow for enhanced visibility
 
 ### **Issue #2: Swipe Functionality Not Working - FIXED ✅**
@@ -157,7 +157,7 @@ const EnhancedTabTrigger: React.FC<EnhancedTabTriggerProps> = memo(({
 1. Navigate to `/trade` page
 2. Click on "All Assets" tab
 3. ✅ **Expected**: Text should be clearly visible with gradient effect
-4. ✅ **Fallback**: If gradient fails, text shows in orange (#F66F13)
+4. ✅ **Fallback**: If gradient fails, text shows in dark orange (#B1420A)
 
 ### **Swipe Functionality Test**:
 

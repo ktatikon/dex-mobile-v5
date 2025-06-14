@@ -187,7 +187,6 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ tokens, chartData }) => {
           <span className="text-white text-lg font-bold">
             ${formatCurrency(tradingBalance)}
           </span>
-          <span className="text-dex-text-secondary text-xs mt-1">Available</span>
         </Button>
 
         {/* P2P Section */}
@@ -201,7 +200,6 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ tokens, chartData }) => {
           <span className="text-white text-lg font-bold">
             ${formatCurrency(p2pBalance)}
           </span>
-          <span className="text-dex-text-secondary text-xs mt-1">Coming Soon</span>
         </Button>
       </div>
 

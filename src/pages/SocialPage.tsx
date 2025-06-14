@@ -85,8 +85,8 @@ const SocialPage: React.FC<SocialPageProps> = React.memo(({
     <div className={`container mx-auto px-4 pt-6 pb-24 ${className}`}>
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white mb-2">Social Trading</h1>
-        <p className="text-gray-400">
+        <h1 className="text-3xl font-medium text-white mb-2 font-poppins">Social Trading</h1>
+        <p className="text-dex-text-secondary font-poppins">
           Connect with top traders, copy strategies, and share your trading insights with the community
         </p>
       </div>

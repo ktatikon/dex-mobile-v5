@@ -85,7 +85,7 @@ const EnhancedTabsList: React.FC<EnhancedTabsListProps> = memo(({ children, clas
     mouseEndX.current = e.clientX;
   }, []);
 
-  const handleMouseUp = useCallback(() => {
+  const handleMouseUp = useCallback((e: React.MouseEvent) => {
     if (!onSwipe || !isDragging.current) {
       isDragging.current = false;
       return;
@@ -96,7 +96,11 @@ const EnhancedTabsList: React.FC<EnhancedTabsListProps> = memo(({ children, clas
 
     console.log('Mouse up - Start:', mouseStartX.current, 'End:', mouseEndX.current, 'Distance:', swipeDistance);
 
-    if (Math.abs(swipeDistance) > swipeThreshold) {
+    // Only trigger swipe if the distance is significant and we're not clicking on a button
+    const target = e.target as HTMLElement;
+    const isButton = target.tagName === 'BUTTON' || target.closest('button');
+
+    if (Math.abs(swipeDistance) > swipeThreshold && !isButton) {
       if (swipeDistance > 0) {
         console.log('Mouse swipe left (next tab)');
         onSwipe('left');
@@ -146,39 +150,27 @@ const EnhancedTabTrigger: React.FC<EnhancedTabTriggerProps> = memo(({
   onClick,
   className
 }) => {
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onClick();
+  }, [onClick]);
+
   return (
     <button
-      onClick={onClick}
+      onClick={handleClick}
+      onMouseDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
       className={`
-        relative flex-shrink-0 px-4 py-3 min-w-[80px] text-center transition-all duration-300 ease-in-out
+        relative flex-shrink-0 px-4 py-3 min-w-[80px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins
         ${isActive
-          ? 'text-lg font-semibold'
-          : 'text-sm font-medium text-white hover:text-gray-300'
+          ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
+          : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01]'
         }
         ${className || ''}
       `}
     >
-      <span
-        className="relative z-10"
-        style={isActive ? {
-          background: 'linear-gradient(to right, #F66F13, #E5E7E8)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
-          color: '#F66F13', // Fallback for browsers that don't support gradient text
-          fontWeight: '600' // Ensure semibold weight
-        } : {}}
-      >
-        {children}
-      </span>
-      {isActive && (
-        <div
-          className="absolute bottom-0 left-1/2 transform -translate-x-1/2 h-0.5 w-8 rounded-full transition-all duration-300"
-          style={{
-            background: 'linear-gradient(to right, #F66F13, #E5E7E8)'
-          }}
-        />
-      )}
+      {children}
     </button>
   );
 });
@@ -278,41 +270,22 @@ const UnifiedTabContent: React.FC<UnifiedTabContentProps> = memo(({
           <DropdownMenuTrigger asChild>
             <button
               onClick={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 setFilter('alts');
               }}
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
               className={`
-                relative flex-shrink-0 px-4 py-3 min-w-[80px] text-center transition-all duration-300 ease-in-out min-h-[44px] flex items-center gap-1
+                relative flex-shrink-0 px-4 py-3 min-w-[80px] text-center transition-all duration-200 ease-in-out min-h-[44px] flex items-center gap-1 rounded-lg font-poppins
                 ${filter === 'alts'
-                  ? 'text-lg font-semibold'
-                  : 'text-sm font-medium text-white hover:text-gray-300'
+                  ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
+                  : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01]'
                 }
               `}
             >
-              <span
-                className="relative z-10"
-                style={filter === 'alts' ? {
-                  background: 'linear-gradient(to right, #F66F13, #E5E7E8)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  color: '#F66F13', // Fallback for browsers that don't support gradient text
-                  fontWeight: '600' // Ensure semibold weight
-                } : {}}
-              >
-                ALTs
-              </span>
-              <ChevronDown className="h-3 w-3 ml-0.5" style={filter === 'alts' ? {
-                color: '#F66F13'
-              } : {}} />
-              {filter === 'alts' && (
-                <div
-                  className="absolute bottom-0 left-1/2 transform -translate-x-1/2 h-0.5 w-8 rounded-full transition-all duration-300"
-                  style={{
-                    background: 'linear-gradient(to right, #F66F13, #E5E7E8)'
-                  }}
-                />
-              )}
+              ALTs
+              <ChevronDown className="h-3 w-3 ml-0.5" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -818,16 +791,7 @@ const TradePage = () => {
     ? realTimeOrderBookService.generateRealTimeRecentTrades(selectedToken.id, selectedToken.price || 0)
     : [];
 
-  // Format the last updated time
-  const formattedLastUpdated = lastUpdated
-    ? new Intl.DateTimeFormat('en-US', {
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: true,
-        day: 'numeric',
-        month: 'short'
-      }).format(lastUpdated)
-    : 'Never';
+
 
   // Handle token selection with error handling
   const handleSelectToken = (token: Token) => {
@@ -1111,22 +1075,15 @@ const TradePage = () => {
     <div className="pb-24">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-white">Market & Trading</h1>
-        {/* Version identifier for cache verification */}
-        <div className="text-xs text-gray-500">v2.0-enhanced</div>
-        <div className="flex items-center gap-4">
-          <div className="text-xs text-dex-text-secondary">
-            Last updated: {formattedLastUpdated}
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={loading}
-            className="h-8 px-2 bg-dex-tertiary border-dex-secondary"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={loading}
+          className="h-8 px-2 bg-dex-tertiary border-dex-secondary"
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+        </Button>
       </div>
 
 

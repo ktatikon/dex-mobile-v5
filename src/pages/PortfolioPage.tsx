@@ -583,7 +583,7 @@ const PortfolioPage = () => {
   return (
     <div className="container mx-auto px-4 pt-6 pb-24">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-white">Portfolio</h2>
+        <h2 className="text-2xl font-medium text-white font-poppins">Portfolio</h2>
         {lastUpdated && (
           <div className="flex items-center gap-2 text-gray-400">
             <RefreshCw size={16} onClick={() => refreshData()} className="cursor-pointer hover:text-dex-primary transition-colors" />
@@ -593,68 +593,112 @@ const PortfolioPage = () => {
       </div>
 
       <Tabs defaultValue="overview" className="w-full" onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-6 mb-6 bg-dex-dark/50 p-1 rounded-lg border border-dex-secondary/20 shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
-          <TabsTrigger
-            value="overview"
-            className="flex items-center justify-center py-1.5 px-1 h-11 min-h-[44px] rounded-lg text-center text-white transition-all duration-200
-            bg-dex-secondary text-dex-text-primary
-            data-[state=active]:bg-gradient-to-r data-[state=active]:from-dex-primary data-[state=active]:to-dex-primary/80
-            data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-dex-primary/20
-            data-[state=active]:border data-[state=active]:border-white/10"
-          >
-            Overview
-          </TabsTrigger>
-          <TabsTrigger
-            value="coins"
-            className="flex items-center justify-center py-1.5 px-1 h-11 min-h-[44px] rounded-lg text-center text-white transition-all duration-200
-            bg-dex-secondary text-dex-text-primary
-            data-[state=active]:bg-gradient-to-r data-[state=active]:from-dex-primary data-[state=active]:to-dex-primary/80
-            data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-dex-primary/20
-            data-[state=active]:border data-[state=active]:border-white/10"
-          >
-            Coins
-          </TabsTrigger>
-          <TabsTrigger
-            value="futures"
-            className="flex items-center justify-center py-1.5 px-1 h-11 min-h-[44px] rounded-lg text-center text-white transition-all duration-200
-            bg-dex-secondary text-dex-text-primary
-            data-[state=active]:bg-gradient-to-r data-[state=active]:from-dex-primary data-[state=active]:to-dex-primary/80
-            data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-dex-primary/20
-            data-[state=active]:border data-[state=active]:border-white/10"
-          >
-            Futures
-          </TabsTrigger>
-          <TabsTrigger
-            value="funds"
-            className="flex items-center justify-center py-1.5 px-1 h-11 min-h-[44px] rounded-lg text-center text-white transition-all duration-200
-            bg-dex-secondary text-dex-text-primary
-            data-[state=active]:bg-gradient-to-r data-[state=active]:from-dex-primary data-[state=active]:to-dex-primary/80
-            data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-dex-primary/20
-            data-[state=active]:border data-[state=active]:border-white/10"
-          >
-            Funds
-          </TabsTrigger>
-          <TabsTrigger
-            value="earn"
-            className="flex items-center justify-center py-1.5 px-1 h-11 min-h-[44px] rounded-lg text-center text-white transition-all duration-200
-            bg-dex-secondary text-dex-text-primary
-            data-[state=active]:bg-gradient-to-r data-[state=active]:from-dex-primary data-[state=active]:to-dex-primary/80
-            data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-dex-primary/20
-            data-[state=active]:border data-[state=active]:border-white/10"
-          >
-            Earn
-          </TabsTrigger>
-          <TabsTrigger
-            value="web3"
-            className="flex items-center justify-center py-1.5 px-1 h-11 min-h-[44px] rounded-lg text-center text-white transition-all duration-200
-            bg-dex-secondary text-dex-text-primary
-            data-[state=active]:bg-gradient-to-r data-[state=active]:from-dex-primary data-[state=active]:to-dex-primary/80
-            data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-dex-primary/20
-            data-[state=active]:border data-[state=active]:border-white/10"
-          >
-            Web 3.0
-          </TabsTrigger>
-        </TabsList>
+        <div
+          className="relative overflow-hidden mb-6"
+          onTouchStart={(e) => {
+            const touch = e.touches[0];
+            e.currentTarget.setAttribute('data-start-x', touch.clientX.toString());
+          }}
+          onTouchEnd={(e) => {
+            const startX = parseFloat(e.currentTarget.getAttribute('data-start-x') || '0');
+            const endX = e.changedTouches[0].clientX;
+            const swipeDistance = startX - endX;
+            const swipeThreshold = 50;
+
+            if (Math.abs(swipeDistance) > swipeThreshold) {
+              const tabs = ['overview', 'coins', 'futures', 'funds', 'earn', 'web3'];
+              const currentIndex = tabs.indexOf(activeTab);
+
+              if (swipeDistance > 0 && currentIndex < tabs.length - 1) {
+                // Swipe left = next tab
+                handleTabChange(tabs[currentIndex + 1]);
+              } else if (swipeDistance < 0 && currentIndex > 0) {
+                // Swipe right = previous tab
+                handleTabChange(tabs[currentIndex - 1]);
+              }
+            }
+          }}
+        >
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 px-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            <button
+              onClick={() => handleTabChange('overview')}
+              className={`
+                flex-shrink-0 px-4 py-3 min-w-[100px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center
+                ${activeTab === 'overview'
+                  ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
+                  : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01] border border-dex-secondary/30'
+                }
+              `}
+            >
+              Overview
+            </button>
+
+            <button
+              onClick={() => handleTabChange('coins')}
+              className={`
+                flex-shrink-0 px-4 py-3 min-w-[100px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center
+                ${activeTab === 'coins'
+                  ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
+                  : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01] border border-dex-secondary/30'
+                }
+              `}
+            >
+              Coins
+            </button>
+
+            <button
+              onClick={() => handleTabChange('futures')}
+              className={`
+                flex-shrink-0 px-4 py-3 min-w-[100px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center
+                ${activeTab === 'futures'
+                  ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
+                  : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01] border border-dex-secondary/30'
+                }
+              `}
+            >
+              Futures
+            </button>
+
+            <button
+              onClick={() => handleTabChange('funds')}
+              className={`
+                flex-shrink-0 px-4 py-3 min-w-[100px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center
+                ${activeTab === 'funds'
+                  ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
+                  : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01] border border-dex-secondary/30'
+                }
+              `}
+            >
+              Funds
+            </button>
+
+            <button
+              onClick={() => handleTabChange('earn')}
+              className={`
+                flex-shrink-0 px-4 py-3 min-w-[100px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center
+                ${activeTab === 'earn'
+                  ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
+                  : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01] border border-dex-secondary/30'
+                }
+              `}
+            >
+              Earn
+            </button>
+
+            <button
+              onClick={() => handleTabChange('web3')}
+              className={`
+                flex-shrink-0 px-4 py-3 min-w-[100px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center
+                ${activeTab === 'web3'
+                  ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
+                  : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01] border border-dex-secondary/30'
+                }
+              `}
+            >
+              Web 3.0
+            </button>
+          </div>
+        </div>
 
         <TabsContent value="overview">
           {portfolioTokens.length === 0 && mockPortfolioData.futures.length === 0 && mockPortfolioData.funds.length === 0 ? (
@@ -662,7 +706,7 @@ const PortfolioPage = () => {
               <div className="w-24 h-24 bg-dex-primary/10 rounded-full flex items-center justify-center mb-6">
                 <Wallet size={48} className="text-dex-primary" />
               </div>
-              <h2 className="text-xl font-bold text-white mb-2">Your account has no assets</h2>
+              <h2 className="text-2xl font-medium text-white mb-2 font-poppins">Your account has no assets</h2>
 
               <div className="flex items-center gap-2 mb-8">
                 <span className="text-dex-text-secondary">Portfolio Value:</span>
@@ -717,7 +761,7 @@ const PortfolioPage = () => {
                 </CardContent>
               </Card>
 
-              <h3 className="text-lg font-semibold text-white self-start mb-4">Products</h3>
+              <h3 className="text-xl font-medium text-white self-start mb-4 font-poppins">Products</h3>
 
               <Card className="w-full bg-dex-dark/80 border-dex-secondary/30 mb-4">
                 <CardContent className="p-4">
@@ -801,7 +845,7 @@ const PortfolioPage = () => {
               <Card className="w-full bg-dex-dark/80 border-dex-secondary/30 mb-6">
                 <CardContent className="p-4">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-white">Portfolio Summary</h3>
+                    <h3 className="text-xl font-medium text-white font-poppins">Portfolio Summary</h3>
                     <div className={`text-sm font-medium px-2 py-1 rounded-full ${isPositiveChange ? 'bg-dex-positive/10 text-dex-positive' : 'bg-dex-negative/10 text-dex-negative'}`}>
                       {isPositiveChange ? '+' : ''}{formattedPortfolioChange}%
                     </div>
@@ -834,7 +878,7 @@ const PortfolioPage = () => {
               </Card>
 
               {/* Top Assets */}
-              <h3 className="text-lg font-semibold text-white mb-4">Top Assets</h3>
+              <h3 className="text-xl font-medium text-white mb-4 font-poppins">Top Assets</h3>
 
               <div className="space-y-4 mb-6">
                 {/* Tether USD (USDT) */}
@@ -855,7 +899,7 @@ const PortfolioPage = () => {
                         <div className="text-xl font-bold text-white">$1</div>
                       </div>
                       <div className="text-amber-500 font-medium text-right">
-                        <Button variant="link" className="h-auto p-0 text-amber-500 font-medium">Buy Now</Button>
+                        <Button variant="positive" size="sm" className="font-poppins">Buy Now</Button>
                       </div>
                     </div>
                   </CardContent>
@@ -883,7 +927,7 @@ const PortfolioPage = () => {
                         <div className="text-xl font-bold text-white">${tokens.find(t => t.id === 'bitcoin')?.price?.toLocaleString() || '11,054.57'}</div>
                       </div>
                       <div className="text-amber-500 font-medium text-right">
-                        <Button variant="link" className="h-auto p-0 text-amber-500 font-medium">Buy Now</Button>
+                        <Button variant="positive" size="sm" className="font-poppins">Buy Now</Button>
                       </div>
                     </div>
                   </CardContent>
@@ -911,7 +955,7 @@ const PortfolioPage = () => {
                         <div className="text-xl font-bold text-white">${tokens.find(t => t.id === 'ripple')?.price?.toLocaleString() || '680.91'}</div>
                       </div>
                       <div className="text-amber-500 font-medium text-right">
-                        <Button variant="link" className="h-auto p-0 text-amber-500 font-medium">Buy Now</Button>
+                        <Button variant="positive" size="sm" className="font-poppins">Buy Now</Button>
                       </div>
                     </div>
                   </CardContent>
@@ -919,7 +963,7 @@ const PortfolioPage = () => {
               </div>
 
               {/* Quick Actions */}
-              <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
+              <h3 className="text-xl font-medium text-white mb-4 font-poppins">Quick Actions</h3>
 
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <Card className="bg-dex-dark/80 border-dex-secondary/30">
@@ -930,7 +974,7 @@ const PortfolioPage = () => {
                       </div>
                       <h3 className="text-sm font-medium text-white mb-2">Deposit Funds</h3>
                       <p className="text-xs text-gray-400 mb-3">Add money to your account</p>
-                      <Button className="w-full h-9 bg-dex-primary hover:bg-dex-primary/90 text-white rounded-lg text-xs">
+                      <Button variant="positive" size="sm" className="w-full font-poppins">
                         Deposit
                       </Button>
                     </div>
@@ -945,7 +989,7 @@ const PortfolioPage = () => {
                       </div>
                       <h3 className="text-sm font-medium text-white mb-2">Trade Assets</h3>
                       <p className="text-xs text-gray-400 mb-3">Buy or sell cryptocurrencies</p>
-                      <Button className="w-full h-9 bg-dex-secondary hover:bg-dex-secondary/90 text-white rounded-lg text-xs">
+                      <Button variant="outline" size="sm" className="w-full font-poppins">
                         Trade
                       </Button>
                     </div>
@@ -1158,11 +1202,11 @@ const PortfolioPage = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <Button className="h-12 min-h-[48px] bg-dex-primary hover:bg-dex-primary/90 text-white rounded-lg flex items-center justify-center gap-2">
+                <Button variant="positive" size="lg" className="flex items-center justify-center gap-2 font-poppins">
                   <Plus size={18} />
                   <span>Add INR</span>
                 </Button>
-                <Button className="h-12 min-h-[48px] bg-dex-secondary hover:bg-dex-secondary/90 text-white rounded-lg flex items-center justify-center gap-2">
+                <Button variant="outline" size="lg" className="flex items-center justify-center gap-2 font-poppins">
                   <ArrowUpDown size={18} />
                   <span>Transfer</span>
                 </Button>
@@ -1261,11 +1305,11 @@ const PortfolioPage = () => {
                       </div>
 
                       <div className="grid grid-cols-2 gap-2">
-                        <Button className="h-9 bg-dex-positive hover:bg-dex-positive/90 text-white rounded-lg text-xs">
+                        <Button variant="positive" size="sm" className="font-poppins">
                           <TrendingUp size={14} className="mr-1" />
                           Long
                         </Button>
-                        <Button className="h-9 bg-dex-negative hover:bg-dex-negative/90 text-white rounded-lg text-xs">
+                        <Button variant="destructive" size="sm" className="font-poppins">
                           <TrendingDown size={14} className="mr-1" />
                           Short
                         </Button>
@@ -1349,7 +1393,7 @@ const PortfolioPage = () => {
                       <Landmark size={32} className="text-blue-500" />
                     </div>
                     <h3 className="text-sm font-medium text-white mb-2">How to do a bank transfer funds?</h3>
-                    <Button className="w-full h-9 bg-blue-100/10 hover:bg-blue-100/20 text-blue-500 rounded-lg text-xs">
+                    <Button variant="outline" size="sm" className="w-full font-poppins">
                       Learn
                     </Button>
                   </div>
@@ -1363,7 +1407,7 @@ const PortfolioPage = () => {
                       <Landmark size={32} className="text-blue-500" />
                     </div>
                     <h3 className="text-sm font-medium text-white mb-2">How to deposit INR?</h3>
-                    <Button className="w-full h-9 bg-blue-100/10 hover:bg-blue-100/20 text-blue-500 rounded-lg text-xs">
+                    <Button variant="outline" size="sm" className="w-full font-poppins">
                       Learn
                     </Button>
                   </div>
@@ -1418,7 +1462,7 @@ const PortfolioPage = () => {
                         {fund.description}
                       </div>
 
-                      <Button className="w-full h-9 bg-dex-primary hover:bg-dex-primary/90 text-white rounded-lg text-xs">
+                      <Button variant="default" size="sm" className="w-full font-poppins">
                         Invest Now
                       </Button>
                     </CardContent>
@@ -1438,7 +1482,7 @@ const PortfolioPage = () => {
                   <div className="flex-1">
                     <h3 className="text-lg font-bold text-white mb-1">Claim assured returns with no lock-in</h3>
                     <p className="text-sm text-white/80 mb-3">Earn up to 7% APY on your crypto assets</p>
-                    <Button className="h-10 min-h-[44px] bg-white text-dex-primary hover:bg-white/90 rounded-lg text-sm font-medium">
+                    <Button variant="glossy" className="font-poppins">
                       Start Earning
                     </Button>
                   </div>

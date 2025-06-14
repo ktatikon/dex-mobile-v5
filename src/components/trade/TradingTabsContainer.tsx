@@ -44,19 +44,16 @@ const EnhancedTabTrigger: React.FC<EnhancedTabTriggerProps> = memo(({
   return (
     <button
       className={`
-        flex-1 px-4 py-3 text-center transition-all duration-300 ease-in-out rounded-md min-h-[44px] relative
-        ${isActive 
-          ? 'text-lg font-semibold bg-gradient-to-r from-[#F66F13] to-[#E5E7E8] bg-clip-text text-transparent' 
-          : 'text-sm font-medium text-white/70 hover:text-white hover:bg-dex-secondary/10'
+        flex-1 px-4 py-3 text-center transition-all duration-200 ease-in-out rounded-lg min-h-[44px] relative font-poppins
+        ${isActive
+          ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
+          : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01]'
         }
         ${className}
       `}
       onClick={onClick}
     >
       {children}
-      {isActive && (
-        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-0.5 bg-gradient-to-r from-[#F66F13] to-[#E5E7E8] rounded-full transition-all duration-300 ease-in-out" />
-      )}
     </button>
   );
 });

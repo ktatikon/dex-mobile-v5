@@ -59,6 +59,9 @@ export default {
 			'96': '24rem',     // 384px
 		},
 		extend: {
+			fontFamily: {
+				'poppins': ['Poppins', 'sans-serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -66,15 +69,16 @@ export default {
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
 
-                // DEX specific colors - New color scheme
+                // DEX specific colors - Updated to Dark Orange theme
                 dex: {
-                    primary: '#FF3B30',     // Primary Red
+                    primary: '#B1420A',     // Dark Orange (was #FF3B30)
                     secondary: '#1C1C1E',   // Dark Gray
                     dark: '#000000',        // Black background
                     card: '#1C1C1E',        // Secondary Dark Gray
                     tertiary: '#2C2C2E',    // Medium Gray
                     positive: '#34C759',    // Green
-                    negative: '#FF3B30',    // Red
+                    negative: '#FF3B30',    // Red (kept for negative actions)
+                    accent: '#D2691E',      // Peru (for gradients)
                     text: {
                         primary: '#FFFFFF',  // White
                         secondary: '#8E8E93', // Light Gray

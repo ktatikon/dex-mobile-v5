@@ -7,9 +7,10 @@ import { useToast } from '@/hooks/use-toast';
 interface AuthContextType {
   session: Session | null;
   user: User | null;
-  signUp: (email: string, password: string, metadata: { full_name: string; phone: string }) => Promise<void>;
+  signUp: (email: string, password: string, metadata: { full_name: string; phone: string }) => Promise<{ needsVerification: boolean; email: string }>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  resendVerification: (email: string) => Promise<void>;
   loading: boolean;
   validateSession: () => Promise<{ isValid: boolean; session: Session | null; error?: string }>;
   forceSessionRefresh: () => Promise<{ success: boolean; session: Session | null; error?: string }>;
@@ -24,9 +25,50 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener
+    // Set up auth state listener with email confirmation handling
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (event, session) => {
+        console.log('🔐 Auth state change:', event, session?.user?.email);
+
+        // Handle email confirmation
+        if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
+          console.log('✅ Email confirmed, initializing user profile...');
+
+          // Initialize user profile after email confirmation
+          try {
+            const { data: initResult, error: initError } = await supabase.rpc('initialize_user_profile', {
+              user_id: session.user.id,
+              user_email: session.user.email,
+              user_name: session.user.user_metadata?.full_name || 'User'
+            });
+
+            if (initError) {
+              console.warn('⚠️ Profile initialization failed after email confirmation:', initError);
+              // Try to show a helpful message to the user
+              toast({
+                title: "Welcome to V-DEX!",
+                description: "Your email is verified. You can now access your account.",
+                variant: "default",
+              });
+            } else {
+              console.log('✅ User profile initialized successfully after email confirmation');
+              toast({
+                title: "Welcome to V-DEX!",
+                description: "Your account has been verified and set up successfully.",
+                variant: "default",
+              });
+            }
+          } catch (profileError) {
+            console.warn('⚠️ Profile initialization error after email confirmation:', profileError);
+            // Still show welcome message even if profile init fails
+            toast({
+              title: "Welcome to V-DEX!",
+              description: "Your email is verified. You can now access your account.",
+              variant: "default",
+            });
+          }
+        }
+
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false); // Ensure loading stops on auth state change
@@ -58,7 +100,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
-  const signUp = async (email: string, password: string, metadata: { full_name: string; phone: string }) => {
+  const signUp = async (email: string, password: string, metadata: { full_name: string; phone: string }): Promise<{ needsVerification: boolean; email: string }> => {
     try {
       // Form validation
       if (!email || email.trim() === '') {
@@ -111,9 +153,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // Safe email redirect URL - handle tunnel URLs
       const currentOrigin = window.location.origin;
-      const emailRedirectTo = currentOrigin ? `${currentOrigin}/auth` : '/auth';
+      const emailRedirectTo = currentOrigin ? `${currentOrigin}/auth/confirm` : '/auth/confirm';
 
-      // Signup with Supabase
+      // Signup with Supabase (email verification required)
       const { data, error } = await supabase.auth.signUp({
         email: normalizedEmail,
         password,
@@ -132,30 +174,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw new Error('Failed to create user account');
       }
 
-      // Check for existing auth_id to prevent constraint violations
-      const { data: existingAuthId } = await supabase
-        .from('users')
-        .select('id')
-        .eq('auth_id', userId)
-        .maybeSingle();
-
-      if (existingAuthId) {
-        throw new Error('User ID already exists in database');
-      }
-
       // 🎯 SUCCESS: Supabase auth.signUp() succeeded!
-      // Database triggers will handle profile creation automatically
+      // Email verification is now required before profile initialization
       console.log('✅ Supabase auth user created successfully:', userId);
-      console.log('📧 Email verification will be sent to:', data.user?.email);
-      console.log('🔧 Database triggers will create user profile automatically');
+      console.log('📧 Verification email sent to:', data.user?.email);
+      console.log('⏳ User must verify email before profile initialization');
 
       // Enhanced logging for debugging
       console.log('🔍 Auth user details:', {
         id: data.user?.id,
         email: data.user?.email,
+        email_confirmed_at: data.user?.email_confirmed_at,
         metadata: data.user?.user_metadata,
         created_at: data.user?.created_at
       });
+
+      // Return success with verification requirement
+      return {
+        needsVerification: true,
+        email: normalizedEmail
+      };
 
       // Handle immediate session (rare case)
       if (data.session) {
@@ -189,17 +227,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         stack: error.stack
       });
 
-      // Check if this is a database error
-      if (error.message && error.message.includes('Database error')) {
-        console.error('🗄️ Database error detected - investigating...');
-
-        // Attempt to get more details about the database error
-        try {
-          const { data: dbHealth } = await supabase.from('users').select('count').limit(1);
-          console.log('🔍 Database connectivity test:', dbHealth ? 'Connected' : 'Failed');
-        } catch (dbError) {
-          console.error('🚨 Database connectivity failed:', dbError);
-        }
+      // Check if this is a timeout error
+      if (error.message && error.message.includes('timeout')) {
+        console.error('⏱️ Signup timeout detected - this should be resolved now');
       }
 
       // Enhanced error handling with specific messages
@@ -228,6 +258,43 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
 
       throw new Error(errorMessage);
+    }
+  };
+
+  const resendVerification = async (email: string) => {
+    try {
+      console.log('🔄 Resending verification email to:', email);
+
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email.trim().toLowerCase(),
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/confirm`
+        }
+      });
+
+      if (error) {
+        throw new Error(`Failed to resend verification email: ${error.message}`);
+      }
+
+      console.log('✅ Verification email resent successfully');
+
+      toast({
+        title: "Verification Email Sent",
+        description: "Please check your email for the verification link.",
+        variant: "default",
+      });
+
+    } catch (error: any) {
+      console.error('🚨 Resend verification error:', error);
+
+      toast({
+        title: "Failed to Resend Email",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+
+      throw error;
     }
   };
 
@@ -361,6 +428,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signUp,
     signIn,
     signOut,
+    resendVerification,
     loading,
     validateSession,
     forceSessionRefresh

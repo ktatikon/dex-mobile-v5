@@ -10,12 +10,15 @@ import { MarketDataProvider } from "@/contexts/MarketDataContext";
 import { TestnetProvider } from "@/contexts/TestnetContext";
 import { ChatProvider } from "@/contexts/ChatContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import PrivateRoute from "@/components/PrivateRoute";
 import DexNavigation from "@/components/DexNavigation";
 import DexHeader from "@/components/DexHeader";
 import HomePageWithErrorBoundary from "./pages/HomePageWithErrorBoundary";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
+import EmailVerificationPage from "./pages/EmailVerificationPage";
+import EmailConfirmPage from "./pages/EmailConfirmPage";
 import TradePageWithErrorBoundary from "./pages/TradePage";
 import ExplorePage from "./pages/ExplorePage";
 import PortfolioPageWithErrorBoundary from "./pages/PortfolioPageWithErrorBoundary";
@@ -62,6 +65,8 @@ import MultiNetworkPortfolioPageWithErrorBoundary from "./components/wrappers/Mu
 import AIAnalyticsPageWithErrorBoundary from "./components/wrappers/AIAnalyticsPageWithErrorBoundary";
 import SocialPageWithErrorBoundary from "./components/wrappers/SocialPageWithErrorBoundary";
 import KYCAMLPageWithErrorBoundary from "./components/wrappers/KYCAMLPageWithErrorBoundary";
+import ButtonShowcase from "./components/ButtonShowcase";
+import ComprehensiveUITest from "./components/ComprehensiveUITest";
 
 const queryClient = new QueryClient();
 
@@ -104,13 +109,16 @@ const App = () => {
                     <TestnetProvider>
                       <ChatProvider>
                         <LanguageProvider>
-                          <TooltipProvider>
+                          <ThemeProvider>
+                            <TooltipProvider>
                             <Toaster />
                             <Sonner />
                             <BrowserRouter>
-                <div className="min-h-screen dark bg-gradient-to-br from-dex-dark via-dex-primary/10 to-dex-secondary/10">
+                <div className="min-h-screen dark bg-dex-dark">
                 <Routes>
                 <Route path="/auth" element={<AuthPage />} />
+                <Route path="/auth/verify-email" element={<EmailVerificationPage />} />
+                <Route path="/auth/confirm" element={<EmailConfirmPage />} />
                 <Route
                   path="/"
                   element={
@@ -392,6 +400,22 @@ const App = () => {
                     <div className="container mx-auto px-4 pt-6 pb-24">
                       <DebugPage />
                     </div>
+                  </div>
+                }
+              />
+              <Route
+                path="/showcase"
+                element={
+                  <div className="min-h-screen bg-dex-dark">
+                    <ButtonShowcase />
+                  </div>
+                }
+              />
+              <Route
+                path="/ui-test"
+                element={
+                  <div className="min-h-screen bg-dex-dark">
+                    <ComprehensiveUITest />
                   </div>
                 }
               />
@@ -760,6 +784,7 @@ const App = () => {
           </div>
                             </BrowserRouter>
                           </TooltipProvider>
+                          </ThemeProvider>
                         </LanguageProvider>
                       </ChatProvider>
                     </TestnetProvider>

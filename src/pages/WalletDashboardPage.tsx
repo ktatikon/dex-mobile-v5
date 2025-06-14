@@ -1160,9 +1160,10 @@ const WalletDashboardPage: React.FC = () => {
             </Badge>
             <div className="flex gap-2">
               <Button
+                variant="destructive"
                 size="sm"
                 onClick={() => navigate('/send')}
-                className="bg-dex-primary hover:bg-dex-primary/80 text-white h-8 px-3"
+                className="font-poppins"
               >
                 <Send size={14} className="mr-1" />
                 Send
@@ -1252,13 +1253,13 @@ const WalletDashboardPage: React.FC = () => {
       {/* Tabs for different views */}
       <Tabs defaultValue="wallets" className="w-full">
         <TabsList className="grid w-full grid-cols-3 mb-6 bg-dex-dark/50 p-1.5 rounded-lg border border-dex-secondary/20">
-          <TabsTrigger value="wallets" className="text-white data-[state=active]:bg-dex-primary">
+          <TabsTrigger value="wallets" className="text-white font-poppins data-[state=active]:bg-gradient-to-br data-[state=active]:from-dex-primary data-[state=active]:to-[#8B3508] data-[state=active]:shadow-[0_4px_8px_rgba(255,255,255,0.05),0_1px_3px_rgba(177,66,10,0.3),inset_0_1px_2px_rgba(255,255,255,0.1)] data-[state=active]:border data-[state=active]:border-dex-primary/20 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200">
             Wallets
           </TabsTrigger>
-          <TabsTrigger value="transactions" className="text-white data-[state=active]:bg-dex-primary">
+          <TabsTrigger value="transactions" className="text-white font-poppins data-[state=active]:bg-gradient-to-br data-[state=active]:from-dex-primary data-[state=active]:to-[#8B3508] data-[state=active]:shadow-[0_4px_8px_rgba(255,255,255,0.05),0_1px_3px_rgba(177,66,10,0.3),inset_0_1px_2px_rgba(255,255,255,0.1)] data-[state=active]:border data-[state=active]:border-dex-primary/20 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200">
             Transactions
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="text-white data-[state=active]:bg-dex-primary">
+          <TabsTrigger value="analytics" className="text-white font-poppins data-[state=active]:bg-gradient-to-br data-[state=active]:from-dex-primary data-[state=active]:to-[#8B3508] data-[state=active]:shadow-[0_4px_8px_rgba(255,255,255,0.05),0_1px_3px_rgba(177,66,10,0.3),inset_0_1px_2px_rgba(255,255,255,0.1)] data-[state=active]:border data-[state=active]:border-dex-primary/20 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200">
             Analytics
           </TabsTrigger>
         </TabsList>
@@ -1268,56 +1269,105 @@ const WalletDashboardPage: React.FC = () => {
             {/* Wallet Type Filter */}
             <Card className="p-4 bg-dex-dark border-dex-secondary/30">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-white">Wallet Type</h3>
+                <h3 className="text-xl font-medium text-white font-poppins">Wallet Type</h3>
                 <Filter size={16} className="text-gray-400" />
               </div>
-              <div className="grid grid-cols-4 gap-2">
-                <Button
-                  variant={walletFilter === 'all' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setWalletFilter('all')}
-                  className={walletFilter === 'all' ? 'bg-dex-primary text-white' : 'border-dex-secondary/30 text-white'}
-                >
-                  All Wallets
-                </Button>
-                <Button
-                  variant={walletFilter === 'generated' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setWalletFilter('generated')}
-                  className={walletFilter === 'generated' ? 'bg-dex-primary text-white' : 'border-dex-secondary/30 text-white'}
-                >
-                  <Coins size={14} className="mr-1" />
-                  Custom AI
-                </Button>
-                <Button
-                  variant={walletFilter === 'hot' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setWalletFilter('hot')}
-                  className={walletFilter === 'hot' ? 'bg-dex-primary text-white' : 'border-dex-secondary/30 text-white'}
-                >
-                  <Flame size={14} className="mr-1" />
-                  Hot Wallets
-                </Button>
-                <Button
-                  variant={walletFilter === 'hardware' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setWalletFilter('hardware')}
-                  className={walletFilter === 'hardware' ? 'bg-dex-primary text-white' : 'border-dex-secondary/30 text-white'}
-                >
-                  <Shield size={14} className="mr-1" />
-                  Cold Wallets
-                </Button>
+
+              {/* Mobile-Optimized Swipeable Wallet Filter Tabs */}
+              <div
+                className="relative overflow-hidden"
+                onTouchStart={(e) => {
+                  const touch = e.touches[0];
+                  e.currentTarget.setAttribute('data-start-x', touch.clientX.toString());
+                }}
+                onTouchEnd={(e) => {
+                  const startX = parseFloat(e.currentTarget.getAttribute('data-start-x') || '0');
+                  const endX = e.changedTouches[0].clientX;
+                  const swipeDistance = startX - endX;
+                  const swipeThreshold = 50;
+
+                  if (Math.abs(swipeDistance) > swipeThreshold) {
+                    const walletFilters = ['all', 'generated', 'hot', 'hardware'] as const;
+                    const currentIndex = walletFilters.indexOf(walletFilter as any);
+
+                    if (swipeDistance > 0 && currentIndex < walletFilters.length - 1) {
+                      // Swipe left = next tab
+                      setWalletFilter(walletFilters[currentIndex + 1]);
+                    } else if (swipeDistance < 0 && currentIndex > 0) {
+                      // Swipe right = previous tab
+                      setWalletFilter(walletFilters[currentIndex - 1]);
+                    }
+                  }
+                }}
+              >
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                  <button
+                    onClick={() => setWalletFilter('all')}
+                    className={`
+                      flex-shrink-0 px-4 py-3 min-w-[120px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center gap-2
+                      ${walletFilter === 'all'
+                        ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
+                        : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01] border border-dex-secondary/30'
+                      }
+                    `}
+                  >
+                    All Wallets
+                  </button>
+
+                  <button
+                    onClick={() => setWalletFilter('generated')}
+                    className={`
+                      flex-shrink-0 px-4 py-3 min-w-[120px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center gap-2
+                      ${walletFilter === 'generated'
+                        ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
+                        : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01] border border-dex-secondary/30'
+                      }
+                    `}
+                  >
+                    <Coins size={14} />
+                    Custom AI
+                  </button>
+
+                  <button
+                    onClick={() => setWalletFilter('hot')}
+                    className={`
+                      flex-shrink-0 px-4 py-3 min-w-[120px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center gap-2
+                      ${walletFilter === 'hot'
+                        ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
+                        : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01] border border-dex-secondary/30'
+                      }
+                    `}
+                  >
+                    <Flame size={14} />
+                    Hot Wallets
+                  </button>
+
+                  <button
+                    onClick={() => setWalletFilter('hardware')}
+                    className={`
+                      flex-shrink-0 px-4 py-3 min-w-[120px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center gap-2
+                      ${walletFilter === 'hardware'
+                        ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
+                        : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01] border border-dex-secondary/30'
+                      }
+                    `}
+                  >
+                    <Shield size={14} />
+                    Cold Wallets
+                  </button>
+                </div>
               </div>
             </Card>
 
             {/* Quick Actions - Only for Custom AI Tab */}
             {walletFilter === 'generated' && (
               <Card className="p-4 bg-dex-dark border-dex-secondary/30">
-                <h3 className="text-lg font-medium text-white mb-4">Quick Actions</h3>
+                <h3 className="text-lg font-medium text-white mb-4 font-poppins">Quick Actions</h3>
                 <div className="grid grid-cols-2 gap-3">
                   <Button
                     onClick={() => navigate('/wallet-generation')}
-                    className="bg-dex-primary hover:bg-dex-primary/80 text-white justify-start"
+                    variant="positive"
+                    className="justify-start font-poppins"
                   >
                     <Plus size={16} className="mr-2" />
                     Create Wallet
@@ -1325,7 +1375,7 @@ const WalletDashboardPage: React.FC = () => {
                   <Button
                     onClick={() => navigate('/wallet-import')}
                     variant="outline"
-                    className="border-dex-secondary/30 text-white justify-start"
+                    className="justify-start font-poppins"
                   >
                     <ArrowUpDown size={16} className="mr-2" />
                     Import Wallet
@@ -1346,11 +1396,13 @@ const WalletDashboardPage: React.FC = () => {
                     return (
                       <Card className="p-6 bg-dex-dark border-dex-secondary/30 text-center">
                         <Coins size={48} className="mx-auto mb-4 text-dex-primary opacity-50" />
-                        <h3 className="text-lg font-medium text-white mb-2">No Generated Wallets</h3>
+                        <h3 className="text-lg font-medium text-white mb-2 font-poppins">No Generated Wallets</h3>
                         <p className="text-gray-400 mb-4">Create your first AI-powered wallet to get started</p>
                         <Button
                           onClick={() => navigate('/wallet-generation')}
-                          className="bg-dex-primary hover:bg-dex-primary/80 text-white h-12 px-6"
+                          variant="positive"
+                          size="lg"
+                          className="font-poppins"
                         >
                           <Plus size={16} className="mr-2" />
                           Create Wallet
@@ -1464,7 +1516,9 @@ const WalletDashboardPage: React.FC = () => {
                     <p className="text-gray-400 mb-4">Connect your favorite hot wallets to get started</p>
                     <Button
                       onClick={() => setShowHotWalletDialog(true)}
-                      className="bg-dex-primary hover:bg-dex-primary/80 text-white h-12 px-6"
+                      variant="default"
+                      size="lg"
+                      className="font-poppins"
                     >
                       <Plus size={16} className="mr-2" />
                       Connect Hot Wallet
@@ -1543,7 +1597,8 @@ const WalletDashboardPage: React.FC = () => {
                     <Button
                       onClick={() => setShowHardwareWalletDialog(true)}
                       variant="outline"
-                      className="border-dex-secondary/30 text-white h-12 px-6"
+                      size="lg"
+                      className="font-poppins"
                     >
                       <Shield size={16} className="mr-2" />
                       Connect Hardware Wallet
@@ -1880,9 +1935,10 @@ const WalletDashboardPage: React.FC = () => {
                   </p>
                   <div className="mt-4 space-x-2">
                     <Button
+                      variant="destructive"
                       size="sm"
                       onClick={() => navigate('/send')}
-                      className="bg-dex-primary hover:bg-dex-primary/80 text-white"
+                      className="font-poppins"
                     >
                       <Send size={14} className="mr-1" />
                       Send

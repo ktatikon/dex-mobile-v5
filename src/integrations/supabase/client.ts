@@ -19,7 +19,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   auth: {
     autoRefreshToken: true,
     persistSession: !isTunnel, // Disable session persistence in tunnels
-    detectSessionInUrl: false, // Disable for tunnel compatibility
+    detectSessionInUrl: true, // Enable for email confirmation handling
     flowType: 'pkce',
     storageKey: isTunnel ? 'sb-tunnel-auth' : 'sb-auth-token'
   },

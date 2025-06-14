@@ -5,11 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:3001": "vite --port 3001",
+    "dev:3002": "vite --port 3002",
     "dev:tunnel": "vite --host 0.0.0.0",
+    "dev:safe": "lsof -ti:3001 | xargs kill -9 2>/dev/null; vite --port 3001",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "kill-port": "lsof -ti:$PORT | xargs kill -9 2>/dev/null || echo 'No processes found on port $PORT'",
+    "test-ui": "echo 'UI Testing URLs:' && echo '• Main App: http://localhost:3001/' && echo '• Button Showcase: http://localhost:3001/showcase' && echo '• UI Test Suite: http://localhost:3001/ui-test'"
   },
   "dependencies": {
     "@1inch/limit-order-protocol": "^2.0.5",
