@@ -14,16 +14,22 @@ import {
   ReferenceLine,
   Tooltip,
   Cell,
-  Line
+  Line,
+  LineChart,
+  BarChart,
+  Area,
+  AreaChart
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, TrendingUp, AlertCircle } from 'lucide-react';
+import { RefreshCw, TrendingUp, AlertCircle, Maximize2, BarChart3, Activity } from 'lucide-react';
+import { ChartLoadingSkeleton, ProgressiveLoading, ErrorRecovery } from '@/components/enterprise/EnterpriseLoadingComponents';
 import { TradingChartProps, TimeInterval, ChartDataPoint, TooltipData } from '@/types/chart';
-import { useChartData } from '@/hooks/useChartData';
+import { useEnterpriseChartData } from '@/hooks/useEnterpriseChartData';
 import { formatPrice, formatVolume } from '@/services/chartDataService';
+import { ChartModal, ChartType } from '@/components/ChartModal';
 
-// Chart configuration following design system
+// Enhanced chart configuration following design system
 const CHART_CONFIG = {
   colors: {
     bullish: '#34C759',
@@ -31,8 +37,9 @@ const CHART_CONFIG = {
     volume: '#8E8E93',
     grid: '#2C2C2E',
     background: '#000000',
-    currentPrice: '#FF3B30',
-    text: '#FFFFFF'
+    currentPrice: '#B1420A',
+    text: '#FFFFFF',
+    sma: '#FFD60A'
   },
   responsive: {
     mobile: { height: 400 },
@@ -158,9 +165,15 @@ export const TradingChart: React.FC<TradingChartProps> = ({
   selectedToken,
   timeInterval: propTimeInterval = '7D',
   isLoading: propIsLoading = false,
-  className = ''
+  className = '',
+  chartType = 'candlestick',
+  showIndicators = { volume: true, sma: false },
+  isModal = false
 }) => {
-  // Chart data hook
+  // Chart modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [localChartType, setLocalChartType] = useState<ChartType>(chartType);
+  // Enterprise chart data hook with enhanced loading management
   const {
     chartData,
     isLoading: hookIsLoading,
@@ -168,22 +181,39 @@ export const TradingChart: React.FC<TradingChartProps> = ({
     timeInterval,
     setTimeInterval,
     refreshData,
-    lastUpdated
-  } = useChartData({
+    lastUpdated,
+    loadingProgress,
+    loadingStage,
+    dataSource,
+    validationResult
+  } = useEnterpriseChartData({
     tokenId: selectedToken.id,
     tokenSymbol: selectedToken.symbol,
     currentPrice: selectedToken.price,
     initialInterval: propTimeInterval,
-    enableAutoRefresh: true
+    enableAutoRefresh: true,
+    enablePreloading: true
   });
 
   const isLoading = propIsLoading || hookIsLoading;
 
-  // Prepare chart data for Recharts
+  // Calculate Simple Moving Average
+  const calculateSMA = useCallback((data: ChartDataPoint[], period: number = 20) => {
+    return data.map((point, index) => {
+      if (index < period - 1) return { ...point, sma: null };
+
+      const sum = data.slice(index - period + 1, index + 1)
+        .reduce((acc, curr) => acc + curr.close, 0);
+
+      return { ...point, sma: sum / period };
+    });
+  }, []);
+
+  // Prepare chart data for Recharts with indicators
   const chartDataFormatted = useMemo(() => {
     if (!chartData?.data) return [];
 
-    return chartData.data.map(point => ({
+    let processedData = chartData.data.map(point => ({
       ...point,
       // Add formatted timestamp for display
       timeLabel: new Date(point.timestamp).toLocaleDateString('en-US', {
@@ -191,7 +221,14 @@ export const TradingChart: React.FC<TradingChartProps> = ({
         day: 'numeric'
       })
     }));
-  }, [chartData]);
+
+    // Add SMA if enabled
+    if (showIndicators.sma) {
+      processedData = calculateSMA(processedData);
+    }
+
+    return processedData;
+  }, [chartData, showIndicators.sma, calculateSMA]);
 
   // Handle time interval change
   const handleIntervalChange = useCallback((newInterval: TimeInterval) => {
@@ -214,7 +251,69 @@ export const TradingChart: React.FC<TradingChartProps> = ({
 
   const chartHeight = getChartHeight();
 
+  // Render different chart types
+  const renderChart = () => {
+    const currentChartType = isModal ? chartType : localChartType;
+
+    switch (currentChartType) {
+      case 'line':
+        return (
+          <LineChart data={chartDataFormatted} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_CONFIG.colors.grid} opacity={0.3} />
+            <XAxis dataKey="timeLabel" axisLine={false} tickLine={false} tick={{ fill: CHART_CONFIG.colors.text, fontSize: 11 }} />
+            <YAxis yAxisId="price" orientation="right" axisLine={false} tickLine={false} tick={{ fill: CHART_CONFIG.colors.text, fontSize: 11 }} tickFormatter={(value) => `$${formatPrice(value)}`} />
+            {showIndicators.volume && <YAxis yAxisId="volume" orientation="left" axisLine={false} tickLine={false} tick={{ fill: CHART_CONFIG.colors.text, fontSize: 11 }} tickFormatter={formatVolume} />}
+            <Tooltip content={<CustomTooltip />} />
+            {showIndicators.volume && <Bar yAxisId="volume" dataKey="volume" fill={CHART_CONFIG.colors.volume} opacity={0.3} maxBarSize={20} />}
+            <Line yAxisId="price" type="monotone" dataKey="close" stroke={CHART_CONFIG.colors.bullish} strokeWidth={2} dot={false} />
+            {showIndicators.sma && <Line yAxisId="price" type="monotone" dataKey="sma" stroke={CHART_CONFIG.colors.sma} strokeWidth={1} dot={false} strokeDasharray="5 5" />}
+            {selectedToken.price && <ReferenceLine yAxisId="price" y={selectedToken.price} stroke={CHART_CONFIG.colors.currentPrice} strokeDasharray="5 5" strokeWidth={2} />}
+          </LineChart>
+        );
+
+      case 'bar':
+        return (
+          <BarChart data={chartDataFormatted} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_CONFIG.colors.grid} opacity={0.3} />
+            <XAxis dataKey="timeLabel" axisLine={false} tickLine={false} tick={{ fill: CHART_CONFIG.colors.text, fontSize: 11 }} />
+            <YAxis yAxisId="price" orientation="right" axisLine={false} tickLine={false} tick={{ fill: CHART_CONFIG.colors.text, fontSize: 11 }} tickFormatter={(value) => `$${formatPrice(value)}`} />
+            {showIndicators.volume && <YAxis yAxisId="volume" orientation="left" axisLine={false} tickLine={false} tick={{ fill: CHART_CONFIG.colors.text, fontSize: 11 }} tickFormatter={formatVolume} />}
+            <Tooltip content={<CustomTooltip />} />
+            {showIndicators.volume && <Bar yAxisId="volume" dataKey="volume" fill={CHART_CONFIG.colors.volume} opacity={0.3} maxBarSize={20} />}
+            <Bar yAxisId="price" dataKey="close" fill={CHART_CONFIG.colors.bullish} />
+            {showIndicators.sma && <Line yAxisId="price" type="monotone" dataKey="sma" stroke={CHART_CONFIG.colors.sma} strokeWidth={1} dot={false} strokeDasharray="5 5" />}
+            {selectedToken.price && <ReferenceLine yAxisId="price" y={selectedToken.price} stroke={CHART_CONFIG.colors.currentPrice} strokeDasharray="5 5" strokeWidth={2} />}
+          </BarChart>
+        );
+
+      default: // candlestick
+        return (
+          <ComposedChart data={chartDataFormatted} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_CONFIG.colors.grid} opacity={0.3} />
+            <XAxis dataKey="timeLabel" axisLine={false} tickLine={false} tick={{ fill: CHART_CONFIG.colors.text, fontSize: 11 }} interval="preserveStartEnd" />
+            <YAxis yAxisId="price" orientation="right" axisLine={false} tickLine={false} tick={{ fill: CHART_CONFIG.colors.text, fontSize: 11 }} domain={['dataMin * 0.99', 'dataMax * 1.01']} tickFormatter={(value) => `$${formatPrice(value)}`} />
+            {showIndicators.volume && <YAxis yAxisId="volume" orientation="left" axisLine={false} tickLine={false} tick={{ fill: CHART_CONFIG.colors.text, fontSize: 11 }} tickFormatter={formatVolume} />}
+            <Tooltip content={<CustomTooltip />} />
+            {showIndicators.volume && <Bar yAxisId="volume" dataKey="volume" fill={CHART_CONFIG.colors.volume} opacity={0.3} maxBarSize={20} />}
+            <Line yAxisId="price" type="monotone" dataKey="close" stroke={CHART_CONFIG.colors.bullish} strokeWidth={2} dot={false} connectNulls={false} />
+            <Line yAxisId="price" type="monotone" dataKey="high" stroke={CHART_CONFIG.colors.bullish} strokeWidth={1} strokeOpacity={0.5} dot={false} connectNulls={false} />
+            <Line yAxisId="price" type="monotone" dataKey="low" stroke={CHART_CONFIG.colors.bearish} strokeWidth={1} strokeOpacity={0.5} dot={false} connectNulls={false} />
+            {showIndicators.sma && <Line yAxisId="price" type="monotone" dataKey="sma" stroke={CHART_CONFIG.colors.sma} strokeWidth={1} dot={false} strokeDasharray="5 5" />}
+            {selectedToken.price && <ReferenceLine yAxisId="price" y={selectedToken.price} stroke={CHART_CONFIG.colors.currentPrice} strokeDasharray="5 5" strokeWidth={2} />}
+          </ComposedChart>
+        );
+    }
+  };
+
   return (
+    <>
+      {/* Chart Modal */}
+      <ChartModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        selectedToken={selectedToken}
+        isLoading={isLoading}
+      />
     <Card className={`bg-dex-dark/80 border-dex-primary/30 ${className}`}>
       <CardHeader className="pb-2">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -231,6 +330,51 @@ export const TradingChart: React.FC<TradingChartProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Chart Type Selector - Desktop only */}
+            {!isModal && (
+              <div className="hidden md:flex bg-dex-dark/50 rounded-lg p-1">
+                <Button
+                  size="sm"
+                  variant={localChartType === 'candlestick' ? 'default' : 'ghost'}
+                  className={`text-xs h-8 px-2 ${
+                    localChartType === 'candlestick'
+                      ? 'bg-dex-primary text-white'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                  onClick={() => setLocalChartType('candlestick')}
+                  disabled={isLoading}
+                >
+                  <BarChart3 size={14} />
+                </Button>
+                <Button
+                  size="sm"
+                  variant={localChartType === 'bar' ? 'default' : 'ghost'}
+                  className={`text-xs h-8 px-2 ${
+                    localChartType === 'bar'
+                      ? 'bg-dex-primary text-white'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                  onClick={() => setLocalChartType('bar')}
+                  disabled={isLoading}
+                >
+                  <Activity size={14} />
+                </Button>
+                <Button
+                  size="sm"
+                  variant={localChartType === 'line' ? 'default' : 'ghost'}
+                  className={`text-xs h-8 px-2 ${
+                    localChartType === 'line'
+                      ? 'bg-dex-primary text-white'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                  onClick={() => setLocalChartType('line')}
+                  disabled={isLoading}
+                >
+                  <TrendingUp size={14} />
+                </Button>
+              </div>
+            )}
+
             {/* Time interval selector */}
             <div className="flex bg-dex-dark/50 rounded-lg p-1">
               {TIME_INTERVALS.map(({ value, label }) => (
@@ -250,6 +394,18 @@ export const TradingChart: React.FC<TradingChartProps> = ({
                 </Button>
               ))}
             </div>
+
+            {/* Mobile Chart Modal Button */}
+            {!isModal && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsModalOpen(true)}
+                className="md:hidden h-8 px-2 bg-dex-tertiary border-dex-secondary text-white"
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            )}
 
             {/* Refresh button */}
             <Button
@@ -275,22 +431,44 @@ export const TradingChart: React.FC<TradingChartProps> = ({
 
       <CardContent className="p-0">
         {isLoading && !chartData ? (
-          <div className="flex justify-center items-center h-96">
-            <div className="text-center">
-              <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-2 text-dex-primary" />
-              <div className="text-dex-text-secondary">Loading chart data...</div>
-            </div>
+          <div className="p-6">
+            <ProgressiveLoading
+              stage={loadingStage}
+              progress={loadingProgress}
+              showProgress={true}
+              className="h-80"
+            />
+            {dataSource === 'cache' && (
+              <div className="text-center text-xs text-yellow-500 mt-2">
+                Using cached data while refreshing...
+              </div>
+            )}
+          </div>
+        ) : error && !chartData ? (
+          <div className="p-6">
+            <ErrorRecovery
+              error={error}
+              onRetry={handleRefresh}
+              onFallback={dataSource === 'cache' ? undefined : () => {
+                // Try to use cached data
+                console.log('Attempting to use cached data...');
+              }}
+              className="h-80"
+            />
           </div>
         ) : chartDataFormatted.length === 0 ? (
           <div className="flex justify-center items-center h-96">
             <div className="text-center text-dex-text-secondary">
               <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-              <div>No chart data available</div>
+              <div>No chart data available for {timeInterval} period</div>
+              <div className="text-xs mt-1 text-gray-500">
+                Try a different time interval or refresh the data
+              </div>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleRefresh}
-                className="mt-2 bg-dex-primary text-white"
+                className="mt-3 bg-dex-primary text-white"
               >
                 Retry
               </Button>
@@ -299,102 +477,26 @@ export const TradingChart: React.FC<TradingChartProps> = ({
         ) : (
           <div style={{ height: chartHeight }}>
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart
-                data={chartDataFormatted}
-                margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-              >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke={CHART_CONFIG.colors.grid}
-                  opacity={0.3}
-                />
-
-                <XAxis
-                  dataKey="timeLabel"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: CHART_CONFIG.colors.text, fontSize: 11 }}
-                  interval="preserveStartEnd"
-                />
-
-                <YAxis
-                  yAxisId="price"
-                  orientation="right"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: CHART_CONFIG.colors.text, fontSize: 11 }}
-                  domain={['dataMin * 0.99', 'dataMax * 1.01']}
-                  tickFormatter={(value) => `$${formatPrice(value)}`}
-                />
-
-                <YAxis
-                  yAxisId="volume"
-                  orientation="left"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: CHART_CONFIG.colors.text, fontSize: 11 }}
-                  tickFormatter={formatVolume}
-                />
-
-                <Tooltip content={<CustomTooltip />} />
-
-                {/* Volume bars */}
-                <Bar
-                  yAxisId="volume"
-                  dataKey="volume"
-                  fill={CHART_CONFIG.colors.volume}
-                  opacity={0.3}
-                  maxBarSize={20}
-                />
-
-                {/* Price lines for OHLC visualization */}
-                <Line
-                  yAxisId="price"
-                  type="monotone"
-                  dataKey="close"
-                  stroke={CHART_CONFIG.colors.bullish}
-                  strokeWidth={2}
-                  dot={false}
-                  connectNulls={false}
-                />
-
-                <Line
-                  yAxisId="price"
-                  type="monotone"
-                  dataKey="high"
-                  stroke={CHART_CONFIG.colors.bullish}
-                  strokeWidth={1}
-                  strokeOpacity={0.5}
-                  dot={false}
-                  connectNulls={false}
-                />
-
-                <Line
-                  yAxisId="price"
-                  type="monotone"
-                  dataKey="low"
-                  stroke={CHART_CONFIG.colors.bearish}
-                  strokeWidth={1}
-                  strokeOpacity={0.5}
-                  dot={false}
-                  connectNulls={false}
-                />
-
-                {/* Current price line */}
-                {selectedToken.price && (
-                  <ReferenceLine
-                    yAxisId="price"
-                    y={selectedToken.price}
-                    stroke={CHART_CONFIG.colors.currentPrice}
-                    strokeDasharray="5 5"
-                    strokeWidth={2}
-                  />
-                )}
-              </ComposedChart>
+              {renderChart()}
             </ResponsiveContainer>
+
+            {/* Data source indicator */}
+            {dataSource !== 'primary' && (
+              <div className="absolute bottom-2 right-2 text-xs text-gray-500 bg-dex-dark/80 px-2 py-1 rounded">
+                {dataSource === 'cache' ? '📦 Cached' : '🔄 Fallback'}
+              </div>
+            )}
+
+            {/* Validation warning */}
+            {validationResult && validationResult.warnings.length > 0 && (
+              <div className="absolute top-2 right-2 text-xs text-yellow-500 bg-dex-dark/80 px-2 py-1 rounded">
+                ⚠️ Data quality: {Math.round(validationResult.confidence * 100)}%
+              </div>
+            )}
           </div>
         )}
       </CardContent>
     </Card>
+    </>
   );
 };

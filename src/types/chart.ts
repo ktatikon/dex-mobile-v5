@@ -22,17 +22,27 @@ export interface ChartData {
   currentPrice?: number;
 }
 
+export type ChartType = 'candlestick' | 'bar' | 'line';
+
 export interface TradingChartProps {
   selectedToken: {
     id: string;
     symbol: string;
     name: string;
     price?: number;
+    priceChange24h?: number;
+    totalVolume?: number;
     logo?: string;
   };
   timeInterval?: TimeInterval;
   isLoading?: boolean;
   className?: string;
+  chartType?: ChartType;
+  showIndicators?: {
+    volume: boolean;
+    sma: boolean;
+  };
+  isModal?: boolean;
 }
 
 export interface ChartConfig {

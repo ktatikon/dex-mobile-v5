@@ -92,6 +92,9 @@ import SocialTradingPanel from '@/components/phase4/SocialTradingPanel';
 import StakingOpportunitiesPanel from '@/components/phase4/StakingOpportunitiesPanel';
 import { phase4ConfigManager } from '@/services/phase4/phase4ConfigService';
 import { getRealTimeTokens } from '@/services/fallbackDataService';
+import { WalletDashboardSkeleton, ProgressiveLoading, ErrorRecovery } from '@/components/enterprise/EnterpriseLoadingComponents';
+import { loadingOrchestrator } from '@/services/enterprise/loadingOrchestrator';
+import { realTimeDataManager } from '@/services/enterprise/realTimeDataManager';
 
 // Real analytics calculation from user data
 const calculateRealAnalytics = async (userId: string) => {
@@ -1100,24 +1103,11 @@ const WalletDashboardPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="pb-20">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-white">Wallet Dashboard</h1>
-          <div className="w-8 h-8 bg-dex-secondary/20 rounded animate-pulse"></div>
+      <ErrorBoundary>
+        <div className="pb-20">
+          <WalletDashboardSkeleton className="space-y-6" />
         </div>
-
-        <div className="space-y-6">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="p-6 bg-dex-dark border-dex-secondary/30 animate-pulse">
-              <div className="h-6 w-48 bg-dex-secondary/20 rounded mb-4"></div>
-              <div className="space-y-3">
-                <div className="h-4 w-32 bg-dex-secondary/10 rounded"></div>
-                <div className="h-4 w-64 bg-dex-secondary/10 rounded"></div>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </div>
+      </ErrorBoundary>
     );
   }
 
@@ -1150,14 +1140,9 @@ const WalletDashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Portfolio Overview */}
       <Card className="p-6 mb-6 bg-dex-dark text-white border-dex-secondary/30">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">Portfolio Overview</h2>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="border-dex-primary text-dex-primary">
-              {portfolioSummary?.walletCount || 0} Wallet{(portfolioSummary?.walletCount || 0) !== 1 ? 's' : ''}
-            </Badge>
             <div className="flex gap-2">
               <Button
                 variant="destructive"
@@ -1253,13 +1238,13 @@ const WalletDashboardPage: React.FC = () => {
       {/* Tabs for different views */}
       <Tabs defaultValue="wallets" className="w-full">
         <TabsList className="grid w-full grid-cols-3 mb-6 bg-dex-dark/50 p-1.5 rounded-lg border border-dex-secondary/20">
-          <TabsTrigger value="wallets" className="text-white font-poppins data-[state=active]:bg-gradient-to-br data-[state=active]:from-dex-primary data-[state=active]:to-[#8B3508] data-[state=active]:shadow-[0_4px_8px_rgba(255,255,255,0.05),0_1px_3px_rgba(177,66,10,0.3),inset_0_1px_2px_rgba(255,255,255,0.1)] data-[state=active]:border data-[state=active]:border-dex-primary/20 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200">
+          <TabsTrigger value="wallets" className="text-white font-poppins text-sm font-medium min-h-[44px] data-[state=active]:bg-gradient-to-br data-[state=active]:from-dex-primary data-[state=active]:to-[#8B3508] data-[state=active]:shadow-[0_4px_8px_rgba(177,66,10,0.3)] data-[state=active]:border data-[state=active]:border-dex-primary/20 transition-all duration-200">
             Wallets
           </TabsTrigger>
-          <TabsTrigger value="transactions" className="text-white font-poppins data-[state=active]:bg-gradient-to-br data-[state=active]:from-dex-primary data-[state=active]:to-[#8B3508] data-[state=active]:shadow-[0_4px_8px_rgba(255,255,255,0.05),0_1px_3px_rgba(177,66,10,0.3),inset_0_1px_2px_rgba(255,255,255,0.1)] data-[state=active]:border data-[state=active]:border-dex-primary/20 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200">
+          <TabsTrigger value="transactions" className="text-white font-poppins text-sm font-medium min-h-[44px] data-[state=active]:bg-gradient-to-br data-[state=active]:from-dex-primary data-[state=active]:to-[#8B3508] data-[state=active]:shadow-[0_4px_8px_rgba(177,66,10,0.3)] data-[state=active]:border data-[state=active]:border-dex-primary/20 transition-all duration-200">
             Transactions
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="text-white font-poppins data-[state=active]:bg-gradient-to-br data-[state=active]:from-dex-primary data-[state=active]:to-[#8B3508] data-[state=active]:shadow-[0_4px_8px_rgba(255,255,255,0.05),0_1px_3px_rgba(177,66,10,0.3),inset_0_1px_2px_rgba(255,255,255,0.1)] data-[state=active]:border data-[state=active]:border-dex-primary/20 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200">
+          <TabsTrigger value="analytics" className="text-white font-poppins text-sm font-medium min-h-[44px] data-[state=active]:bg-gradient-to-br data-[state=active]:from-dex-primary data-[state=active]:to-[#8B3508] data-[state=active]:shadow-[0_4px_8px_rgba(177,66,10,0.3)] data-[state=active]:border data-[state=active]:border-dex-primary/20 transition-all duration-200">
             Analytics
           </TabsTrigger>
         </TabsList>
@@ -1304,10 +1289,10 @@ const WalletDashboardPage: React.FC = () => {
                   <button
                     onClick={() => setWalletFilter('all')}
                     className={`
-                      flex-shrink-0 px-4 py-3 min-w-[120px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center gap-2
+                      flex-shrink-0 px-2 py-2 min-w-[120px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center gap-2 text-sm font-medium
                       ${walletFilter === 'all'
-                        ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
-                        : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01] border border-dex-secondary/30'
+                        ? 'bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_4px_8px_rgba(177,66,10,0.3)] border border-[#B1420A]/20'
+                        : 'text-white/70 hover:text-white hover:bg-dex-secondary/10 border border-dex-secondary/30'
                       }
                     `}
                   >
@@ -1317,10 +1302,10 @@ const WalletDashboardPage: React.FC = () => {
                   <button
                     onClick={() => setWalletFilter('generated')}
                     className={`
-                      flex-shrink-0 px-4 py-3 min-w-[120px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center gap-2
+                      flex-shrink-0 px-2 py-2 min-w-[120px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center gap-2 text-sm font-medium
                       ${walletFilter === 'generated'
-                        ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
-                        : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01] border border-dex-secondary/30'
+                        ? 'bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_4px_8px_rgba(177,66,10,0.3)] border border-[#B1420A]/20'
+                        : 'text-white/70 hover:text-white hover:bg-dex-secondary/10 border border-dex-secondary/30'
                       }
                     `}
                   >
@@ -1331,10 +1316,10 @@ const WalletDashboardPage: React.FC = () => {
                   <button
                     onClick={() => setWalletFilter('hot')}
                     className={`
-                      flex-shrink-0 px-4 py-3 min-w-[120px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center gap-2
+                      flex-shrink-0 px-2 py-2 min-w-[120px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center gap-2 text-sm font-medium
                       ${walletFilter === 'hot'
-                        ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
-                        : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01] border border-dex-secondary/30'
+                        ? 'bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_4px_8px_rgba(177,66,10,0.3)] border border-[#B1420A]/20'
+                        : 'text-white/70 hover:text-white hover:bg-dex-secondary/10 border border-dex-secondary/30'
                       }
                     `}
                   >
@@ -1345,10 +1330,10 @@ const WalletDashboardPage: React.FC = () => {
                   <button
                     onClick={() => setWalletFilter('hardware')}
                     className={`
-                      flex-shrink-0 px-4 py-3 min-w-[120px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center gap-2
+                      flex-shrink-0 px-2 py-2 min-w-[120px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center gap-2 text-sm font-medium
                       ${walletFilter === 'hardware'
-                        ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
-                        : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01] border border-dex-secondary/30'
+                        ? 'bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_4px_8px_rgba(177,66,10,0.3)] border border-[#B1420A]/20'
+                        : 'text-white/70 hover:text-white hover:bg-dex-secondary/10 border border-dex-secondary/30'
                       }
                     `}
                   >

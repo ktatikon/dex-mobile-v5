@@ -592,7 +592,7 @@ const PortfolioPage = () => {
         )}
       </div>
 
-      <Tabs defaultValue="overview" className="w-full" onValueChange={handleTabChange}>
+      <Tabs value={activeTab} className="w-full" onValueChange={handleTabChange}>
         <div
           className="relative overflow-hidden mb-6"
           onTouchStart={(e) => {
@@ -623,10 +623,10 @@ const PortfolioPage = () => {
             <button
               onClick={() => handleTabChange('overview')}
               className={`
-                flex-shrink-0 px-4 py-3 min-w-[100px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center
+                flex-shrink-0 px-2 py-2 min-w-[100px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center text-sm font-medium
                 ${activeTab === 'overview'
-                  ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
-                  : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01] border border-dex-secondary/30'
+                  ? 'bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_4px_8px_rgba(177,66,10,0.3)] border border-[#B1420A]/20'
+                  : 'text-white/70 hover:text-white hover:bg-dex-secondary/10 border border-dex-secondary/30'
                 }
               `}
             >
@@ -636,10 +636,10 @@ const PortfolioPage = () => {
             <button
               onClick={() => handleTabChange('coins')}
               className={`
-                flex-shrink-0 px-4 py-3 min-w-[100px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center
+                flex-shrink-0 px-2 py-2 min-w-[100px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center text-sm font-medium
                 ${activeTab === 'coins'
-                  ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
-                  : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01] border border-dex-secondary/30'
+                  ? 'bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_4px_8px_rgba(177,66,10,0.3)] border border-[#B1420A]/20'
+                  : 'text-white/70 hover:text-white hover:bg-dex-secondary/10 border border-dex-secondary/30'
                 }
               `}
             >
@@ -649,10 +649,10 @@ const PortfolioPage = () => {
             <button
               onClick={() => handleTabChange('futures')}
               className={`
-                flex-shrink-0 px-4 py-3 min-w-[100px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center
+                flex-shrink-0 px-2 py-2 min-w-[100px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center text-sm font-medium
                 ${activeTab === 'futures'
-                  ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
-                  : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01] border border-dex-secondary/30'
+                  ? 'bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_4px_8px_rgba(177,66,10,0.3)] border border-[#B1420A]/20'
+                  : 'text-white/70 hover:text-white hover:bg-dex-secondary/10 border border-dex-secondary/30'
                 }
               `}
             >
@@ -662,10 +662,10 @@ const PortfolioPage = () => {
             <button
               onClick={() => handleTabChange('funds')}
               className={`
-                flex-shrink-0 px-4 py-3 min-w-[100px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center
+                flex-shrink-0 px-2 py-2 min-w-[100px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center text-sm font-medium
                 ${activeTab === 'funds'
-                  ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
-                  : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01] border border-dex-secondary/30'
+                  ? 'bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_4px_8px_rgba(177,66,10,0.3)] border border-[#B1420A]/20'
+                  : 'text-white/70 hover:text-white hover:bg-dex-secondary/10 border border-dex-secondary/30'
                 }
               `}
             >
@@ -675,10 +675,10 @@ const PortfolioPage = () => {
             <button
               onClick={() => handleTabChange('earn')}
               className={`
-                flex-shrink-0 px-4 py-3 min-w-[100px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center
+                flex-shrink-0 px-2 py-2 min-w-[100px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center text-sm font-medium
                 ${activeTab === 'earn'
-                  ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
-                  : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01] border border-dex-secondary/30'
+                  ? 'bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_4px_8px_rgba(177,66,10,0.3)] border border-[#B1420A]/20'
+                  : 'text-white/70 hover:text-white hover:bg-dex-secondary/10 border border-dex-secondary/30'
                 }
               `}
             >
@@ -688,10 +688,10 @@ const PortfolioPage = () => {
             <button
               onClick={() => handleTabChange('web3')}
               className={`
-                flex-shrink-0 px-4 py-3 min-w-[100px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center
+                flex-shrink-0 px-2 py-2 min-w-[100px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins min-h-[44px] flex items-center justify-center text-sm font-medium
                 ${activeTab === 'web3'
-                  ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
-                  : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01] border border-dex-secondary/30'
+                  ? 'bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_4px_8px_rgba(177,66,10,0.3)] border border-[#B1420A]/20'
+                  : 'text-white/70 hover:text-white hover:bg-dex-secondary/10 border border-dex-secondary/30'
                 }
               `}
             >
@@ -706,7 +706,7 @@ const PortfolioPage = () => {
               <div className="w-24 h-24 bg-dex-primary/10 rounded-full flex items-center justify-center mb-6">
                 <Wallet size={48} className="text-dex-primary" />
               </div>
-              <h2 className="text-2xl font-medium text-white mb-2 font-poppins">Your account has no assets</h2>
+
 
               <div className="flex items-center gap-2 mb-8">
                 <span className="text-dex-text-secondary">Portfolio Value:</span>
@@ -841,11 +841,11 @@ const PortfolioPage = () => {
             </div>
           ) : (
             <div className="flex flex-col py-4">
-              {/* Portfolio Summary */}
+
               <Card className="w-full bg-dex-dark/80 border-dex-secondary/30 mb-6">
                 <CardContent className="p-4">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-medium text-white font-poppins">Portfolio Summary</h3>
+
                     <div className={`text-sm font-medium px-2 py-1 rounded-full ${isPositiveChange ? 'bg-dex-positive/10 text-dex-positive' : 'bg-dex-negative/10 text-dex-negative'}`}>
                       {isPositiveChange ? '+' : ''}{formattedPortfolioChange}%
                     </div>
@@ -1342,7 +1342,7 @@ const PortfolioPage = () => {
                   <span className="text-blue-600 font-bold text-sm">₹</span>
                 </div>
               </div>
-              <h2 className="text-lg font-bold text-white mb-2">Your account has no assets</h2>
+
             </div>
 
             {/* Deposit Card */}

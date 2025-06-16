@@ -54,20 +54,26 @@ const EnhancedTabsList: React.FC<EnhancedTabsListProps> = memo(({ children, clas
     touchEndX.current = e.targetTouches[0].clientX;
   }, []);
 
-  const handleTouchEnd = useCallback(() => {
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     if (!onSwipe) return;
 
-    const swipeThreshold = 50; // Minimum distance for swipe
+    const swipeThreshold = 80; // Increased threshold to reduce accidental swipes
     const swipeDistance = touchStartX.current - touchEndX.current;
 
     console.log('Touch end - Start:', touchStartX.current, 'End:', touchEndX.current, 'Distance:', swipeDistance);
 
-    if (Math.abs(swipeDistance) > swipeThreshold) {
+    // Only trigger swipe if the distance is significant and we're not clicking on a button
+    const target = e.target as HTMLElement;
+    const isButton = target.tagName === 'BUTTON' || target.closest('button') || target.closest('[role="button"]');
+    const isTabTrigger = target.classList.contains('touch-manipulation') || target.closest('.touch-manipulation');
+
+    // Prevent swipe if touching a button or tab trigger
+    if (Math.abs(swipeDistance) > swipeThreshold && !isButton && !isTabTrigger) {
       if (swipeDistance > 0) {
-        console.log('Swiping left (next tab)');
+        console.log('Touch swipe left (next tab)');
         onSwipe('left');
       } else {
-        console.log('Swiping right (previous tab)');
+        console.log('Touch swipe right (previous tab)');
         onSwipe('right');
       }
     }
@@ -140,7 +146,7 @@ interface EnhancedTabTriggerProps {
   value: string;
   isActive: boolean;
   children: React.ReactNode;
-  onClick: () => void;
+  onClick: (e?: React.MouseEvent | React.TouchEvent) => void;
   className?: string;
 }
 
@@ -153,22 +159,36 @@ const EnhancedTabTrigger: React.FC<EnhancedTabTriggerProps> = memo(({
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    onClick();
+    onClick(e);
+  }, [onClick]);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onClick(e);
   }, [onClick]);
 
   return (
     <button
       onClick={handleClick}
+      onTouchEnd={handleTouchEnd}
       onMouseDown={(e) => e.stopPropagation()}
       onTouchStart={(e) => e.stopPropagation()}
+      onTouchMove={(e) => e.stopPropagation()}
       className={`
-        relative flex-shrink-0 px-4 py-3 min-w-[80px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins
+        relative flex-shrink-0 px-2 py-2 min-w-[80px] min-h-[44px] text-center transition-all duration-200 ease-in-out rounded-lg font-poppins text-sm font-medium touch-manipulation
         ${isActive
-          ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
-          : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01]'
+          ? 'bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_4px_8px_rgba(177,66,10,0.3)] border border-[#B1420A]/20'
+          : 'text-white/70 hover:text-white hover:bg-dex-secondary/10 border border-dex-secondary/30'
         }
         ${className || ''}
       `}
+      style={{
+        touchAction: 'manipulation',
+        WebkitTouchCallout: 'none',
+        WebkitUserSelect: 'none',
+        userSelect: 'none'
+      }}
     >
       {children}
     </button>
@@ -221,48 +241,72 @@ const UnifiedTabContent: React.FC<UnifiedTabContentProps> = memo(({
         <EnhancedTabTrigger
           value="all"
           isActive={filter === 'all'}
-          onClick={() => setFilter('all')}
-          className="min-h-[44px]"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setFilter('all');
+          }}
+          className="min-h-[44px] touch-manipulation"
         >
           All Assets
         </EnhancedTabTrigger>
         <EnhancedTabTrigger
           value="gainers"
           isActive={filter === 'gainers'}
-          onClick={() => setFilter('gainers')}
-          className="min-h-[44px]"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setFilter('gainers');
+          }}
+          className="min-h-[44px] touch-manipulation"
         >
           Top Gainers
         </EnhancedTabTrigger>
         <EnhancedTabTrigger
           value="losers"
           isActive={filter === 'losers'}
-          onClick={() => setFilter('losers')}
-          className="min-h-[44px]"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setFilter('losers');
+          }}
+          className="min-h-[44px] touch-manipulation"
         >
           Top Losers
         </EnhancedTabTrigger>
         <EnhancedTabTrigger
           value="inr"
           isActive={filter === 'inr'}
-          onClick={() => setFilter('inr')}
-          className="min-h-[44px]"
+          onClick={(e) => {
+            e?.preventDefault();
+            e?.stopPropagation();
+            setFilter('inr');
+          }}
+          className="min-h-[44px] touch-manipulation"
         >
           INR
         </EnhancedTabTrigger>
         <EnhancedTabTrigger
           value="usdt"
           isActive={filter === 'usdt'}
-          onClick={() => setFilter('usdt')}
-          className="min-h-[44px]"
+          onClick={(e) => {
+            e?.preventDefault();
+            e?.stopPropagation();
+            setFilter('usdt');
+          }}
+          className="min-h-[44px] touch-manipulation"
         >
           USDT
         </EnhancedTabTrigger>
         <EnhancedTabTrigger
           value="btc"
           isActive={filter === 'btc'}
-          onClick={() => setFilter('btc')}
-          className="min-h-[44px]"
+          onClick={(e) => {
+            e?.preventDefault();
+            e?.stopPropagation();
+            setFilter('btc');
+          }}
+          className="min-h-[44px] touch-manipulation"
         >
           BTC
         </EnhancedTabTrigger>
@@ -276,11 +320,18 @@ const UnifiedTabContent: React.FC<UnifiedTabContentProps> = memo(({
               }}
               onMouseDown={(e) => e.stopPropagation()}
               onTouchStart={(e) => e.stopPropagation()}
+              onTouchMove={(e) => e.stopPropagation()}
+              style={{
+                touchAction: 'manipulation',
+                WebkitTouchCallout: 'none',
+                WebkitUserSelect: 'none',
+                userSelect: 'none'
+              }}
               className={`
-                relative flex-shrink-0 px-4 py-3 min-w-[80px] text-center transition-all duration-200 ease-in-out min-h-[44px] flex items-center gap-1 rounded-lg font-poppins
+                relative flex-shrink-0 px-2 py-2 min-w-[80px] min-h-[44px] text-center transition-all duration-200 ease-in-out flex items-center gap-1 rounded-lg font-poppins text-sm font-medium
                 ${filter === 'alts'
-                  ? 'text-lg font-medium bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_6px_12px_rgba(255,255,255,0.08),0_2px_4px_rgba(177,66,10,0.4),inset_0_2px_4px_rgba(255,255,255,0.15)] border border-white/10 hover:shadow-[0_8px_20px_rgba(255,255,255,0.12),0_3px_6px_rgba(177,66,10,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:to-white/20 before:opacity-70 before:rounded-lg'
-                  : 'text-sm font-normal text-white/70 hover:text-white hover:bg-dex-secondary/10 hover:scale-[1.01]'
+                  ? 'bg-gradient-to-br from-[#B1420A] to-[#D2691E] text-white shadow-[0_4px_8px_rgba(177,66,10,0.3)] border border-[#B1420A]/20'
+                  : 'text-white/70 hover:text-white hover:bg-dex-secondary/10 border border-dex-secondary/30'
                 }
               `}
             >
@@ -586,16 +637,48 @@ const TradePage = () => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Available currencies
+    // Enhanced currency list with more options
     const currencies = [
       { code: 'USD', name: 'US Dollar', symbol: '$' },
       { code: 'EUR', name: 'Euro', symbol: '€' },
       { code: 'GBP', name: 'British Pound', symbol: '£' },
-      { code: 'INR', name: 'Indian Rupee', symbol: '₹' },
       { code: 'JPY', name: 'Japanese Yen', symbol: '¥' },
+      { code: 'INR', name: 'Indian Rupee', symbol: '₹' },
       { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$' },
-      { code: 'AUD', name: 'Australian Dollar', symbol: 'A$' }
+      { code: 'AUD', name: 'Australian Dollar', symbol: 'A$' },
+      { code: 'CHF', name: 'Swiss Franc', symbol: 'Fr' },
+      { code: 'CNY', name: 'Chinese Yuan', symbol: '¥' },
+      { code: 'KRW', name: 'South Korean Won', symbol: '₩' }
     ];
+
+    // State for exchange rates
+    const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({});
+    const [isLoadingRates, setIsLoadingRates] = useState(false);
+
+    // Load exchange rates when dropdown opens
+    useEffect(() => {
+      const loadExchangeRates = async () => {
+        if (isOpen && Object.keys(exchangeRates).length === 0) {
+          setIsLoadingRates(true);
+          try {
+            const { currencyService } = await import('@/services/currencyService');
+            const rates = await currencyService.getExchangeRates();
+            setExchangeRates(rates);
+          } catch (error) {
+            console.error('Failed to load exchange rates:', error);
+            // Set fallback rates
+            setExchangeRates({
+              EUR: 0.85, GBP: 0.73, JPY: 110, INR: 74,
+              CAD: 1.25, AUD: 1.35, CHF: 0.92, CNY: 6.45, KRW: 1180
+            });
+          } finally {
+            setIsLoadingRates(false);
+          }
+        }
+      };
+
+      loadExchangeRates();
+    }, [isOpen, exchangeRates]);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -618,11 +701,12 @@ const TradePage = () => {
 
     return (
       <div className={`relative ${className || ''}`} ref={dropdownRef}>
-        {/* Currency Trigger */}
+        {/* Enhanced Currency Trigger */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1 px-2 py-1 text-sm text-gray-400 hover:text-white transition-colors rounded border border-dex-primary/20 hover:border-dex-primary/40"
+          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:text-white transition-all duration-200 rounded-lg border border-dex-primary/20 hover:border-dex-primary/40 bg-dex-dark/50 hover:bg-dex-primary/10"
         >
+          <span className="text-xs">{selectedCurrencyInfo.symbol}</span>
           <span className="font-medium">{selectedCurrencyInfo.code}</span>
           <ChevronDown
             size={12}
@@ -630,29 +714,55 @@ const TradePage = () => {
           />
         </button>
 
-        {/* Currency Dropdown - Fixed positioning */}
+        {/* Enhanced Currency Dropdown with Exchange Rates - Fixed Positioning */}
         {isOpen && (
-          <div className="fixed top-auto right-auto mt-1 w-48 bg-dex-dark border border-dex-primary/30 rounded-lg shadow-xl z-[9999] max-h-64 overflow-y-auto"
-               style={{
-                 position: 'fixed',
-                 top: dropdownRef.current ? dropdownRef.current.getBoundingClientRect().bottom + 4 : 'auto',
-                 left: dropdownRef.current ? dropdownRef.current.getBoundingClientRect().right - 192 : 'auto',
-               }}>
-            {currencies.map(currency => (
-              <button
-                key={currency.code}
-                onClick={() => handleCurrencySelect(currency.code)}
-                className={`w-full flex items-center justify-between p-3 hover:bg-dex-primary/10 transition-colors text-left border-b border-gray-800 last:border-b-0 ${
-                  currency.code === selectedCurrency ? 'bg-dex-primary/20' : ''
-                }`}
-              >
-                <div>
-                  <div className="font-medium text-white">{currency.code}</div>
-                  <div className="text-xs text-gray-400">{currency.name}</div>
-                </div>
-                <span className="text-sm text-gray-400">{currency.symbol}</span>
-              </button>
-            ))}
+          <div
+            className="absolute top-full left-0 mt-2 w-64 bg-dex-dark border border-dex-primary/30 rounded-lg shadow-xl z-[9999] max-h-80 overflow-y-auto"
+            style={{
+              position: 'absolute',
+              zIndex: 9999,
+              backgroundColor: '#1C1C1E',
+              border: '1px solid rgba(177, 66, 10, 0.3)',
+              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(177, 66, 10, 0.1)'
+            }}
+          >
+            {isLoadingRates && (
+              <div className="px-3 py-2 text-center text-gray-400 text-sm border-b border-gray-800">
+                Loading exchange rates...
+              </div>
+            )}
+            {currencies.map(currency => {
+              const rate = exchangeRates[currency.code];
+              const isSelected = currency.code === selectedCurrency;
+
+              return (
+                <button
+                  key={currency.code}
+                  onClick={() => handleCurrencySelect(currency.code)}
+                  className={`w-full flex items-center justify-between p-3 hover:bg-dex-primary/10 transition-colors text-left border-b border-gray-800 last:border-b-0 ${
+                    isSelected ? 'bg-dex-primary/20 text-dex-primary' : 'text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{currency.symbol}</span>
+                    <div>
+                      <div className="font-medium">{currency.code}</div>
+                      <div className="text-xs text-gray-400">{currency.name}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    {rate && currency.code !== 'USD' && (
+                      <div className="text-xs text-gray-500">
+                        1 USD = {rate.toFixed(currency.code === 'JPY' || currency.code === 'KRW' ? 0 : 2)}
+                      </div>
+                    )}
+                    {currency.code === 'USD' && (
+                      <div className="text-xs text-gray-500">Base</div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
@@ -1161,11 +1271,20 @@ const TradePage = () => {
         </Card>
       )}
 
-      {/* Trading Chart - Full width above trading interface */}
+      {/* Enhanced Trading Chart - Full width above trading interface */}
       <div className="mb-6">
         <TradingChart
-          selectedToken={selectedToken || { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', price: 0 }}
+          selectedToken={selectedToken || {
+            id: 'bitcoin',
+            symbol: 'BTC',
+            name: 'Bitcoin',
+            price: 0,
+            priceChange24h: 0,
+            totalVolume: 0
+          }}
           isLoading={loading}
+          chartType="candlestick"
+          showIndicators={{ volume: true, sma: false }}
         />
       </div>
 
