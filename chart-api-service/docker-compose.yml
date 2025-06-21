@@ -1,0 +1,170 @@
+version: '3.8'
+
+services:
+  # Redis Cache Service
+  redis:
+    image: redis:7-alpine
+    container_name: chart-api-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
+    command: redis-server /usr/local/etc/redis/redis.conf
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - chart-api-network
+    environment:
+      - REDIS_REPLICATION_MODE=master
+
+  # Chart API Service
+  chart-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: chart-api-service
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      # Server Configuration
+      - PORT=4000
+      - NODE_ENV=production
+      - API_VERSION=v1
+      
+      # Redis Configuration
+      - REDIS_URL=redis://redis:6379
+      - REDIS_DB=0
+      - REDIS_KEY_PREFIX=chart_api:
+      
+      # Cache Configuration
+      - CACHE_TTL_SECONDS=300
+      - CACHE_MAX_SIZE=1000
+      - FALLBACK_CACHE_TTL_SECONDS=900
+      
+      # CoinGecko API Configuration
+      - COINGECKO_BASE_URL=https://api.coingecko.com/api/v3
+      - COINGECKO_RATE_LIMIT_PER_MINUTE=50
+      - COINGECKO_TIMEOUT_MS=10000
+      
+      # Circuit Breaker Configuration
+      - CIRCUIT_BREAKER_THRESHOLD=5
+      - CIRCUIT_BREAKER_TIMEOUT_MS=60000
+      - CIRCUIT_BREAKER_RESET_TIMEOUT_MS=30000
+      
+      # Request Queue Configuration
+      - QUEUE_CONCURRENCY=5
+      - QUEUE_DELAY_MS=100
+      - DEBOUNCE_DELAY_MS=300
+      
+      # Rate Limiting Configuration
+      - RATE_LIMIT_WINDOW_MS=60000
+      - RATE_LIMIT_MAX_REQUESTS=100
+      
+      # Logging Configuration
+      - LOG_LEVEL=info
+      - LOG_FORMAT=json
+      
+      # CORS Configuration
+      - CORS_ORIGIN=http://localhost:3001,http://localhost:3000
+      - CORS_CREDENTIALS=true
+    volumes:
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4000/api/v1/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - chart-api-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.chart-api.rule=Host(`chart-api.localhost`)"
+      - "traefik.http.services.chart-api.loadbalancer.server.port=4000"
+
+  # Redis Commander (Development only)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: chart-api-redis-commander
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+      - HTTP_USER=admin
+      - HTTP_PASSWORD=admin123
+    networks:
+      - chart-api-network
+    profiles:
+      - development
+
+  # Prometheus (Monitoring)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: chart-api-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - chart-api-network
+    profiles:
+      - monitoring
+
+  # Grafana (Monitoring Dashboard)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: chart-api-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - chart-api-network
+    profiles:
+      - monitoring
+
+volumes:
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  chart-api-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

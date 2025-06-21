@@ -51,6 +51,7 @@ import P2PComingSoonPage from "./pages/P2PComingSoonPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import AdminUserManagementPage from "./pages/AdminUserManagementPage";
 import DebugPage from "./pages/DebugPage";
+import ChartTestPage from "./pages/ChartTestPage";
 
 
 import AdminRoute from "./components/AdminRoute";
@@ -67,6 +68,7 @@ import SocialPageWithErrorBoundary from "./components/wrappers/SocialPageWithErr
 import KYCAMLPageWithErrorBoundary from "./components/wrappers/KYCAMLPageWithErrorBoundary";
 import ButtonShowcase from "./components/ButtonShowcase";
 import ComprehensiveUITest from "./components/ComprehensiveUITest";
+// Chart test page removed - will be implemented with new specification
 
 const queryClient = new QueryClient();
 
@@ -400,6 +402,14 @@ const App = () => {
                     <div className="container mx-auto px-4 pt-6 pb-24">
                       <DebugPage />
                     </div>
+                  </div>
+                }
+              />
+              <Route
+                path="/chart-test"
+                element={
+                  <div className="min-h-screen bg-black text-white">
+                    <ChartTestPage />
                   </div>
                 }
               />
@@ -778,6 +788,8 @@ const App = () => {
               />
 
 
+
+              {/* Chart test route removed - will be implemented with new specification */}
 
               <Route path="*" element={<NotFound />} />
             </Routes>

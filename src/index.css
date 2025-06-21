@@ -166,3 +166,98 @@
     }
   }
 }
+
+/* Android-specific optimizations for chart modal */
+.android-optimized {
+  -webkit-overflow-scrolling: touch;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Landscape mode optimizations */
+.landscape-mode {
+  height: 100vh !important;
+  width: 100vw !important;
+}
+
+.landscape-mode .chart-container {
+  height: calc(100vh - 120px) !important;
+}
+
+/* Portrait mode optimizations */
+.portrait-mode .chart-container {
+  height: calc(100vh - 200px) !important;
+}
+
+/* Android WebView optimizations */
+@media screen and (max-width: 768px) {
+  .android-optimized {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+
+  .android-optimized * {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .android-optimized input,
+  .android-optimized textarea,
+  .android-optimized select {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+
+/* Fullscreen fallback for mobile devices */
+.fullscreen-fallback {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 9999 !important;
+  overflow: hidden !important;
+  background: #000000 !important;
+}
+
+.fullscreen-fallback * {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hide browser UI elements in fullscreen fallback */
+.fullscreen-fallback .browser-ui,
+.fullscreen-fallback .navigation-bar,
+.fullscreen-fallback .status-bar {
+  display: none !important;
+}
+
+/* Ensure modal takes full space in fallback mode */
+.fullscreen-fallback [data-modal="chart"] {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+}
+
+/* Mobile landscape optimizations */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  .landscape-mode .chart-container {
+    height: calc(100vh - 80px) !important;
+  }
+
+  .landscape-mode .chart-controls {
+    height: 80px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+  }
+}

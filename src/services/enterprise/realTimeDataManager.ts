@@ -250,7 +250,7 @@ class RealTimeDataManager {
   }
 
   /**
-   * Fetch chart data with time window support
+   * CRITICAL FIX: Enhanced chart data fetching with token change coordination
    */
   public async fetchChartData(
     tokenId: string,
@@ -258,7 +258,17 @@ class RealTimeDataManager {
     forceRefresh = false
   ): Promise<ChartData> {
     const sourceId = `chart_${tokenId}_${timeInterval}`;
-    
+
+    // CRITICAL FIX: Always invalidate cache for token/timeline changes
+    if (forceRefresh) {
+      // Clear all related cache entries for this token
+      const relatedSources = Array.from(this.dataStreams.keys()).filter(key =>
+        key.startsWith(`chart_${tokenId}_`)
+      );
+      relatedSources.forEach(source => this.invalidateCache(source));
+      console.log(`🔄 Invalidated ${relatedSources.length} cache entries for token ${tokenId}`);
+    }
+
     // Register if not exists
     if (!this.dataStreams.has(sourceId)) {
       this.registerDataSource(
@@ -276,10 +286,6 @@ class RealTimeDataManager {
 
     const fetchFunction = () => fetchOHLCData(tokenId, timeInterval);
     const fallbackFunction = () => this.generateFallbackChartData(tokenId, timeInterval);
-
-    if (forceRefresh) {
-      this.invalidateCache(sourceId);
-    }
 
     return this.fetchData(sourceId, fetchFunction, fallbackFunction);
   }
@@ -373,8 +379,38 @@ class RealTimeDataManager {
     }
   }
 
-  private invalidateCache(key: string): void {
+  /**
+   * CRITICAL FIX: Enhanced cache invalidation for token changes
+   */
+  public invalidateCache(key: string): void {
+    // Clear localStorage cache
     localStorage.removeItem(`rtdm_${key}`);
+
+    // Clear in-memory cache
+    this.dataCache.delete(key);
+
+    // CRITICAL FIX: Reset data stream state for token changes
+    const stream = this.dataStreams.get(key);
+    if (stream) {
+      stream.next({
+        data: null,
+        isLoading: false,
+        error: null,
+        lastUpdated: 0,
+        validationResult: null,
+        source: 'primary',
+        retryCount: 0
+      });
+    }
+
+    // Clear any auto-refresh timers for this source
+    const timerId = this.refreshTimers.get(key);
+    if (timerId) {
+      clearInterval(timerId);
+      this.refreshTimers.delete(key);
+    }
+
+    console.log(`🗑️ CACHE INVALIDATED: ${key} (localStorage + memory + stream + timers)`);
   }
 
   /**

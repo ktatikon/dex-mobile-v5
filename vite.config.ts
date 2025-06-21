@@ -12,8 +12,8 @@ export default defineConfig(({ mode }) => {
   base: '/',
   server: {
     host: "0.0.0.0",
-    port: 8080,
-    strictPort: true,
+    port: process.env.PORT ? parseInt(process.env.PORT) : 8080,
+    strictPort: false, // Allow port fallback
     cors: true,
     headers: {
       'Access-Control-Allow-Origin': '*',
@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     },
     hmr: {
-      port: 8080,
+      port: process.env.HMR_PORT ? parseInt(process.env.HMR_PORT) : undefined,
       host: 'localhost'
     },
   },
@@ -44,7 +44,7 @@ export default defineConfig(({ mode }) => {
         manualChunks: {
           vendor: ['react', 'react-dom'],
           ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
-          charts: ['recharts', 'plotly.js-dist-min'],
+          charts: ['plotly.js-dist-min'], // recharts removed
           crypto: ['@metamask/sdk', '@phantom/wallet-sdk']
         }
       }
@@ -53,6 +53,8 @@ export default defineConfig(({ mode }) => {
   },
   define: {
     'process.env.NODE_ENV': JSON.stringify(mode),
+    'process.env.REACT_APP_USE_CHART_MICROSERVICE': JSON.stringify(process.env.REACT_APP_USE_CHART_MICROSERVICE || 'true'),
+    'process.env.REACT_APP_CHART_API_URL': JSON.stringify(process.env.REACT_APP_CHART_API_URL || 'http://localhost:4000/api/v1'),
     global: 'globalThis',
   }
   };

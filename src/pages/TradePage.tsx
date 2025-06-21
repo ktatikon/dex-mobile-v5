@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
+import { createPortal } from 'react-dom';
 import { formatCurrency } from '@/services/realTimeData';
 import { realTimeOrderBookService } from '@/services/realTimeOrderBook';
 import { convertPrice } from '@/services/currencyService';
@@ -12,7 +13,11 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import TokenIcon from '@/components/TokenIcon';
 import EnhancedTokenSelector from '@/components/TokenSelector';
 import { TradingTabsContainer } from '@/components/trade';
-import { TradingChart } from '@/components/TradingChart';
+import { ChartModal } from '@/components/charts';
+
+
+
+import { TimeInterval, ChartType, DEFAULT_INDICATORS } from '@/types/chart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 // import { Tabs, TabsContent } from '@/components/ui/tabs'; // Removed - using custom tabs in TradingTabsContainer
 import { Button } from '@/components/ui/button';
@@ -79,11 +84,10 @@ const EnhancedTabsList: React.FC<EnhancedTabsListProps> = memo(({ children, clas
     }
   }, [onSwipe]);
 
-  // Mouse events for desktop testing
+  // Mouse events for desktop
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     mouseStartX.current = e.clientX;
     isDragging.current = true;
-    console.log('Mouse down:', mouseStartX.current);
   }, []);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
@@ -526,31 +530,35 @@ const TokenListContent: React.FC<TokenListContentProps> = memo(({
 
         const tokenPrice = token.price || 0;
         switch (pairSymbol) {
-          case 'BNB':
+          case 'BNB': {
             const bnbPrice = getBaseCurrencyPrice('BNB');
             displayPrice = `${formatCurrency(tokenPrice / bnbPrice, 6)} BNB`;
             break;
-          case 'ETH':
+          }
+          case 'ETH': {
             const ethPrice = getBaseCurrencyPrice('ETH');
             displayPrice = `${formatCurrency(tokenPrice / ethPrice, 6)} ETH`;
             break;
+          }
           case 'USDC':
             displayPrice = `${formatCurrency(tokenPrice)} USDC`;
             break;
-          case 'XRP':
+          case 'XRP': {
             const xrpPrice = getBaseCurrencyPrice('XRP');
             displayPrice = `${formatCurrency(tokenPrice / xrpPrice, 4)} XRP`;
             break;
+          }
           case 'DAI':
             displayPrice = `${formatCurrency(tokenPrice)} DAI`;
             break;
           case 'TUSD':
             displayPrice = `${formatCurrency(tokenPrice)} TUSD`;
             break;
-          case 'TRX':
+          case 'TRX': {
             const trxPrice = getBaseCurrencyPrice('TRX');
             displayPrice = `${formatCurrency(tokenPrice / trxPrice, 2)} TRX`;
             break;
+          }
         }
       }
 
@@ -636,6 +644,8 @@ const TradePage = () => {
   }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
 
     // Enhanced currency list with more options
     const currencies = [
@@ -680,50 +690,138 @@ const TradePage = () => {
       loadExchangeRates();
     }, [isOpen, exchangeRates]);
 
-    // Close dropdown when clicking outside
+    // Calculate dropdown position when opening
+    const updateDropdownPosition = useCallback(() => {
+      if (triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect();
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+        const dropdownHeight = 320; // max-h-80 = 320px
+        const dropdownWidth = Math.max(rect.width, 256); // Minimum 256px width
+
+        // Calculate initial position
+        let top = rect.bottom + scrollTop + 8; // 8px gap below trigger
+        let left = rect.left + scrollLeft;
+
+        // Viewport boundary checks
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
+
+        // Check if dropdown would go below viewport
+        if (rect.bottom + dropdownHeight > viewportHeight) {
+          // Position above trigger instead
+          top = rect.top + scrollTop - dropdownHeight - 8;
+        }
+
+        // Check if dropdown would go beyond right edge
+        if (left + dropdownWidth > viewportWidth) {
+          left = viewportWidth - dropdownWidth - 16; // 16px margin from edge
+        }
+
+        // Check if dropdown would go beyond left edge
+        if (left < 16) {
+          left = 16; // 16px margin from edge
+        }
+
+        setDropdownPosition({
+          top,
+          left,
+          width: dropdownWidth
+        });
+      }
+    }, []);
+
+    // Close dropdown when clicking outside and handle scroll/resize
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
-        if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) &&
+            triggerRef.current && !triggerRef.current.contains(event.target as Node)) {
+          setIsOpen(false);
+        }
+      };
+
+      const handleScroll = () => {
+        if (isOpen) {
+          updateDropdownPosition();
+        }
+      };
+
+      const handleResize = () => {
+        if (isOpen) {
+          updateDropdownPosition();
+        }
+      };
+
+      const handleKeyDown = (event: KeyboardEvent) => {
+        if (event.key === 'Escape' && isOpen) {
           setIsOpen(false);
         }
       };
 
       document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+      document.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('scroll', handleScroll, true);
+      window.addEventListener('resize', handleResize);
+
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener('scroll', handleScroll, true);
+        window.removeEventListener('resize', handleResize);
+      };
+    }, [isOpen, updateDropdownPosition]);
 
     const handleCurrencySelect = useCallback((currencyCode: string) => {
       onCurrencyChange(currencyCode);
       setIsOpen(false);
     }, [onCurrencyChange]);
 
+    const handleToggleDropdown = useCallback(() => {
+      if (!isOpen) {
+        updateDropdownPosition();
+      }
+      setIsOpen(!isOpen);
+    }, [isOpen, updateDropdownPosition]);
+
     const selectedCurrencyInfo = currencies.find(c => c.code === selectedCurrency) || currencies[0];
 
     return (
-      <div className={`relative ${className || ''}`} ref={dropdownRef}>
-        {/* Enhanced Currency Trigger */}
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:text-white transition-all duration-200 rounded-lg border border-dex-primary/20 hover:border-dex-primary/40 bg-dex-dark/50 hover:bg-dex-primary/10"
-        >
-          <span className="text-xs">{selectedCurrencyInfo.symbol}</span>
-          <span className="font-medium">{selectedCurrencyInfo.code}</span>
-          <ChevronDown
-            size={12}
-            className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-          />
-        </button>
+      <>
+        <div className={`relative ${className || ''}`}>
+          {/* Enhanced Currency Trigger */}
+          <button
+            ref={triggerRef}
+            onClick={handleToggleDropdown}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:text-white transition-all duration-200 rounded-lg border border-dex-primary/20 hover:border-dex-primary/40 bg-dex-dark/50 hover:bg-dex-primary/10"
+          >
+            <span className="text-xs">{selectedCurrencyInfo.symbol}</span>
+            <span className="font-medium">{selectedCurrencyInfo.code}</span>
+            <ChevronDown
+              size={12}
+              className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+            />
+          </button>
+        </div>
 
-        {/* Enhanced Currency Dropdown with Exchange Rates - Fixed Positioning */}
-        {isOpen && (
+        {/* Enhanced Currency Dropdown with Exchange Rates - Portal Rendering */}
+        {isOpen && createPortal(
           <div
-            className="absolute top-full left-0 mt-2 w-64 bg-dex-dark border border-dex-primary/30 rounded-lg shadow-xl z-[9999] max-h-80 overflow-y-auto"
+            ref={dropdownRef}
+            className="fixed bg-dex-dark border border-dex-primary/30 rounded-lg shadow-xl max-h-80 overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-200"
             style={{
-              position: 'absolute',
-              zIndex: 9999,
+              position: 'fixed',
+              top: `${dropdownPosition.top}px`,
+              left: `${dropdownPosition.left}px`,
+              width: `${dropdownPosition.width}px`,
+              zIndex: 99999, // Higher than chart modal and other components
               backgroundColor: '#1C1C1E',
               border: '1px solid rgba(177, 66, 10, 0.3)',
-              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(177, 66, 10, 0.1)'
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(177, 66, 10, 0.2), 0 0 0 1px rgba(177, 66, 10, 0.1)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              // Mobile optimizations
+              WebkitOverflowScrolling: 'touch',
+              touchAction: 'manipulation'
             }}
           >
             {isLoadingRates && (
@@ -763,9 +861,10 @@ const TradePage = () => {
                 </button>
               );
             })}
-          </div>
+          </div>,
+          document.body
         )}
-      </div>
+      </>
     );
   });
   // const [timeframe, setTimeframe] = useState<'24h' | '7d' | '30d'>('24h'); // Removed - was only used in old orderbook section
@@ -788,6 +887,16 @@ const TradePage = () => {
     refreshData,
     lastUpdated
   } = useMarketData('usd');
+
+  // Token selection state
+  const [selectedToken, setSelectedToken] = useState<Token | null>(null);
+
+  // Chart modal state
+  const [showChartModal, setShowChartModal] = useState(false);
+
+
+
+
 
   // Tab order for swipe navigation
   const tabOrder: MarketFilterType[] = ['all', 'gainers', 'losers', 'inr', 'usdt', 'btc', 'alts'];
@@ -842,9 +951,6 @@ const TradePage = () => {
     }
   }, [handleSwipe]);
 
-  // Set default selected token (first token when data is loaded)
-  const [selectedToken, setSelectedToken] = useState<Token | null>(null);
-
   // Currency selection state
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
   const [convertedPrice, setConvertedPrice] = useState<string>('$0.00');
@@ -865,7 +971,12 @@ const TradePage = () => {
       try {
         // Clone the token to prevent any reference issues
         const firstToken = { ...tokens[0] };
-        console.log('Setting initial selected token:', firstToken.symbol);
+        console.log('🎯 Setting initial selected token:', {
+          symbol: firstToken.symbol,
+          id: firstToken.id,
+          price: firstToken.price,
+          hasValidId: !!firstToken.id && firstToken.id !== 'unknown'
+        });
         setSelectedToken(firstToken);
       } catch (error) {
         console.error('Error setting initial token:', error);
@@ -893,12 +1004,12 @@ const TradePage = () => {
 
   // Generate real-time order book data for the selected token
   const orderBook = selectedToken
-    ? realTimeOrderBookService.generateRealTimeOrderBook(selectedToken.id, selectedToken.price || 0)
+    ? realTimeOrderBookService.generateRealTimeOrderBook(selectedToken?.id || 'unknown', selectedToken?.price || 0)
     : { bids: [], asks: [] };
 
   // Generate real-time recent trades for the selected token
   const recentTrades = selectedToken
-    ? realTimeOrderBookService.generateRealTimeRecentTrades(selectedToken.id, selectedToken.price || 0)
+    ? realTimeOrderBookService.generateRealTimeRecentTrades(selectedToken?.id || 'unknown', selectedToken?.price || 0)
     : [];
 
 
@@ -913,7 +1024,7 @@ const TradePage = () => {
 
       // Clone the token to prevent any reference issues
       const tokenCopy = { ...token };
-      console.log(`Selecting token: ${tokenCopy.symbol}`);
+      console.log(`🎯 Selecting token: ${tokenCopy.symbol} (ID: ${tokenCopy.id})`);
 
       setSelectedToken(tokenCopy);
 
@@ -923,6 +1034,8 @@ const TradePage = () => {
         : '0';
 
       setPrice(priceStr);
+
+
     } catch (error) {
       console.error('Error in handleSelectToken:', error);
       // Don't update state if there was an error
@@ -942,7 +1055,7 @@ const TradePage = () => {
     }
 
     const tradeAmount = parseFloat(amount);
-    const tradePrice = orderType === 'market' ? (selectedToken.price || 0) : parseFloat(price);
+    const tradePrice = orderType === 'market' ? (selectedToken?.price || 0) : parseFloat(price);
     const totalCost = tradeAmount * tradePrice;
 
     // Balance validation
@@ -978,7 +1091,7 @@ const TradePage = () => {
         }
       } else {
         // Market order - simulate immediate execution
-        setOrderSuccess(`Market ${tradeType} order executed successfully! ${tradeAmount} ${selectedToken.symbol} at $${tradePrice.toFixed(2)}`);
+        setOrderSuccess(`Market ${tradeType} order executed successfully! ${tradeAmount} ${selectedToken?.symbol || 'TOKEN'} at $${tradePrice.toFixed(2)}`);
 
         // Update balance
         if (tradeType === 'buy') {
@@ -1030,6 +1143,18 @@ const TradePage = () => {
   const handleRefresh = () => {
     refreshData();
   };
+
+
+
+  const handleChartExpand = useCallback(() => {
+    console.log('📊 Expanding chart to landscape modal');
+    setShowChartModal(true);
+  }, []);
+
+  const handleChartModalClose = useCallback(() => {
+    console.log('📊 Closing chart modal');
+    setShowChartModal(false);
+  }, []);
 
   // Automatic data refresh every 5 seconds for real-time updates
   useEffect(() => {
@@ -1271,22 +1396,44 @@ const TradePage = () => {
         </Card>
       )}
 
-      {/* Enhanced Trading Chart - Full width above trading interface */}
+      {/* Trading Chart Button - Simplified */}
       <div className="mb-6">
-        <TradingChart
-          selectedToken={selectedToken || {
-            id: 'bitcoin',
-            symbol: 'BTC',
-            name: 'Bitcoin',
-            price: 0,
-            priceChange24h: 0,
-            totalVolume: 0
-          }}
-          isLoading={loading}
-          chartType="candlestick"
-          showIndicators={{ volume: true, sma: false }}
-        />
+        <Card className="bg-black border-gray-800 rounded-xl overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex justify-center">
+              <Button
+                onClick={handleChartExpand}
+                disabled={!selectedToken}
+                className={`
+                  h-12 px-6 rounded-lg font-semibold text-base transition-all duration-200 flex items-center gap-2
+                  ${selectedToken
+                    ? 'bg-gradient-to-r from-[#B1420A] to-[#D2691E] hover:from-[#D2691E] hover:to-[#B1420A] text-white shadow-lg shadow-[#B1420A]/30 hover:shadow-[#B1420A]/40 transform hover:scale-105'
+                    : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                  }
+                `}
+                style={{ fontFamily: 'Poppins' }}
+              >
+                <BarChart3 size={20} />
+                {selectedToken ? 'Trading Chart' : 'Select Token First'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Chart Modal for Trading View - Only render when needed */}
+        {showChartModal && selectedToken && (
+          <ChartModal
+            isOpen={showChartModal}
+            onClose={handleChartModalClose}
+            selectedToken={selectedToken}
+            data={[]}
+            indicators={DEFAULT_INDICATORS}
+            theme="dark"
+          />
+        )}
       </div>
+
+
 
       <div className="mb-6">
         {/* Trading interface - Now full width */}
@@ -1443,20 +1590,33 @@ const TradePage = () => {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Amount:</span>
-                        <span className="text-white">{amount} {selectedToken.symbol}</span>
+                        <span className="text-white">{amount} {selectedToken?.symbol || 'TOKEN'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Price:</span>
                         <span className="text-white">
-                          ${orderType === 'market' ? (selectedToken.price || 0).toFixed(2) : price || '0.00'}
+                          ${orderType === 'market' ? (selectedToken?.price || 0).toFixed(2) : price || '0.00'}
                         </span>
                       </div>
                       <div className="flex justify-between border-t border-gray-700 pt-1">
                         <span className="text-gray-400">Total:</span>
                         <span className="text-white font-medium">
-                          ${amount && (orderType === 'market'
-                            ? (parseFloat(amount) * (selectedToken.price || 0)).toFixed(2)
-                            : (parseFloat(amount || '0') * parseFloat(price || '0')).toFixed(2))}
+                          ${(() => {
+                            if (!amount) return '0.00';
+                            try {
+                              const amountNum = parseFloat(amount);
+                              if (orderType === 'market') {
+                                const tokenPrice = selectedToken?.price || 0;
+                                return (amountNum * tokenPrice).toFixed(2);
+                              } else {
+                                const priceNum = parseFloat(price || '0');
+                                return (amountNum * priceNum).toFixed(2);
+                              }
+                            } catch (error) {
+                              console.error('Error calculating total:', error);
+                              return '0.00';
+                            }
+                          })()}
                         </span>
                       </div>
                     </div>
@@ -1473,19 +1633,21 @@ const TradePage = () => {
       {/* Unified Trading Tabs Container - Positioned after orderbook section */}
       <TradingTabsContainer
         // Orderbook props
-        selectedToken={selectedToken}
-        orderBook={orderBook}
-        recentTrades={recentTrades}
+        selectedToken={selectedToken || null}
+        orderBook={orderBook || { bids: [], asks: [] }}
+        recentTrades={recentTrades || []}
         showRecentTrades={showRecentTrades}
         onToggleView={() => setShowRecentTrades(!showRecentTrades)}
 
         // Trading props
-        tokens={tokens}
-        selectedFromToken={selectedToken}
+        tokens={tokens || []}
+        selectedFromToken={selectedToken || null}
         selectedToToken={null}
         onTokenSelect={(fromToken, toToken) => {
-          setSelectedToken(fromToken);
-          console.log('Token selection:', fromToken.symbol, '→', toToken.symbol);
+          if (fromToken) {
+            setSelectedToken(fromToken);
+            console.log('Token selection:', fromToken?.symbol || 'Unknown', '→', toToken?.symbol || 'Unknown');
+          }
         }}
       />
 

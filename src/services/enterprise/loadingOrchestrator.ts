@@ -104,21 +104,36 @@ class LoadingOrchestrator {
   }
 
   /**
-   * Execute coordinated data loading for a component
+   * Execute coordinated data loading for a component with token change detection
    */
   public async loadComponentData(
-    componentId: string, 
+    componentId: string,
     dataSources: DataSource[]
   ): Promise<{ [key: string]: any }> {
-    const config = this.componentConfigs.get(componentId);
-    if (!config) {
-      throw new Error(`Component ${componentId} not registered`);
+    // CRITICAL FIX: Auto-register component if not exists (for dynamic token changes)
+    if (!this.componentConfigs.has(componentId)) {
+      this.registerComponent({
+        componentId,
+        timeout: 30000,
+        maxRetries: 3,
+        retryDelay: 1000,
+        dependencies: [],
+        priority: 'high'
+      });
+    }
+
+    const config = this.componentConfigs.get(componentId)!;
+
+    // CRITICAL FIX: Clear any existing cache for token changes
+    if (componentId.includes('chart_')) {
+      this.clearComponentCache(componentId);
+      console.log(`🔄 ORCHESTRATOR: Cleared cache for chart component ${componentId}`);
     }
 
     this.updateLoadingState(componentId, {
       isLoading: true,
       progress: 0,
-      stage: 'initializing',
+      stage: 'token-sync',
       error: null
     });
 
@@ -161,14 +176,20 @@ class LoadingOrchestrator {
         } catch (error) {
           console.error(`❌ Failed to load ${source.id}:`, error);
           
-          // Try fallback if available
+          // CRITICAL FIX: Enhanced fallback handling for chart data
           if (source.fallback) {
             try {
-              results[source.id] = await source.fallback();
-              console.log(`🔄 Used fallback for ${source.id}`);
+              const fallbackData = await source.fallback();
+              results[source.id] = fallbackData;
+              console.log(`🔄 Used fallback for ${source.id} - data type: ${typeof fallbackData}`);
+
+              // Don't throw error for successful fallback, even if data is empty
+              if (fallbackData !== null && fallbackData !== undefined) {
+                console.log(`✅ Fallback successful for ${source.id}`);
+              }
             } catch (fallbackError) {
               console.error(`❌ Fallback failed for ${source.id}:`, fallbackError);
-              throw error;
+              throw error; // Only throw if both primary and fallback fail
             }
           } else {
             throw error;
@@ -283,6 +304,27 @@ class LoadingOrchestrator {
       timestamp: Date.now(),
       ttl
     });
+  }
+
+  /**
+   * CRITICAL FIX: Clear component cache for token changes
+   */
+  private clearComponentCache(componentId: string): void {
+    const keysToDelete: string[] = [];
+
+    // Find all cache keys related to this component
+    for (const [key] of this.dataCache) {
+      if (key.includes(componentId) || componentId.includes(key.split('_')[0])) {
+        keysToDelete.push(key);
+      }
+    }
+
+    // Clear related cache entries
+    keysToDelete.forEach(key => {
+      this.dataCache.delete(key);
+    });
+
+    console.log(`🔄 Cleared ${keysToDelete.length} cache entries for component ${componentId}`);
   }
 
   /**

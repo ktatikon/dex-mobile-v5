@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from '@/services/realTimeData';
 import { Token } from '@/types';
-import { LineChart, Line, ResponsiveContainer } from 'recharts';
+// Chart components removed - will be implemented with new specification
 import { useNavigate } from 'react-router-dom';
 
 interface PortfolioCardProps {
@@ -204,24 +204,13 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ tokens, chartData }) => {
       </div>
 
       <div className="h-24 w-full">
-        {isNewUser ? (
-          <div className="flex items-center justify-center h-full text-dex-text-secondary text-sm border border-dashed border-dex-secondary/20 rounded-lg">
-            Your portfolio chart will appear here
-          </div>
-        ) : (
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={portfolioChartData}>
-              <Line
-                type="monotone"
-                dataKey="value"
-                stroke={isPositive ? "#34C759" : "#FF3B30"}
-                strokeWidth={2.5}
-                dot={false}
-                isAnimationActive={true}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        )}
+        <div className="flex items-center justify-center h-full text-dex-text-secondary text-sm border border-dashed border-dex-secondary/20 rounded-lg">
+          {isNewUser ? (
+            "Your portfolio chart will appear here"
+          ) : (
+            "Portfolio chart will be implemented with new specification"
+          )}
+        </div>
       </div>
     </Card>
   );
